@@ -53,7 +53,7 @@ jobs:
       # El toolchain de Android (Gradle) que usan los plugins de Flutter
       # necesita un JDK disponible, aunque este job no compile el APK.
       - name: Configurar JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -105,7 +105,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           java-version: ${{ env.JAVA_VERSION }}
