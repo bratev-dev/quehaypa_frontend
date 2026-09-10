@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Descargar el código del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # El toolchain de Android (Gradle) que usan los plugins de Flutter
       # necesita un JDK disponible, aunque este job no compile el APK.
@@ -102,7 +102,7 @@ jobs:
 
     steps:
       - name: Descargar el código del repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
