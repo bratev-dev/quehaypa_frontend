@@ -1,0 +1,1767 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arquitectura Frontend — Qué hay pa'?</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+  }
+
+  :root {
+    --ink: #16181d;
+    --ink-soft: #4a5160;
+    --ink-faint: #767e8f;
+    --rule: #dcdfe6;
+    --rule-soft: #eceef2;
+    --accent: #1f4d8f;
+    --accent-soft: #eef3fa;
+    --warn: #8a5a00;
+    --warn-soft: #fdf6e6;
+    --danger: #97331f;
+    --danger-soft: #fbefec;
+    --ok: #1f6b46;
+    --ok-soft: #edf6f1;
+    --code-bg: #f6f7f9;
+    --mono: "Cascadia Mono", "Consolas", "SF Mono", ui-monospace, monospace;
+    --sans: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: #fff;
+    font-size: 10.2pt;
+    line-height: 1.55;
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- Portada ---------- */
+  .cover {
+    height: 247mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    page-break-after: always;
+  }
+  .cover-top { padding-top: 38mm; }
+  .eyebrow {
+    font-size: 8.5pt;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 10mm;
+  }
+  .cover h1 {
+    font-size: 30pt;
+    line-height: 1.12;
+    margin: 0 0 6mm;
+    letter-spacing: -.02em;
+    font-weight: 700;
+  }
+  .cover .sub {
+    font-size: 12.5pt;
+    color: var(--ink-soft);
+    max-width: 125mm;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .cover-rule {
+    height: 3px;
+    width: 40mm;
+    background: var(--accent);
+    margin: 9mm 0;
+  }
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5mm 10mm;
+    border-top: 1px solid var(--rule);
+    padding-top: 6mm;
+    font-size: 9pt;
+  }
+  .cover-meta dt {
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 7.6pt;
+    font-weight: 600;
+    margin-bottom: 1.5mm;
+  }
+  .cover-meta dd { margin: 0; font-weight: 600; }
+  .cover-meta dd code { font-size: 8.6pt; }
+
+  /* ---------- Estructura ---------- */
+  h2 {
+    font-size: 16pt;
+    letter-spacing: -.015em;
+    margin: 0 0 4mm;
+    padding-bottom: 2.5mm;
+    border-bottom: 2px solid var(--ink);
+    page-break-after: avoid;
+  }
+  h2 .num {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    margin-right: 3mm;
+  }
+  h3 {
+    font-size: 11.5pt;
+    margin: 7mm 0 2.5mm;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 10pt;
+    margin: 5mm 0 2mm;
+    color: var(--ink-soft);
+    page-break-after: avoid;
+  }
+  section { page-break-before: always; }
+  section.cont { page-break-before: auto; }
+  p { margin: 0 0 3mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; }
+  li { margin-bottom: 1.5mm; }
+  strong { font-weight: 650; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 8.8pt;
+    background: var(--code-bg);
+    padding: .5mm 1.2mm;
+    border-radius: 2px;
+    border: 1px solid var(--rule-soft);
+  }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 7.9pt;
+    line-height: 1.5;
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 3mm 3.5mm;
+    overflow-x: auto;
+    margin: 0 0 4mm;
+    page-break-inside: avoid;
+    white-space: pre;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; }
+  pre.long { page-break-inside: auto; }
+
+  .filetag {
+    font-family: var(--mono);
+    font-size: 7.8pt;
+    font-weight: 700;
+    color: #fff;
+    background: var(--ink);
+    display: inline-block;
+    padding: .8mm 2.5mm;
+    border-radius: 3px 3px 0 0;
+    margin-bottom: 0;
+  }
+  .filetag + pre { border-radius: 0 3px 3px 3px; margin-top: 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.8pt;
+    margin: 0 0 4mm;
+    page-break-inside: avoid;
+  }
+  th {
+    text-align: left;
+    background: var(--ink);
+    color: #fff;
+    font-weight: 600;
+    padding: 2mm 2.5mm;
+    font-size: 8.2pt;
+    letter-spacing: .02em;
+  }
+  td {
+    padding: 1.8mm 2.5mm;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  td code { font-size: 8.1pt; }
+
+  .callout {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 3mm 3.5mm;
+    border-radius: 0 3px 3px 0;
+    margin: 0 0 4mm;
+    page-break-inside: avoid;
+    font-size: 9.4pt;
+  }
+  .callout .lbl {
+    display: block;
+    font-size: 7.6pt;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5mm;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .callout.warn .lbl { color: var(--warn); }
+  .callout.danger { border-left-color: var(--danger); background: var(--danger-soft); }
+  .callout.danger .lbl { color: var(--danger); }
+  .callout.ok { border-left-color: var(--ok); background: var(--ok-soft); }
+  .callout.ok .lbl { color: var(--ok); }
+
+  .step {
+    display: flex;
+    align-items: baseline;
+    gap: 3mm;
+    margin: 8mm 0 3mm;
+    page-break-after: avoid;
+  }
+  .step-n {
+    flex: 0 0 auto;
+    width: 8mm; height: 8mm;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 10pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .step-t { font-size: 11.5pt; font-weight: 650; }
+  .step-sub {
+    font-family: var(--mono);
+    font-size: 8.2pt;
+    color: var(--ink-faint);
+    font-weight: 400;
+    display: block;
+    margin-top: .8mm;
+  }
+
+  .toc { font-size: 10pt; }
+  .toc ol { list-style: none; padding: 0; counter-reset: toc; }
+  .toc li {
+    counter-increment: toc;
+    display: flex;
+    align-items: baseline;
+    gap: 2mm;
+    padding: 1.6mm 0;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .toc li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 8.4pt;
+    color: var(--accent);
+    font-weight: 700;
+    flex: 0 0 7mm;
+  }
+  .toc .t { font-weight: 600; }
+  .toc .d { color: var(--ink-faint); font-size: 8.8pt; margin-left: auto; text-align: right; max-width: 92mm; }
+
+  .tree {
+    font-family: var(--mono);
+    font-size: 8.2pt;
+    line-height: 1.62;
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 3.5mm 4mm;
+    margin: 0 0 4mm;
+    page-break-inside: avoid;
+  }
+  .tree .c { color: var(--ink-faint); }
+  .tree .z { color: var(--accent); font-weight: 700; }
+  .tree .dead { color: var(--danger); font-weight: 600; }
+
+  figure { margin: 0 0 5mm; page-break-inside: avoid; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption {
+    font-size: 8.2pt;
+    color: var(--ink-faint);
+    margin-top: 2mm;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .pill {
+    display: inline-block;
+    font-size: 7.4pt;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: .6mm 2mm;
+    border-radius: 8px;
+    vertical-align: middle;
+  }
+  .pill.dom { background: #e7edf7; color: var(--accent); }
+  .pill.dat { background: #eaf4ee; color: var(--ok); }
+  .pill.pre { background: #f6ecdc; color: var(--warn); }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .lead {
+    font-size: 10.6pt;
+    color: var(--ink-soft);
+    border-left: 3px solid var(--rule);
+    padding-left: 4mm;
+    margin-bottom: 6mm;
+  }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li {
+    padding-left: 7mm;
+    position: relative;
+    margin-bottom: 2mm;
+  }
+  .checklist li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 1mm;
+    width: 3.6mm; height: 3.6mm;
+    border: 1.4px solid var(--ink-soft);
+    border-radius: 2px;
+  }
+  .end {
+    margin-top: 8mm;
+    padding-top: 4mm;
+    border-top: 1px solid var(--rule);
+    font-size: 8.4pt;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+</style>
+
+</head>
+<body>
+<!-- ============ PORTADA ============ -->
+<div class="cover">
+  <div class="cover-top">
+    <div class="eyebrow">Documentación técnica · Frontend</div>
+    <h1>Arquitectura del Frontend<br>y guía de nuevos módulos</h1>
+    <div class="cover-rule"></div>
+    <p class="sub">
+      Especificación de la construcción de la aplicación móvil <strong>Qué hay pa'?</strong>,
+      desarrollada en Flutter sobre Clean Architecture, y procedimiento normalizado
+      para incorporar módulos funcionales nuevos.
+    </p>
+  </div>
+  <dl class="cover-meta">
+    <div><dt>Proyecto</dt><dd>QUEHAYPA — paquete <code>frontend</code></dd></div>
+    <div><dt>Versión de la app</dt><dd>1.0.0+1</dd></div>
+    <div><dt>Framework</dt><dd>Flutter · Dart SDK <code>^3.13.2</code></dd></div>
+    <div><dt>Arquitectura</dt><dd>Clean Architecture + Feature-first</dd></div>
+    <div><dt>Estado y DI</dt><dd>Riverpod 3.4.3</dd></div>
+    <div><dt>Identidad</dt><dd>Keycloak · OAuth 2.0 / OIDC (PKCE)</dd></div>
+  </dl>
+</div>
+
+<!-- ============ ÍNDICE ============ -->
+<section class="cont">
+  <h2>Contenido</h2>
+  <div class="toc">
+    <ol>
+      <li><span class="t">Panorama general</span><span class="d">Stack, dependencias y decisiones estructurales</span></li>
+      <li><span class="t">Las tres zonas del código</span><span class="d"><code>app/</code>, <code>core/</code>, <code>features/</code></span></li>
+      <li><span class="t">Clean Architecture en tres capas</span><span class="d">Domain, Data, Presentation y la regla de dependencia</span></li>
+      <li><span class="t">Mapa de archivos actual</span><span class="d">Inventario completo con responsabilidad de cada pieza</span></li>
+      <li><span class="t">Inyección de dependencias</span><span class="d">El grafo de providers de Riverpod</span></li>
+      <li><span class="t">Flujo de autenticación</span><span class="d">Login, restauración y cierre de sesión</span></li>
+      <li><span class="t">Renovación automática de tokens</span><span class="d">El interceptor y su control de concurrencia</span></li>
+      <li><span class="t">Enrutamiento y guardas</span><span class="d">GoRouter reactivo al estado de sesión</span></li>
+      <li><span class="t">Configuración por entorno</span><span class="d">AppConfig y el problema de <code>localhost</code></span></li>
+      <li><span class="t">Deuda técnica detectada</span><span class="d">Hallazgos concretos sobre el código actual</span></li>
+      <li><span class="t">Cómo agregar un módulo nuevo</span><span class="d">Receta de 9 pasos con un módulo de ejemplo completo</span></li>
+      <li><span class="t">Checklist y convenciones</span><span class="d">Criterios de aceptación antes de integrar</span></li>
+      <li><span class="t">Errores comunes</span><span class="d">Trampas frecuentes y cómo evitarlas</span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section>
+  <h2><span class="num">01</span>Panorama general</h2>
+
+  <p class="lead">
+    El frontend es una aplicación Flutter organizada bajo <strong>Clean Architecture con enfoque
+    feature-first</strong>. Cada funcionalidad vive en su propia carpeta y se subdivide en tres capas
+    con dependencias estrictamente unidireccionales. Toda la composición de objetos ocurre mediante
+    Riverpod: no hay <em>singletons</em> globales ni instanciación directa entre capas.
+  </p>
+
+  <h3>Dependencias de producción</h3>
+  <table>
+    <thead>
+      <tr><th style="width:32%">Paquete</th><th style="width:14%">Versión</th><th>Rol dentro de la arquitectura</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>flutter_riverpod</code></td><td>^3.4.3</td><td>Gestión de estado <em>e</em> inyección de dependencias. Es el contenedor DI de todo el proyecto.</td></tr>
+      <tr><td><code>go_router</code></td><td>^18.0.1</td><td>Enrutamiento declarativo con redirección basada en el estado de autenticación.</td></tr>
+      <tr><td><code>dio</code></td><td>^5.11.1</td><td>Cliente HTTP hacia la API propia. Aloja el interceptor de autenticación.</td></tr>
+      <tr><td><code>flutter_appauth</code></td><td>^12.1.0</td><td>Cliente OAuth 2.0 / OIDC certificado. Abre el navegador del sistema contra Keycloak.</td></tr>
+      <tr><td><code>flutter_secure_storage</code></td><td>^11.0.0</td><td>Persistencia cifrada de tokens (Keystore en Android, Keychain en iOS).</td></tr>
+      <tr><td><code>cupertino_icons</code></td><td>^1.0.8</td><td>Set de iconos iOS.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <span class="lbl">Decisión de diseño</span>
+    <p>La autenticación <strong>no</strong> se implementa con un formulario propio de usuario y contraseña.
+    Se delega en Keycloak mediante <em>Authorization Code Flow con PKCE</em>, abriendo el navegador del
+    sistema. La app nunca ve las credenciales del usuario: solo recibe tokens. Esto es lo que exige el
+    estándar <em>OAuth 2.0 for Native Apps</em> (RFC 8252) y es la razón de que exista el esquema
+    <code>com.quehaypa.app://oauth/callback</code> registrado en el manifiesto de Android.</p>
+  </div>
+
+  <h3>Principios que sostienen la estructura</h3>
+  <ul>
+    <li><strong>Regla de dependencia.</strong> Las capas externas conocen a las internas, nunca al revés.
+      <code>presentation</code> → <code>domain</code> ← <code>data</code>.</li>
+    <li><strong>Inversión de dependencias.</strong> El dominio declara interfaces abstractas; la capa de
+      datos las implementa. El dominio no sabe si detrás hay Dio, Keycloak o una base de datos local.</li>
+    <li><strong>Un caso de uso, una intención.</strong> Cada <code>UseCase</code> expone un único método
+      <code>call()</code>, de modo que se invoca como si fuera una función.</li>
+    <li><strong>Estado inmutable.</strong> Los estados se modelan como clases con <code>copyWith</code>;
+      nunca se mutan en sitio.</li>
+    <li><strong>El widget no decide.</strong> La UI observa estado y despacha intenciones. Toda la lógica
+      vive en el controlador y por debajo.</li>
+  </ul>
+</section>
+
+<!-- ============ 2 ============ -->
+<section>
+  <h2><span class="num">02</span>Las tres zonas del código</h2>
+
+  <p>Dentro de <code>lib/</code> existen exactamente tres zonas, y cada archivo nuevo pertenece
+  a una sola de ellas. Elegir mal la zona es el error estructural más frecuente.</p>
+
+  <table>
+    <thead>
+      <tr><th style="width:18%">Zona</th><th style="width:34%">Qué contiene</th><th>Criterio de pertenencia</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>app/</code></td>
+        <td>Arranque, configuración, router y los providers que <em>cablean</em> dependencias entre features.</td>
+        <td>Aquí va lo que necesita conocer la aplicación <strong>completa</strong>. Si algo debe saber de dos features a la vez, va aquí.</td>
+      </tr>
+      <tr>
+        <td><code>core/</code></td>
+        <td>Infraestructura transversal: red, seguridad, errores. Sin lógica de negocio.</td>
+        <td>Aquí va lo que <strong>cualquier</strong> feature podría usar y no pertenece a ninguna en particular.</td>
+      </tr>
+      <tr>
+        <td><code>features/</code></td>
+        <td>Una carpeta por funcionalidad de negocio, con sus tres capas dentro.</td>
+        <td>Aquí va todo lo demás. Es el destino por defecto: ante la duda, va en la feature.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Estructura verificada del proyecto</h3>
+
+  <div class="tree">
+lib/
+├── main.dart                          <span class="c">// punto de entrada: monta ProviderScope</span>
+│
+├── <span class="z">app/</span>                              <span class="c">// composición global</span>
+│   ├── app.dart                       <span class="c">// MaterialApp.router + gate de arranque</span>
+│   ├── config/
+│   │   ├── environment.dart           <span class="c">// enum Environment</span>
+│   │   ├── app_config.dart            <span class="c">// URLs y credenciales por entorno</span>
+│   │   └── app_config_provider.dart
+│   ├── providers/                     <span class="c">// cableado entre core y features</span>
+│   │   ├── network_providers.dart
+│   │   ├── session_providers.dart
+│   │   └── session_invalidator_providers.dart
+│   └── router/
+│       ├── app_router.dart            <span class="c">// GoRouter + redirect guard</span>
+│       ├── route_names.dart
+│       ├── route_paths.dart
+│       └── router_refresh_notifier.dart
+│
+├── <span class="z">core/</span>                             <span class="c">// infraestructura transversal</span>
+│   ├── errors/
+│   │   ├── exceptions.dart            <span class="c">// excepciones de infraestructura</span>
+│   │   └── <span class="dead">failtures.dart</span>              <span class="c">// (typo + sin uso — ver §10)</span>
+│   ├── network/
+│   │   ├── dio_client.dart            <span class="c">// Dio configurado</span>
+│   │   └── auth_interceptor.dart      <span class="c">// Bearer + refresh en 401</span>
+│   └── security/
+│       ├── secure_storage.dart        <span class="c">// wrapper de almacenamiento cifrado</span>
+│       ├── token_manager.dart         <span class="c">// tokens + decodificación de exp</span>
+│       ├── security_providers.dart
+│       ├── session_refresher.dart     <span class="c">// interfaz (puerto)</span>
+│       ├── session_invalidator.dart   <span class="c">// interfaz (puerto)</span>
+│       ├── session_events.dart        <span class="c">// bus de eventos de sesión</span>
+│       ├── session_events_provider.dart
+│       └── <span class="dead">keycloak_session_refresher.dart</span>  <span class="c">// archivo vacío</span>
+│
+└── <span class="z">features/</span>
+    ├── authentication/
+    │   ├── domain/
+    │   │   ├── entities/auth_session.dart
+    │   │   ├── repositories/authentication_repository.dart
+    │   │   └── usecases/              <span class="c">// login, logout, refresh, restore</span>
+    │   ├── data/
+    │   │   ├── datasources/keycloak_data_source.dart
+    │   │   ├── models/auth_session_model.dart
+    │   │   ├── repositories/authentication_repository_impl.dart
+    │   │   ├── services/              <span class="c">// impls de los puertos de core</span>
+    │   │   └── <span class="dead">auth_service.dart</span>       <span class="c">// sin uso — ver §10</span>
+    │   └── presentation/
+    │       ├── controllers/           <span class="c">// controller, state, providers</span>
+    │       └── pages/login_page.dart
+    └── home/
+        └── presentation/home_page.dart
+  </div>
+
+  <div class="callout warn">
+    <span class="lbl">Nota sobre <code>home</code></span>
+    <p>La feature <code>home</code> solo tiene capa de presentación. Es legítimo: una pantalla sin
+    reglas de negocio ni acceso a datos no necesita <code>domain/</code> ni <code>data/</code>.
+    <strong>No cree capas vacías por simetría.</strong> Cree cada capa en el momento en que tenga
+    contenido real.</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section>
+  <h2><span class="num">03</span>Clean Architecture en tres capas</h2>
+
+  <p>Cada feature con lógica de negocio se divide en tres capas. La dirección de las flechas
+  es la parte importante: <strong>el dominio es el centro y no depende de nada</strong>.</p>
+
+  <figure>
+    <svg viewBox="0 0 620 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif">
+      <!-- Presentation -->
+      <rect x="10" y="20" width="170" height="260" rx="6" fill="#f6ecdc" stroke="#8a5a00" stroke-width="1.5"/>
+      <text x="95" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#8a5a00">PRESENTATION</text>
+      <text x="95" y="58" text-anchor="middle" font-size="9.5" fill="#6b5a3a">Widgets · Controllers · State</text>
+      <rect x="26" y="76" width="138" height="30" rx="4" fill="#fff" stroke="#c9b48c"/>
+      <text x="95" y="95" text-anchor="middle" font-size="10.5" fill="#16181d">Page (ConsumerWidget)</text>
+      <rect x="26" y="114" width="138" height="30" rx="4" fill="#fff" stroke="#c9b48c"/>
+      <text x="95" y="133" text-anchor="middle" font-size="10.5" fill="#16181d">Controller (Notifier)</text>
+      <rect x="26" y="152" width="138" height="30" rx="4" fill="#fff" stroke="#c9b48c"/>
+      <text x="95" y="171" text-anchor="middle" font-size="10.5" fill="#16181d">State (inmutable)</text>
+      <rect x="26" y="190" width="138" height="30" rx="4" fill="#fff" stroke="#c9b48c"/>
+      <text x="95" y="209" text-anchor="middle" font-size="10.5" fill="#16181d">Providers</text>
+
+      <!-- Domain -->
+      <rect x="225" y="20" width="170" height="260" rx="6" fill="#e7edf7" stroke="#1f4d8f" stroke-width="1.5"/>
+      <text x="310" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1f4d8f">DOMAIN</text>
+      <text x="310" y="58" text-anchor="middle" font-size="9.5" fill="#44577a">Reglas puras · Sin Flutter</text>
+      <rect x="241" y="76" width="138" height="30" rx="4" fill="#fff" stroke="#9db2d4"/>
+      <text x="310" y="95" text-anchor="middle" font-size="10.5" fill="#16181d">Entity</text>
+      <rect x="241" y="114" width="138" height="30" rx="4" fill="#fff" stroke="#9db2d4"/>
+      <text x="310" y="133" text-anchor="middle" font-size="10.5" fill="#16181d">Repository (abstract)</text>
+      <rect x="241" y="152" width="138" height="30" rx="4" fill="#fff" stroke="#9db2d4"/>
+      <text x="310" y="171" text-anchor="middle" font-size="10.5" fill="#16181d">UseCase</text>
+      <text x="310" y="205" text-anchor="middle" font-size="9" fill="#44577a" font-style="italic">no importa dart:io</text>
+      <text x="310" y="219" text-anchor="middle" font-size="9" fill="#44577a" font-style="italic">no importa flutter</text>
+      <text x="310" y="233" text-anchor="middle" font-size="9" fill="#44577a" font-style="italic">no importa dio</text>
+
+      <!-- Data -->
+      <rect x="440" y="20" width="170" height="260" rx="6" fill="#eaf4ee" stroke="#1f6b46" stroke-width="1.5"/>
+      <text x="525" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1f6b46">DATA</text>
+      <text x="525" y="58" text-anchor="middle" font-size="9.5" fill="#3d6b52">Implementaciones · I/O</text>
+      <rect x="456" y="76" width="138" height="30" rx="4" fill="#fff" stroke="#9ec7ad"/>
+      <text x="525" y="95" text-anchor="middle" font-size="10.5" fill="#16181d">Model (JSON)</text>
+      <rect x="456" y="114" width="138" height="30" rx="4" fill="#fff" stroke="#9ec7ad"/>
+      <text x="525" y="133" text-anchor="middle" font-size="10.5" fill="#16181d">RepositoryImpl</text>
+      <rect x="456" y="152" width="138" height="30" rx="4" fill="#fff" stroke="#9ec7ad"/>
+      <text x="525" y="171" text-anchor="middle" font-size="10.5" fill="#16181d">DataSource</text>
+      <rect x="456" y="190" width="138" height="30" rx="4" fill="#fff" stroke="#9ec7ad"/>
+      <text x="525" y="209" text-anchor="middle" font-size="10.5" fill="#16181d">Dio · SecureStorage</text>
+
+      <!-- Arrows -->
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+          <path d="M0,0 L0,6.4 L8,3.2 z" fill="#16181d"/>
+        </marker>
+      </defs>
+      <line x1="182" y1="130" x2="221" y2="130" stroke="#16181d" stroke-width="2" marker-end="url(#ah)"/>
+      <line x1="438" y1="130" x2="399" y2="130" stroke="#16181d" stroke-width="2" marker-end="url(#ah)"/>
+      <text x="201" y="122" text-anchor="middle" font-size="8.5" fill="#16181d">usa</text>
+      <text x="419" y="122" text-anchor="middle" font-size="8.5" fill="#16181d">implementa</text>
+    </svg>
+    <figcaption>Regla de dependencia: ambas capas externas apuntan al dominio; el dominio no apunta a nadie.</figcaption>
+  </figure>
+
+  <h3>Responsabilidad exacta de cada pieza</h3>
+
+  <h4><span class="pill dom">Domain</span> &nbsp;Lógica de negocio pura</h4>
+  <ul>
+    <li><strong>Entity</strong> — objeto de negocio. Sin <code>fromJson</code>, sin anotaciones, sin
+      dependencias externas. Ejemplo real: <code>AuthSession</code>.</li>
+    <li><strong>Repository (abstracto)</strong> — el <em>contrato</em>. Declara qué operaciones existen,
+      jamás cómo se cumplen. Ejemplo: <code>AuthenticationRepository</code>.</li>
+    <li><strong>UseCase</strong> — una acción del sistema. Recibe el repositorio por constructor y expone
+      <code>call()</code>. Ejemplo: <code>LoginUseCase</code>.</li>
+  </ul>
+
+  <h4><span class="pill dat">Data</span> &nbsp;Cómo se cumple el contrato</h4>
+  <ul>
+    <li><strong>Model</strong> — espejo del DTO externo. Aquí vive <code>fromJson</code> y el método
+      <code>toEntity()</code> que traduce al dominio. Ejemplo: <code>AuthSessionModel</code>.</li>
+    <li><strong>DataSource</strong> — el punto donde ocurre la E/S real. Traduce fallos técnicos a las
+      excepciones de <code>core/errors/exceptions.dart</code>. Ejemplo: <code>KeycloakDataSource</code>.</li>
+    <li><strong>RepositoryImpl</strong> — implementa la interfaz del dominio orquestando uno o varios
+      datasources. Ejemplo: <code>AuthenticationRepositoryImpl</code>, que combina Keycloak con
+      <code>TokenManager</code>.</li>
+  </ul>
+
+  <h4><span class="pill pre">Presentation</span> &nbsp;Lo que el usuario ve y toca</h4>
+  <ul>
+    <li><strong>State</strong> — clase inmutable con <code>copyWith</code>. Ejemplo:
+      <code>AuthenticationState</code> con su enum <code>AuthenticationStatus</code>.</li>
+    <li><strong>Controller</strong> — un <code>Notifier</code> de Riverpod. Invoca casos de uso y traduce
+      su resultado a estado. <strong>Nunca lanza excepciones hacia la UI</strong>: las captura y las
+      convierte en un estado de error.</li>
+    <li><strong>Page / Widget</strong> — <code>ConsumerWidget</code>. Solo observa (<code>ref.watch</code>)
+      y despacha (<code>ref.read(...notifier).accion()</code>).</li>
+    <li><strong>Providers</strong> — construyen el grafo de la feature: datasource → repositorio → casos
+      de uso.</li>
+  </ul>
+</section>
+
+<!-- ============ 4 ============ -->
+<section>
+  <h2><span class="num">04</span>Mapa de archivos actual</h2>
+
+  <p>Inventario del código existente, con la responsabilidad concreta de cada archivo.
+  Sirve como referencia al buscar dónde tocar algo.</p>
+
+  <h3>Zona <code>app/</code></h3>
+  <table>
+    <thead><tr><th style="width:38%">Archivo</th><th>Responsabilidad</th></tr></thead>
+    <tbody>
+      <tr><td><code>main.dart</code></td><td>Monta <code>ProviderScope</code> y lanza <code>App</code>. Nada más.</td></tr>
+      <tr><td><code>app/app.dart</code></td><td><code>MaterialApp.router</code>. En <code>initState</code> dispara <code>restoreSession()</code> y muestra un spinner mientras el estado sea <code>initial</code>.</td></tr>
+      <tr><td><code>config/environment.dart</code></td><td>Enum con <code>development</code> y <code>production</code>.</td></tr>
+      <tr><td><code>config/app_config.dart</code></td><td>Objeto inmutable con la URL de la API y los cuatro parámetros de Keycloak. Contiene la constante <code>development</code>.</td></tr>
+      <tr><td><code>config/app_config_provider.dart</code></td><td>Expone la configuración activa. Punto único donde se elige el entorno.</td></tr>
+      <tr><td><code>providers/network_providers.dart</code></td><td>Construye <code>DioClient</code> inyectándole config, token manager, refresher e invalidador.</td></tr>
+      <tr><td><code>providers/session_providers.dart</code></td><td>Enlaza el puerto <code>SessionRefresher</code> de <code>core</code> con su implementación en la feature de autenticación.</td></tr>
+      <tr><td><code>providers/session_invalidator_providers.dart</code></td><td>Ídem para <code>SessionInvalidator</code>.</td></tr>
+      <tr><td><code>router/app_router.dart</code></td><td>Define el <code>GoRouter</code>, la tabla de rutas y el <code>redirect</code> que actúa como guarda de sesión.</td></tr>
+      <tr><td><code>router/route_names.dart</code></td><td>Nombres simbólicos de ruta para navegación por nombre.</td></tr>
+      <tr><td><code>router/route_paths.dart</code></td><td>Rutas literales (<code>/login</code>, <code>/home</code>).</td></tr>
+      <tr><td><code>router/router_refresh_notifier.dart</code></td><td><code>ChangeNotifier</code> mínimo que despierta a GoRouter cuando cambia el estado de sesión.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Zona <code>core/</code></h3>
+  <table>
+    <thead><tr><th style="width:38%">Archivo</th><th>Responsabilidad</th></tr></thead>
+    <tbody>
+      <tr><td><code>errors/exceptions.dart</code></td><td>Cinco excepciones de infraestructura: <code>Server</code>, <code>Network</code>, <code>Unauthorized</code>, <code>Authentication</code>, <code>Storage</code>.</td></tr>
+      <tr><td><code>network/dio_client.dart</code></td><td>Construye <code>Dio</code> con <code>baseUrl</code>, timeouts de 10 s y cabeceras JSON. Registra el interceptor.</td></tr>
+      <tr><td><code>network/auth_interceptor.dart</code></td><td>Inyecta <code>Authorization: Bearer</code> en cada petición y gestiona el reintento tras un 401.</td></tr>
+      <tr><td><code>security/secure_storage.dart</code></td><td>Lectura y escritura cifrada de los tres tokens.</td></tr>
+      <tr><td><code>security/token_manager.dart</code></td><td>Fachada sobre el almacenamiento. Decodifica el <em>payload</em> del JWT para evaluar <code>exp</code> con 60 s de margen.</td></tr>
+      <tr><td><code>security/session_refresher.dart</code></td><td>Puerto: <code>Future&lt;String?&gt; refreshAccessToken()</code>.</td></tr>
+      <tr><td><code>security/session_invalidator.dart</code></td><td>Puerto: <code>Future&lt;void&gt; invalidateSession()</code>.</td></tr>
+      <tr><td><code>security/session_events.dart</code></td><td><code>StreamController.broadcast</code> que emite cuando la sesión muere.</td></tr>
+      <tr><td><code>security/session_events_provider.dart</code></td><td>Expone el bus y un <code>StreamProvider</code> observable.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <span class="lbl">Por qué existen los puertos en <code>core</code></span>
+    <p>El interceptor necesita renovar la sesión, pero <code>core</code> no puede importar
+    <code>features/authentication</code> sin invertir la regla de dependencia. La solución aplicada
+    es correcta: <code>core</code> declara las interfaces <code>SessionRefresher</code> y
+    <code>SessionInvalidator</code>, la feature las implementa, y los providers de <code>app/</code>
+    hacen la unión. <strong>Replique este patrón</strong> cada vez que <code>core</code> necesite algo
+    que solo una feature sabe hacer.</p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section>
+  <h2><span class="num">05</span>Inyección de dependencias</h2>
+
+  <p>No existe ningún <em>service locator</em> ni <code>GetIt</code>. Riverpod es el contenedor:
+  cada objeto se declara una vez en un provider y se resuelve por composición.</p>
+
+  <figure>
+    <svg viewBox="0 0 620 330" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, sans-serif">
+      <defs>
+        <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="2.8" orient="auto">
+          <path d="M0,0 L0,5.6 L7,2.8 z" fill="#4a5160"/>
+        </marker>
+      </defs>
+      <style>
+        .bx { fill:#fff; stroke:#9db2d4; stroke-width:1.2; }
+        .bxc { fill:#eaf4ee; stroke:#1f6b46; stroke-width:1.2; }
+        .bxa { fill:#f6ecdc; stroke:#8a5a00; stroke-width:1.2; }
+        .lb { font-size:9.5px; fill:#16181d; }
+        .ln { stroke:#4a5160; stroke-width:1.1; fill:none; }
+      </style>
+
+      <rect class="bxc" x="12" y="14" width="150" height="26" rx="4"/>
+      <text class="lb" x="87" y="31" text-anchor="middle">appConfigProvider</text>
+
+      <rect class="bxc" x="12" y="60" width="150" height="26" rx="4"/>
+      <text class="lb" x="87" y="77" text-anchor="middle">tokenManagerProvider</text>
+
+      <rect class="bxc" x="12" y="106" width="150" height="26" rx="4"/>
+      <text class="lb" x="87" y="123" text-anchor="middle">sessionEventsProvider</text>
+
+      <rect class="bx" x="235" y="14" width="165" height="26" rx="4"/>
+      <text class="lb" x="317" y="31" text-anchor="middle">keycloakDataSourceProvider</text>
+
+      <rect class="bx" x="235" y="60" width="165" height="26" rx="4"/>
+      <text class="lb" x="317" y="77" text-anchor="middle">authenticationRepository</text>
+
+      <rect class="bx" x="235" y="118" width="165" height="52" rx="4"/>
+      <text class="lb" x="317" y="138" text-anchor="middle">login / logout / refresh</text>
+      <text class="lb" x="317" y="154" text-anchor="middle">restore · UseCaseProviders</text>
+
+      <rect class="bxa" x="235" y="196" width="165" height="26" rx="4"/>
+      <text class="lb" x="317" y="213" text-anchor="middle">authenticationController</text>
+
+      <rect class="bxa" x="235" y="242" width="165" height="26" rx="4"/>
+      <text class="lb" x="317" y="259" text-anchor="middle">appRouterProvider</text>
+
+      <rect class="bxc" x="455" y="118" width="152" height="26" rx="4"/>
+      <text class="lb" x="531" y="135" text-anchor="middle">sessionRefresherProvider</text>
+
+      <rect class="bxc" x="455" y="164" width="152" height="26" rx="4"/>
+      <text class="lb" x="531" y="181" text-anchor="middle">sessionInvalidator</text>
+
+      <rect class="bxc" x="455" y="210" width="152" height="26" rx="4"/>
+      <text class="lb" x="531" y="227" text-anchor="middle">dioClientProvider</text>
+
+      <rect class="bxa" x="455" y="272" width="152" height="26" rx="4"/>
+      <text class="lb" x="531" y="289" text-anchor="middle">tu nuevo módulo</text>
+
+      <path class="ln" d="M162 27 H235" marker-end="url(#a2)"/>
+      <path class="ln" d="M162 73 H200 V73 H235" marker-end="url(#a2)"/>
+      <path class="ln" d="M317 40 V60" marker-end="url(#a2)"/>
+      <path class="ln" d="M317 86 V118" marker-end="url(#a2)"/>
+      <path class="ln" d="M317 170 V196" marker-end="url(#a2)"/>
+      <path class="ln" d="M317 222 V242" marker-end="url(#a2)"/>
+      <path class="ln" d="M400 144 H455" marker-end="url(#a2)"/>
+      <path class="ln" d="M162 119 H200 V177 H455" marker-end="url(#a2)"/>
+      <path class="ln" d="M531 144 V164" marker-end="url(#a2)"/>
+      <path class="ln" d="M531 190 V210" marker-end="url(#a2)"/>
+      <path class="ln" d="M531 236 V272" marker-end="url(#a2)"/>
+
+      <rect x="12" y="272" width="14" height="12" rx="2" class="bxc"/>
+      <text class="lb" x="32" y="282">core / infraestructura</text>
+      <rect x="12" y="292" width="14" height="12" rx="2" class="bx"/>
+      <text class="lb" x="32" y="302">feature: dominio y datos</text>
+      <rect x="12" y="312" width="14" height="12" rx="2" class="bxa"/>
+      <text class="lb" x="32" y="322">presentación</text>
+    </svg>
+    <figcaption>Grafo real de providers. Su módulo nuevo se engancha a <code>dioClientProvider</code>.</figcaption>
+  </figure>
+
+  <h3>Convención de resolución</h3>
+  <p>Dentro del cuerpo de un <code>Provider</code> el proyecto usa <code>ref.read</code>, no
+  <code>ref.watch</code>, porque son dependencias de construcción que no cambian durante la vida
+  de la app. En cambio, en los widgets se usa <code>ref.watch</code> para que la UI reaccione.</p>
+
+  <div class="callout warn">
+    <span class="lbl">Regla práctica</span>
+    <p><code>ref.watch</code> en <code>build()</code> de widgets y cuando quiera reconstruir ante cambios.
+    <code>ref.read</code> dentro de providers de construcción y en manejadores de eventos
+    (<code>onPressed</code>). Usar <code>watch</code> en un <code>onPressed</code> es un error;
+    usar <code>read</code> en un <code>build</code> deja la UI congelada.</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section>
+  <h2><span class="num">06</span>Flujo de autenticación</h2>
+
+  <p>Es el flujo más elaborado del proyecto y el mejor ejemplo de cómo se atraviesan las tres capas.
+  Conviene entenderlo antes de escribir un módulo nuevo.</p>
+
+  <h3>Inicio de sesión</h3>
+  <ol>
+    <li><code>LoginPage</code> llama a <code>ref.read(authenticationControllerProvider.notifier).login()</code>.</li>
+    <li>El controlador pasa el estado a <code>loading</code> e invoca <code>LoginUseCase()</code>.</li>
+    <li>El caso de uso delega en <code>AuthenticationRepository.login()</code>.</li>
+    <li><code>AuthenticationRepositoryImpl</code> llama a <code>KeycloakDataSource.login()</code>.</li>
+    <li>El datasource ejecuta <code>authorizeAndExchangeCode</code>: se abre el navegador del sistema,
+      el usuario se autentica en Keycloak y el sistema devuelve el control a la app mediante el esquema
+      <code>com.quehaypa.app://oauth/callback</code>.</li>
+    <li>Se recibe <code>AuthSessionModel</code>; el repositorio persiste los tres tokens vía
+      <code>TokenManager</code> y devuelve la entidad.</li>
+    <li>El controlador pasa a <code>authenticated</code>.</li>
+    <li>El cambio de estado despierta a <code>RouterRefreshNotifier</code>, GoRouter reevalúa su
+      <code>redirect</code> y navega a <code>/home</code>.</li>
+  </ol>
+
+  <h3>Restauración al abrir la app</h3>
+  <p>En <code>initState</code> de <code>App</code> se dispara <code>restoreSession()</code>. La lógica
+  de <code>AuthenticationRepositoryImpl.restoreSession()</code> es escalonada:</p>
+  <ul>
+    <li>Si no hay <em>access token</em> guardado → <code>null</code> (usuario no autenticado).</li>
+    <li>Si <code>TokenManager.hasSession()</code> confirma que el token sigue vigente → se reconstruye
+      la sesión sin tocar la red.</li>
+    <li>Si el token caducó pero existe <em>refresh token</em> → se intenta <code>refreshSession()</code>.</li>
+    <li>Si la renovación falla o no hay <em>refresh token</em> → se limpia el almacenamiento y se
+      devuelve <code>null</code>.</li>
+  </ul>
+
+  <div class="callout ok">
+    <span class="lbl">Detalle de calidad</span>
+    <p><code>TokenManager._isExpired()</code> decodifica el JWT en local y aplica un margen de
+    <strong>60 segundos</strong> antes del <code>exp</code> real. Así se evita el caso en que un token
+    válido al enviarse expira en tránsito. Ante cualquier anomalía de decodificación devuelve
+    <code>true</code>, es decir, asume caducidad: falla del lado seguro.</p>
+  </div>
+
+  <h3>Cierre de sesión</h3>
+  <p><code>logout()</code> notifica el fin de sesión a Keycloak mediante <code>endSession</code> y
+  limpia el almacenamiento local dentro de un bloque <code>finally</code>. Esto garantiza que los
+  tokens locales desaparezcan <strong>aunque Keycloak esté inaccesible</strong>.</p>
+
+  <h3>Expulsión por sesión inválida</h3>
+  <p>Existe un camino independiente para cuando la sesión muere sin que el usuario lo pida:</p>
+  <pre><code>AuthInterceptor (401 irrecuperable)
+    └─&gt; SessionInvalidator.invalidateSession()
+            ├─&gt; TokenManager.clearSession()
+            └─&gt; SessionEvents.notifySessionInvalidated()
+                    └─&gt; sessionInvalidatedProvider (Stream)
+                            └─&gt; AuthenticationController escucha en build()
+                                    └─&gt; state = unauthenticated
+                                            └─&gt; GoRouter redirige a /login</code></pre>
+  <p>La consecuencia práctica es importante: <strong>cualquier módulo nuevo hereda esta protección
+  gratis</strong>. Si su repositorio hace una petición con Dio y el backend responde 401 sin
+  posibilidad de renovación, el usuario será expulsado a la pantalla de login sin que usted escriba
+  una sola línea para ello.</p>
+</section>
+
+<!-- ============ 7 ============ -->
+<section>
+  <h2><span class="num">07</span>Renovación automática de tokens</h2>
+
+  <p><code>AuthInterceptor</code> es la pieza más delicada de <code>core</code>. Conviene no
+  modificarla sin entender su control de concurrencia.</p>
+
+  <h3>En cada petición saliente</h3>
+  <p><code>onRequest</code> lee el <em>access token</em> y, si existe, añade la cabecera
+  <code>Authorization: Bearer &lt;token&gt;</code>. Si no hay token, la petición sale sin cabecera:
+  es responsabilidad del backend rechazarla.</p>
+
+  <h3>Ante un 401</h3>
+  <ol>
+    <li>Si el código no es 401, el error se propaga sin tocarlo.</li>
+    <li>Si la petición ya lleva la marca <code>extra['retried'] == true</code>, se propaga el error.
+      <strong>Esto corta los bucles infinitos de reintento.</strong></li>
+    <li>Se marca la petición y se solicita un token renovado.</li>
+    <li>Si la renovación devuelve un token válido, se reescribe la cabecera, se reintenta la petición
+      original con <code>dio.fetch</code> y se resuelve como si nunca hubiera fallado. <em>La capa que
+      hizo la llamada no se entera del 401.</em></li>
+    <li>Si la renovación falla, se invalida la sesión y el error se propaga.</li>
+  </ol>
+
+  <h3>Control de concurrencia: <em>single-flight</em></h3>
+  <p>Si cinco peticiones simultáneas reciben 401 a la vez, sería catastrófico lanzar cinco
+  renovaciones en paralelo: Keycloak rota el <em>refresh token</em> y las renovaciones que llegan
+  tarde fallarían, tumbando la sesión de un usuario perfectamente válido. El interceptor lo evita
+  guardando el <code>Future</code> en curso:</p>
+
+  <div class="filetag">lib/core/network/auth_interceptor.dart</div>
+  <pre><code>Future&lt;String?&gt; _getRefreshedToken() {
+    final refreshingToken = _refreshingToken;
+
+    if (refreshingToken != null) {
+        return refreshingToken;          // ya hay una renovación en vuelo
+    }
+
+    final refreshFuture = _refreshAccessToken();
+
+    _refreshingToken = refreshFuture;
+
+    refreshFuture.whenComplete(() {
+        _refreshingToken = null;         // libera el carril al terminar
+    });
+
+    return refreshFuture;
+}</code></pre>
+
+  <p>Las peticiones que llegan mientras hay una renovación en vuelo se suscriben al mismo
+  <code>Future</code>. Se ejecuta <strong>una sola</strong> renovación y todas reciben su resultado.</p>
+
+  <div class="callout danger">
+    <span class="lbl">No romper esto</span>
+    <p>Si algún módulo nuevo necesita un cliente HTTP, <strong>debe obtenerlo de
+    <code>dioClientProvider</code></strong>. Crear un <code>Dio()</code> propio deja la petición sin
+    cabecera de autorización, sin renovación automática y sin expulsión por sesión inválida. Es el
+    error de integración más caro de diagnosticar.</p>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section>
+  <h2><span class="num">08</span>Enrutamiento y guardas</h2>
+
+  <p>El router es un <code>Provider&lt;GoRouter&gt;</code>, lo que permite que lea el estado de
+  autenticación sin acoplarse a ningún widget.</p>
+
+  <h3>Mecanismo de reactividad</h3>
+  <p>GoRouter no observa Riverpod por sí mismo. El puente es <code>RouterRefreshNotifier</code>,
+  un <code>ChangeNotifier</code> de tres líneas:</p>
+  <pre><code>ref.listen&lt;AuthenticationState&gt;(
+    authenticationControllerProvider,
+    (previous, next) {
+        if (previous?.status != next.status) {
+            routerRefreshNotifier.refresh();   // -&gt; notifyListeners()
+        }
+    },
+);</code></pre>
+  <p>Solo se notifica cuando cambia el <code>status</code>, no ante cualquier cambio del estado.
+  Evita reevaluaciones inútiles del <code>redirect</code>.</p>
+
+  <h3>La guarda</h3>
+  <table>
+    <thead><tr><th style="width:40%">Situación</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Estado <code>initial</code> o <code>loading</code></td><td><code>null</code> — no se redirige. Espera a que se resuelva la restauración de sesión.</td></tr>
+      <tr><td>No autenticado y va a una ruta distinta de <code>/login</code></td><td>Redirige a <code>/login</code>.</td></tr>
+      <tr><td>Autenticado y va a <code>/login</code></td><td>Redirige a <code>/home</code>.</td></tr>
+      <tr><td>Resto</td><td><code>null</code> — navegación permitida.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <span class="lbl">Consecuencia para módulos nuevos</span>
+    <p>La guarda es <strong>excluyente por defecto</strong>: toda ruta que no sea <code>/login</code>
+    exige sesión activa. Al añadir <code>/events</code> o <code>/profile</code> queda protegida
+    automáticamente. Solo tendrá que modificar el <code>redirect</code> si necesita una ruta
+    <em>pública</em>, y entonces conviene sustituir la comparación literal con <code>/login</code>
+    por una lista de rutas públicas.</p>
+  </div>
+
+  <h3>Gate de arranque</h3>
+  <p>Mientras el estado sea <code>initial</code>, el <code>builder</code> de <code>MaterialApp.router</code>
+  sustituye toda la pantalla por un <code>CircularProgressIndicator</code>. Es lo que impide el parpadeo
+  de la pantalla de login antes de saber si hay sesión guardada.</p>
+</section>
+
+<!-- ============ 9 ============ -->
+<section>
+  <h2><span class="num">09</span>Configuración por entorno</h2>
+
+  <p>Toda URL y credencial vive en <code>AppConfig</code>. Ningún otro archivo debería
+  contener una dirección literal.</p>
+
+  <table>
+    <thead><tr><th style="width:36%">Campo</th><th>Valor actual (<code>development</code>)</th></tr></thead>
+    <tbody>
+      <tr><td><code>apiBaseUrl</code></td><td><code>http://$_host:8080</code></td></tr>
+      <tr><td><code>keycloakIssuer</code></td><td><code>http://$_host:9090/realms/que-hay-pa-dev</code></td></tr>
+      <tr><td><code>keycloakClientId</code></td><td><code>que-hay-pa-mobile</code></td></tr>
+      <tr><td><code>keycloakRedirectUrl</code></td><td><code>com.quehaypa.app://oauth/callback</code></td></tr>
+      <tr><td><code>keycloakEndSessionUrl</code></td><td><code>.../protocol/openid-connect/logout</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>El host es inyectable en tiempo de compilación</h3>
+  <p>El host de la API y de Keycloak <strong>no está escrito a mano</strong>. Se declara una sola vez
+  y se lee del entorno de compilación, con <code>localhost</code> como valor por defecto:</p>
+
+  <div class="filetag">lib/app/config/app_config.dart</div>
+  <pre><code>static const _host = String.fromEnvironment(
+    'BACKEND_HOST',
+    defaultValue: 'localhost',
+);
+
+static const _realm = 'http://$_host:9090/realms/que-hay-pa-dev';
+
+static const development = AppConfig(
+    environment: Environment.development,
+    apiBaseUrl: 'http://$_host:8080',
+    keycloakIssuer: _realm,
+    keycloakClientId: 'que-hay-pa-mobile',
+    keycloakRedirectUrl: 'com.quehaypa.app://oauth/callback',
+    keycloakEndSessionUrl:
+        '$_realm/protocol/openid-connect/logout',
+);</code></pre>
+
+  <p>La constante <code>_realm</code> existe para que la URL del <em>realm</em> aparezca una única vez:
+  el <em>issuer</em> y la URL de cierre de sesión se derivan de ella y no pueden desincronizarse.
+  Como <code>_host</code> es <code>const</code>, la interpolación sigue siendo constante y
+  <code>AppConfig.development</code> conserva su constructor <code>const</code>.</p>
+
+  <table>
+    <thead><tr><th style="width:38%">Escenario</th><th>Comando</th></tr></thead>
+    <tbody>
+      <tr><td>Escritorio o web (mismo equipo)</td><td><code>flutter run -d windows</code></td></tr>
+      <tr><td>Emulador Android</td><td><code>--dart-define=BACKEND_HOST=10.0.2.2</code></td></tr>
+      <tr><td>Dispositivo físico</td><td><code>--dart-define=BACKEND_HOST=&lt;IP LAN del PC&gt;</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout danger">
+    <span class="lbl">Bloqueante en dispositivo físico</span>
+    <p>Desde un teléfono, <code>localhost</code> es <strong>el propio teléfono</strong>, no el PC de
+    desarrollo. Si se omite <code>--dart-define</code>, la app arranca pero el login falla siempre.
+    Además hay que asegurarse de que backend y Keycloak escuchan en <code>0.0.0.0</code> y abrir los
+    puertos 8080 y 9090 en el cortafuegos.</p>
+  </div>
+
+  <div class="callout warn">
+    <span class="lbl">Qué NO es <code>--dart-define</code></span>
+    <p>No es una variable de entorno del sistema: <code>String.fromEnvironment</code> se resuelve al
+    <strong>compilar</strong>, no al ejecutar. De ahí dos consecuencias prácticas: el <em>hot reload</em>
+    no recoge un valor nuevo (hay que relanzar <code>flutter run</code>), y el valor queda incrustado
+    en el binario, extraíble de un APK sin dificultad. <strong>Sirve para configuración, nunca para
+    secretos.</strong></p>
+  </div>
+
+  <div class="callout warn">
+    <span class="lbl">Pendiente en el entorno actual</span>
+    <p><code>app_config_provider.dart</code> devuelve <code>AppConfig.development</code> de forma fija
+    y <strong>no existe una constante <code>production</code></strong>. Antes de cualquier publicación
+    hay que definirla, sin <code>allowInsecureConnections</code> y sobre HTTPS.</p>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section>
+  <h2><span class="num">10</span>Deuda técnica detectada</h2>
+
+  <p>Hallazgos verificados sobre el código actual. Ninguno impide compilar, pero todos
+  conviene resolverlos antes de que el proyecto crezca.</p>
+
+  <table>
+    <thead><tr><th style="width:30%">Hallazgo</th><th style="width:12%">Gravedad</th><th>Detalle y acción</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>data/auth_service.dart</code> sin uso</td>
+        <td>Media</td>
+        <td>Clase <code>AuthService</code> con el <code>issuer</code>, el <code>clientId</code> y el
+        <code>redirectUrl</code> <strong>escritos a mano</strong>, duplicando lo que ya hace
+        <code>KeycloakDataSource</code> a partir de <code>AppConfig</code>. Ninguna referencia la usa.
+        Es una versión anterior que quedó huérfana y que, si alguien la retoma, reintroducirá
+        <code>localhost</code> por la puerta de atrás. <strong>Eliminar.</strong></td>
+      </tr>
+      <tr>
+        <td><code>core/security/keycloak_session_refresher.dart</code> vacío</td>
+        <td>Baja</td>
+        <td>Archivo de 0 bytes. Su función la cumple <code>SessionRefresherImpl</code>.
+        <strong>Eliminar.</strong></td>
+      </tr>
+      <tr>
+        <td><code>core/errors/failtures.dart</code></td>
+        <td>Media</td>
+        <td>Dos problemas: el nombre está mal escrito (<em>failtures</em> → <em>failures</em>) y
+        ninguna de las seis clases <code>Failure</code> se usa en el proyecto. Hay que decidir:
+        adoptar el patrón <code>Either&lt;Failure, T&gt;</code> de forma consistente, o eliminarlo
+        y quedarse solo con excepciones. <strong>Convivir con ambos es lo peor de los dos mundos.</strong></td>
+      </tr>
+      <tr>
+        <td><code>copyWith</code> no puede limpiar campos</td>
+        <td>Media</td>
+        <td>En <code>AuthenticationState.copyWith</code>, <code>errorMessage ?? this.errorMessage</code>
+        hace imposible volver a <code>null</code> pasando <code>null</code>. Un mensaje de error puede
+        quedar pegado en estados posteriores. Se resuelve con centinelas o con
+        <code>freezed</code>.</td>
+      </tr>
+      <tr>
+        <td>Mensajes de excepción expuestos en la UI</td>
+        <td>Alta<br><em>(en producción)</em></td>
+        <td>Las excepciones de <code>core/errors/exceptions.dart</code> ya sobrescriben
+        <code>toString()</code>, de modo que el mensaje real llega a la pantalla en lugar de
+        <code>Instance of '...'</code>. Eso es lo correcto <strong>en desarrollo</strong>, pero
+        <code>KeycloakDataSource</code> compone el texto como <code>'... : $e'</code>, incluyendo la
+        excepción cruda de AppAuth con URLs y puertos internos. Mostrado al usuario final es
+        <strong>fuga de información</strong>. Antes de publicar: conservar el <code>toString()</code>
+        completo para los logs y mapear a mensajes genéricos en la UI.</td>
+      </tr>
+      <tr>
+        <td>Proyecto sin control de versiones efectivo</td>
+        <td>Alta</td>
+        <td>El repositorio existe y tiene remoto configurado, pero <code>git ls-files</code> devuelve
+        <strong>cero archivos rastreados</strong>: solo se había subido un <code>README.md</code>.
+        Todo el código fuente vive únicamente en el disco local, sin historial, sin posibilidad de
+        revertir y sin respaldo.</td>
+      </tr>
+      <tr>
+        <td><code>local.properties</code> no está en <code>.gitignore</code></td>
+        <td>Media</td>
+        <td><code>android/local.properties</code> contiene rutas absolutas propias de cada máquina
+        (<code>sdk.dir</code>, <code>flutter.sdk</code>). Versionarlo rompe la compilación de
+        cualquier otro desarrollador con un error engañoso. Debe excluirse explícitamente: la
+        plantilla de Flutter <strong>no</strong> lo hace.</td>
+      </tr>
+      <tr>
+        <td>Permiso <code>INTERNET</code> ausente en release</td>
+        <td>Alta</td>
+        <td>El manifiesto principal no lo declara; solo lo tienen los de <code>debug</code> y
+        <code>profile</code>. Un APK de release <strong>no tendría acceso a red</strong>. Añadir
+        <code>&lt;uses-permission android:name="android.permission.INTERNET"/&gt;</code> a
+        <code>src/main/AndroidManifest.xml</code>.</td>
+      </tr>
+      <tr>
+        <td><code>usesCleartextTraffic="true"</code></td>
+        <td>Alta</td>
+        <td>Necesario hoy porque el backend es HTTP plano. <strong>Debe desactivarse antes de
+        publicar</strong>, junto con <code>allowInsecureConnections</code> en el datasource.</td>
+      </tr>
+      <tr>
+        <td><code>applicationId</code> de plantilla</td>
+        <td>Media</td>
+        <td>Sigue siendo <code>com.example.frontend</code>. Google Play rechaza el prefijo
+        <code>com.example</code>. Cambiar a <code>com.quehaypa.app</code> antes de la primera
+        publicación (después es irreversible).</td>
+      </tr>
+      <tr>
+        <td>Firma de release con clave de depuración</td>
+        <td>Alta</td>
+        <td><code>signingConfig = signingConfigs.getByName("debug")</code>. Hay que generar un
+        <em>keystore</em> propio antes de distribuir.</td>
+      </tr>
+      <tr>
+        <td>Sin pruebas</td>
+        <td>Media</td>
+        <td>Solo existe <code>widget_test.dart</code> de plantilla. La arquitectura está preparada
+        para pruebas (todo se inyecta), pero no se aprovecha: los casos de uso y repositorios son
+        triviales de cubrir con dobles.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 11 ============ -->
+<section>
+  <h2><span class="num">11</span>Cómo agregar un módulo nuevo</h2>
+
+  <p class="lead">
+    Procedimiento normalizado en nueve pasos. Como ejemplo se construye un módulo
+    <strong><code>events</code></strong> que lista los eventos disponibles consumiendo
+    <code>GET /events</code> de la API. Sustituya <code>Event</code> por su entidad y el
+    resto es mecánico.
+  </p>
+
+  <h3>Estructura a crear</h3>
+  <div class="tree">
+lib/features/<span class="z">events/</span>
+├── domain/
+│   ├── entities/event.dart
+│   ├── repositories/event_repository.dart
+│   └── usecases/get_events_use_case.dart
+├── data/
+│   ├── models/event_model.dart
+│   ├── datasources/event_remote_data_source.dart
+│   └── repositories/event_repository_impl.dart
+└── presentation/
+    ├── controllers/
+    │   ├── events_state.dart
+    │   ├── events_controller.dart
+    │   └── events_providers.dart
+    └── pages/events_page.dart
+  </div>
+
+  <div class="callout">
+    <span class="lbl">Orden de trabajo</span>
+    <p>Construya <strong>de dentro hacia afuera</strong>: primero el dominio, luego los datos,
+    al final la presentación. Así el compilador le va guiando y nunca escribe una capa contra
+    un contrato que todavía no existe.</p>
+  </div>
+
+  <!-- PASO 1 -->
+  <div class="step">
+    <div class="step-n">1</div>
+    <div class="step-t">Definir la entidad
+      <span class="step-sub">domain/entities/event.dart</span></div>
+  </div>
+  <p>Objeto de negocio puro. Sin JSON, sin Flutter, sin anotaciones.</p>
+  <pre><code>class Event {
+    final String id;
+    final String title;
+    final String description;
+    final DateTime startsAt;
+    final String location;
+
+    const Event({
+        required this.id,
+        required this.title,
+        required this.description,
+        required this.startsAt,
+        required this.location,
+    });
+}</code></pre>
+
+  <!-- PASO 2 -->
+  <div class="step">
+    <div class="step-n">2</div>
+    <div class="step-t">Declarar el contrato del repositorio
+      <span class="step-sub">domain/repositories/event_repository.dart</span></div>
+  </div>
+  <p>Qué operaciones existen. Nunca cómo se cumplen.</p>
+  <pre><code>import '../entities/event.dart';
+
+abstract class EventRepository {
+    Future&lt;List&lt;Event&gt;&gt; getEvents();
+
+    Future&lt;Event&gt; getEventById(String id);
+}</code></pre>
+
+  <!-- PASO 3 -->
+  <div class="step">
+    <div class="step-n">3</div>
+    <div class="step-t">Escribir el caso de uso
+      <span class="step-sub">domain/usecases/get_events_use_case.dart</span></div>
+  </div>
+  <p>Una intención, un <code>call()</code>. Se invoca como una función.</p>
+  <pre><code>import '../entities/event.dart';
+import '../repositories/event_repository.dart';
+
+class GetEventsUseCase {
+    final EventRepository _repository;
+
+    const GetEventsUseCase(this._repository);
+
+    Future&lt;List&lt;Event&gt;&gt; call() {
+        return _repository.getEvents();
+    }
+}</code></pre>
+
+  <div class="callout warn">
+    <span class="lbl">Cuándo el caso de uso deja de ser trivial</span>
+    <p>Aquí solo delega, igual que <code>LoginUseCase</code>. Su valor aparece cuando hay reglas:
+    filtrar eventos pasados, ordenar por cercanía, combinar dos repositorios. Ese es exactamente
+    el sitio donde debe ir esa lógica — <strong>no en el controlador ni en el widget</strong>.</p>
+  </div>
+</section>
+
+<section>
+  <h2 style="border:none; font-size:12pt; color:var(--ink-faint); border-bottom:1px solid var(--rule);">
+    §11 · continuación — capa de datos</h2>
+
+  <!-- PASO 4 -->
+  <div class="step">
+    <div class="step-n">4</div>
+    <div class="step-t">Crear el modelo
+      <span class="step-sub">data/models/event_model.dart</span></div>
+  </div>
+  <p>Espejo del JSON del backend, más la traducción al dominio. Toda la fragilidad del contrato
+  externo queda encapsulada aquí.</p>
+  <pre><code>import '../../domain/entities/event.dart';
+
+class EventModel {
+    final String id;
+    final String title;
+    final String description;
+    final DateTime startsAt;
+    final String location;
+
+    const EventModel({
+        required this.id,
+        required this.title,
+        required this.description,
+        required this.startsAt,
+        required this.location,
+    });
+
+    factory EventModel.fromJson(Map&lt;String, dynamic&gt; json) {
+        return EventModel(
+            id: json['id'] as String,
+            title: json['title'] as String,
+            description: json['description'] as String? ?? '',
+            startsAt: DateTime.parse(json['startsAt'] as String),
+            location: json['location'] as String? ?? '',
+        );
+    }
+
+    Event toEntity() {
+        return Event(
+            id: id,
+            title: title,
+            description: description,
+            startsAt: startsAt,
+            location: location,
+        );
+    }
+}</code></pre>
+
+  <!-- PASO 5 -->
+  <div class="step">
+    <div class="step-n">5</div>
+    <div class="step-t">Implementar el datasource remoto
+      <span class="step-sub">data/datasources/event_remote_data_source.dart</span></div>
+  </div>
+  <p>Aquí ocurre la E/S real. Recibe <code>DioClient</code> por constructor — <strong>jamás
+  construye su propio <code>Dio</code></strong> — y traduce los fallos técnicos a las excepciones
+  de <code>core/errors/exceptions.dart</code>.</p>
+  <pre class="long"><code>import 'package:dio/dio.dart';
+
+import '../../../../core/errors/exceptions.dart';
+import '../../../../core/network/dio_client.dart';
+import '../models/event_model.dart';
+
+class EventRemoteDataSource {
+    final DioClient _dioClient;
+
+    const EventRemoteDataSource({
+        required DioClient dioClient,
+    }) : _dioClient = dioClient;
+
+    Future&lt;List&lt;EventModel&gt;&gt; getEvents() async {
+        try {
+            final response = await _dioClient.dio.get&lt;List&lt;dynamic&gt;&gt;(
+                '/events',
+            );
+
+            final data = response.data;
+
+            if (data == null) {
+                throw const ServerException(
+                    'La respuesta de /events vino vacia.',
+                );
+            }
+
+            return data
+                .cast&lt;Map&lt;String, dynamic&gt;&gt;()
+                .map(EventModel.fromJson)
+                .toList();
+        } on DioException catch (e) {
+            if (e.response?.statusCode == 401) {
+                throw const UnauthorizedException(
+                    'Sesion no valida.',
+                );
+            }
+
+            throw NetworkException(
+                'No fue posible obtener los eventos: ${e.message}',
+            );
+        }
+    }
+}</code></pre>
+
+  <div class="callout danger">
+    <span class="lbl">Punto crítico de integración</span>
+    <p>La línea <code>_dioClient.dio.get(...)</code> es lo que conecta su módulo con toda la
+    infraestructura de sesión: cabecera <code>Bearer</code> automática, renovación transparente ante
+    un 401 y expulsión a <code>/login</code> si la sesión murió. Un <code>Dio()</code> propio pierde
+    las tres cosas.</p>
+  </div>
+
+  <!-- PASO 6 -->
+  <div class="step">
+    <div class="step-n">6</div>
+    <div class="step-t">Implementar el repositorio
+      <span class="step-sub">data/repositories/event_repository_impl.dart</span></div>
+  </div>
+  <p>Cumple el contrato del dominio orquestando los datasources y traduciendo modelos a entidades.</p>
+  <pre><code>import '../../domain/entities/event.dart';
+import '../../domain/repositories/event_repository.dart';
+import '../datasources/event_remote_data_source.dart';
+
+class EventRepositoryImpl implements EventRepository {
+    final EventRemoteDataSource _remoteDataSource;
+
+    const EventRepositoryImpl({
+        required EventRemoteDataSource remoteDataSource,
+    }) : _remoteDataSource = remoteDataSource;
+
+    @override
+    Future&lt;List&lt;Event&gt;&gt; getEvents() async {
+        final models = await _remoteDataSource.getEvents();
+
+        return models.map((model) =&gt; model.toEntity()).toList();
+    }
+
+    @override
+    Future&lt;Event&gt; getEventById(String id) async {
+        final model = await _remoteDataSource.getEventById(id);
+
+        return model.toEntity();
+    }
+}</code></pre>
+  <p>Si más adelante añade caché local, es <strong>aquí</strong> donde se decide entre remoto y local.
+  Ni el dominio ni la UI se enteran del cambio.</p>
+</section>
+
+<section>
+  <h2 style="border:none; font-size:12pt; color:var(--ink-faint); border-bottom:1px solid var(--rule);">
+    §11 · continuación — capa de presentación</h2>
+
+  <!-- PASO 7 -->
+  <div class="step">
+    <div class="step-n">7</div>
+    <div class="step-t">Modelar el estado y el controlador
+      <span class="step-sub">presentation/controllers/</span></div>
+  </div>
+  <p>Mismo patrón que <code>AuthenticationState</code>: enum de estatus más clase inmutable.</p>
+
+  <div class="filetag">events_state.dart</div>
+  <pre><code>import '../../domain/entities/event.dart';
+
+enum EventsStatus { initial, loading, loaded, error }
+
+class EventsState {
+    final EventsStatus status;
+    final List&lt;Event&gt; events;
+    final String? errorMessage;
+
+    const EventsState({
+        required this.status,
+        this.events = const [],
+        this.errorMessage,
+    });
+
+    const EventsState.initial()
+        : status = EventsStatus.initial,
+            events = const [],
+            errorMessage = null;
+
+    EventsState copyWith({
+        EventsStatus? status,
+        List&lt;Event&gt;? events,
+        String? errorMessage,
+    }) {
+        return EventsState(
+            status: status ?? this.status,
+            events: events ?? this.events,
+            errorMessage: errorMessage,
+        );
+    }
+}</code></pre>
+
+  <div class="callout ok">
+    <span class="lbl">Mejora aplicada</span>
+    <p>Fíjese en <code>errorMessage: errorMessage</code> sin <code>??</code>. Corrige el problema
+    señalado en §10: aquí sí se puede limpiar el mensaje de error pasando <code>null</code>.</p>
+  </div>
+
+  <div class="filetag">events_controller.dart</div>
+  <pre class="long"><code>import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../domain/usecases/get_events_use_case.dart';
+import 'events_providers.dart';
+import 'events_state.dart';
+
+final eventsControllerProvider =
+    NotifierProvider&lt;EventsController, EventsState&gt;(
+        EventsController.new,
+    );
+
+class EventsController extends Notifier&lt;EventsState&gt; {
+    late final GetEventsUseCase _getEventsUseCase;
+
+    @override
+    EventsState build() {
+        _getEventsUseCase = ref.read(getEventsUseCaseProvider);
+
+        return const EventsState.initial();
+    }
+
+    Future&lt;void&gt; loadEvents() async {
+        state = state.copyWith(
+            status: EventsStatus.loading,
+            errorMessage: null,
+        );
+
+        try {
+            final events = await _getEventsUseCase();
+
+            state = state.copyWith(
+                status: EventsStatus.loaded,
+                events: events,
+            );
+        } catch (e) {
+            state = state.copyWith(
+                status: EventsStatus.error,
+                errorMessage: e.toString(),
+            );
+        }
+    }
+}</code></pre>
+  <p>El controlador <strong>nunca deja escapar una excepción</strong>. Todo fallo se convierte en un
+  estado que la UI sabe representar.</p>
+
+  <!-- PASO 8 -->
+  <div class="step">
+    <div class="step-n">8</div>
+    <div class="step-t">Cablear los providers
+      <span class="step-sub">presentation/controllers/events_providers.dart</span></div>
+  </div>
+  <p>El grafo de la feature, de abajo arriba. Es el equivalente de
+  <code>authentication_providers.dart</code>.</p>
+  <pre><code>import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../app/providers/network_providers.dart';
+import '../../data/datasources/event_remote_data_source.dart';
+import '../../data/repositories/event_repository_impl.dart';
+import '../../domain/repositories/event_repository.dart';
+import '../../domain/usecases/get_events_use_case.dart';
+
+final eventRemoteDataSourceProvider =
+    Provider&lt;EventRemoteDataSource&gt;((ref) {
+    return EventRemoteDataSource(
+        dioClient: ref.read(dioClientProvider),
+    );
+});
+
+final eventRepositoryProvider = Provider&lt;EventRepository&gt;((ref) {
+    return EventRepositoryImpl(
+        remoteDataSource: ref.read(eventRemoteDataSourceProvider),
+    );
+});
+
+final getEventsUseCaseProvider = Provider&lt;GetEventsUseCase&gt;((ref) {
+    return GetEventsUseCase(
+        ref.read(eventRepositoryProvider),
+    );
+});</code></pre>
+
+  <div class="callout">
+    <span class="lbl">Detalle de tipado</span>
+    <p><code>Provider&lt;EventRepository&gt;</code> declara el tipo de la <strong>interfaz</strong>,
+    no el de la implementación. Así, quien consuma el provider no puede acoplarse por accidente a
+    <code>EventRepositoryImpl</code>, y sustituirla en pruebas es inmediato.</p>
+  </div>
+</section>
+
+<section>
+  <h2 style="border:none; font-size:12pt; color:var(--ink-faint); border-bottom:1px solid var(--rule);">
+    §11 · continuación — pantalla y ruta</h2>
+
+  <!-- PASO 9 -->
+  <div class="step">
+    <div class="step-n">9</div>
+    <div class="step-t">Construir la pantalla y registrar la ruta
+      <span class="step-sub">presentation/pages/events_page.dart + app/router/</span></div>
+  </div>
+
+  <div class="filetag">events_page.dart</div>
+  <pre class="long"><code>import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../controllers/events_controller.dart';
+import '../controllers/events_state.dart';
+
+class EventsPage extends ConsumerStatefulWidget {
+    const EventsPage({super.key});
+
+    @override
+    ConsumerState&lt;EventsPage&gt; createState() =&gt; _EventsPageState();
+}
+
+class _EventsPageState extends ConsumerState&lt;EventsPage&gt; {
+    @override
+    void initState() {
+        super.initState();
+
+        Future.microtask(() {
+            ref.read(eventsControllerProvider.notifier).loadEvents();
+        });
+    }
+
+    @override
+    Widget build(BuildContext context) {
+        final state = ref.watch(eventsControllerProvider);
+
+        return Scaffold(
+            appBar: AppBar(
+                title: const Text('Eventos'),
+            ),
+            body: switch (state.status) {
+                EventsStatus.loading =&gt;
+                    const Center(child: CircularProgressIndicator()),
+
+                EventsStatus.error =&gt; Center(
+                    child: Text(
+                        state.errorMessage ?? 'Ocurrio un error.',
+                    ),
+                ),
+
+                EventsStatus.loaded =&gt; ListView.builder(
+                    itemCount: state.events.length,
+                    itemBuilder: (context, index) {
+                        final event = state.events[index];
+
+                        return ListTile(
+                            title: Text(event.title),
+                            subtitle: Text(event.location),
+                        );
+                    },
+                ),
+
+                _ =&gt; const SizedBox.shrink(),
+            },
+        );
+    }
+}</code></pre>
+
+  <div class="callout warn">
+    <span class="lbl">Por qué <code>Future.microtask</code></span>
+    <p>Modificar un provider durante la fase de construcción del widget lanza un error en Riverpod.
+    Aplazar la llamada al siguiente ciclo del bucle de eventos evita el conflicto. Es el mismo
+    recurso que emplea <code>App.initState</code> para <code>restoreSession()</code>.</p>
+  </div>
+
+  <h4>Registro de la ruta — tres archivos</h4>
+
+  <div class="filetag">app/router/route_paths.dart</div>
+  <pre><code>abstract final class RoutePaths {
+    static const login = '/login';
+    static const home = '/home';
+    static const events = '/events';        // +
+}</code></pre>
+
+  <div class="filetag">app/router/route_names.dart</div>
+  <pre><code>abstract final class RouteNames {
+    static const login = 'login';
+    static const home = 'home';
+    static const events = 'events';         // +
+}</code></pre>
+
+  <div class="filetag">app/router/app_router.dart</div>
+  <pre><code>routes: [
+    // ... login y home
+
+    GoRoute(
+        name: RouteNames.events,
+        path: RoutePaths.events,
+        builder: (context, state) {
+            return const EventsPage();
+        },
+    ),
+],</code></pre>
+
+  <p>No hace falta tocar el <code>redirect</code>: la guarda ya protege por defecto toda ruta
+  distinta de <code>/login</code>. Para navegar desde otra pantalla:</p>
+  <pre><code>context.goNamed(RouteNames.events);</code></pre>
+
+  <div class="callout ok">
+    <span class="lbl">Resultado</span>
+    <p>Con estos nueve pasos el módulo queda plenamente integrado: autenticado, con renovación
+    automática de token, protegido por la guarda de sesión y desacoplado de la implementación
+    concreta de red. <strong>Ninguna línea de <code>core/</code> tuvo que modificarse.</strong>
+    Esa es la señal de que la arquitectura está funcionando.</p>
+  </div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section>
+  <h2><span class="num">12</span>Checklist y convenciones</h2>
+
+  <h3>Antes de integrar un módulo</h3>
+  <ul class="checklist">
+    <li>El dominio no importa <code>flutter</code>, <code>dio</code> ni <code>dart:io</code>.</li>
+    <li>El repositorio está tipado como <strong>interfaz</strong> en su provider, no como implementación.</li>
+    <li>El datasource obtiene el cliente HTTP de <code>dioClientProvider</code>.</li>
+    <li>Ningún <code>Dio()</code> instanciado fuera de <code>DioClient</code>.</li>
+    <li>No hay URLs literales fuera de <code>AppConfig</code>.</li>
+    <li>Los fallos técnicos se traducen a las excepciones de <code>core/errors/exceptions.dart</code>.</li>
+    <li>El controlador captura toda excepción y la convierte en estado.</li>
+    <li>El estado es inmutable y su <code>copyWith</code> permite limpiar campos opcionales.</li>
+    <li>La UI usa <code>ref.watch</code> en <code>build</code> y <code>ref.read</code> en manejadores.</li>
+    <li>La ruta está registrada en los tres archivos del router.</li>
+    <li><code>flutter analyze</code> termina sin advertencias.</li>
+  </ul>
+
+  <h3>Convenciones de nomenclatura</h3>
+  <table>
+    <thead><tr><th style="width:30%">Elemento</th><th style="width:34%">Patrón</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td>Archivos y carpetas</td><td><code>snake_case</code></td><td><code>event_remote_data_source.dart</code></td></tr>
+      <tr><td>Clases</td><td><code>PascalCase</code></td><td><code>EventRepositoryImpl</code></td></tr>
+      <tr><td>Entidad</td><td>Sustantivo en singular</td><td><code>Event</code></td></tr>
+      <tr><td>Modelo</td><td>Entidad + <code>Model</code></td><td><code>EventModel</code></td></tr>
+      <tr><td>Contrato</td><td>Entidad + <code>Repository</code></td><td><code>EventRepository</code></td></tr>
+      <tr><td>Implementación</td><td>Contrato + <code>Impl</code></td><td><code>EventRepositoryImpl</code></td></tr>
+      <tr><td>Caso de uso</td><td>Verbo + <code>UseCase</code></td><td><code>GetEventsUseCase</code></td></tr>
+      <tr><td>Provider</td><td>Objeto + <code>Provider</code></td><td><code>eventRepositoryProvider</code></td></tr>
+      <tr><td>Pantalla</td><td>Nombre + <code>Page</code></td><td><code>EventsPage</code></td></tr>
+      <tr><td>Estado</td><td>Feature + <code>State</code></td><td><code>EventsState</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Estilo de código</h3>
+  <p>El proyecto emplea de forma consistente <strong>indentación de 4 espacios</strong> dentro de los
+  cuerpos de clase, comas finales en listas de argumentos y una línea en blanco entre bloques lógicos.
+  Mantenga ese estilo: la coherencia importa más que la preferencia personal.</p>
+</section>
+
+<!-- ============ 13 ============ -->
+<section>
+  <h2><span class="num">13</span>Errores comunes</h2>
+
+  <table>
+    <thead><tr><th style="width:34%">Error</th><th style="width:30%">Síntoma</th><th>Solución</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Instanciar <code>Dio()</code> en el datasource</td>
+        <td>Respuestas 401 constantes pese a haber iniciado sesión</td>
+        <td>Inyectar <code>DioClient</code> desde <code>dioClientProvider</code>.</td>
+      </tr>
+      <tr>
+        <td>Importar <code>data/</code> desde <code>domain/</code></td>
+        <td>Compila, pero la arquitectura queda invertida y el dominio deja de ser testeable</td>
+        <td>El dominio solo importa de sí mismo. Si necesita algo de fuera, decláralo como interfaz.</td>
+      </tr>
+      <tr>
+        <td>Poner reglas de negocio en el widget</td>
+        <td>Lógica imposible de probar sin levantar la UI</td>
+        <td>Trasladarla al caso de uso.</td>
+      </tr>
+      <tr>
+        <td><code>ref.watch</code> dentro de <code>onPressed</code></td>
+        <td>Excepción en tiempo de ejecución o reconstrucciones descontroladas</td>
+        <td><code>ref.read</code> en manejadores de eventos.</td>
+      </tr>
+      <tr>
+        <td>Llamar al controlador directamente en <code>build</code></td>
+        <td>«Tried to modify a provider while the widget tree was building»</td>
+        <td>Envolver en <code>Future.microtask</code> desde <code>initState</code>.</td>
+      </tr>
+      <tr>
+        <td>Devolver el <code>Model</code> hacia la UI</td>
+        <td>Un cambio en el JSON del backend rompe los widgets</td>
+        <td>Convertir siempre con <code>toEntity()</code> en el repositorio.</td>
+      </tr>
+      <tr>
+        <td>Olvidar registrar la ruta en los tres archivos</td>
+        <td>Pantalla en blanco o error de ruta no encontrada</td>
+        <td><code>route_paths</code>, <code>route_names</code> y <code>app_router</code>.</td>
+      </tr>
+      <tr>
+        <td>Escribir la URL en el datasource</td>
+        <td>Imposible cambiar de entorno sin editar código</td>
+        <td>Solo rutas relativas: <code>baseUrl</code> ya viene de <code>AppConfig</code>.</td>
+      </tr>
+      <tr>
+        <td>Capturar excepciones en la página</td>
+        <td>Estados inconsistentes y errores duplicados</td>
+        <td>El controlador es el único que captura; la página solo lee el estado.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Verificación final</h3>
+  <pre><code>flutter analyze          # sin advertencias
+flutter test             # pruebas en verde
+flutter run              # comprobación en dispositivo</code></pre>
+
+  <div class="end">
+    Documento generado a partir del análisis directo del código fuente del paquete
+    <code>frontend</code> · QUEHAYPA<br>
+    Estado del código verificado el <strong>9 de septiembre de 2026, 23:20</strong>
+    — incluye la configuración por <code>--dart-define</code> (§9)
+    y los <code>toString()</code> de las excepciones (§10).
+  </div>
+</section>
+
+</body>
+</html>

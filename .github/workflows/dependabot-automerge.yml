@@ -1,0 +1,30 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# Permisos requeridos para que el robot pueda aprobar y escribir en el repositorio
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    # ¡Clave de seguridad! Solo corre si el creador del PR es el robot oficial de Dependabot
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      # Paso 1: El bot aprueba el Pull Request usando GitHub CLI
+      - name: Aprobar PR de Dependabot
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Paso 2: El bot activa la orden de fusión automática ("en cola")
+      - name: Programar Auto-merge (Squash)
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

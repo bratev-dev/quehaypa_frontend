@@ -1,0 +1,132 @@
+name: Flutter CI
+
+# Cuándo se ejecuta este workflow:
+# - En cada push a las ramas principales.
+# - En cada Pull Request que apunte a esas ramas.
+# - Manualmente, desde la pestaña "Actions" de GitHub (workflow_dispatch).
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch: {}
+
+# Si se hace push varias veces seguidas a la misma rama/PR, cancela la
+# ejecución anterior que ya quedó obsoleta, para no gastar minutos de CI.
+concurrency:
+  group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permisos mínimos necesarios (principio de menor privilegio).
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.47.3" # Debe coincidir con la versión usada por el equipo (ver `flutter --version`)
+  FLUTTER_CHANNEL: "stable"
+  JAVA_VERSION: "17" # Requerido por android/app/build.gradle.kts (sourceCompatibility/JVM target = 17)
+  JAVA_DISTRIBUTION: "temurin"
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Job 1: analiza el código (lint/formato) y corre las pruebas unitarias.
+  # ---------------------------------------------------------------------
+  analyze-and-test:
+    name: Analizar y probar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      # El toolchain de Android (Gradle) que usan los plugins de Flutter
+      # necesita un JDK disponible, aunque este job no compile el APK.
+      - name: Configurar JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Configurar Flutter SDK ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Mostrar entorno (flutter doctor)
+        run: flutter doctor -v
+
+      - name: Instalar dependencias (flutter pub get)
+        run: flutter pub get
+
+      - name: Verificar formato del código (dart format)
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analizar el código (flutter analyze)
+        run: flutter analyze
+
+      - name: Ejecutar pruebas unitarias (flutter test)
+        run: flutter test --coverage
+
+      - name: Publicar reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------
+  # Job 2: compila el APK de Android como verificación de que el build
+  # completo (incluyendo Gradle/JDK) sigue funcionando.
+  # Solo corre si el job anterior fue exitoso.
+  # ---------------------------------------------------------------------
+  build-android:
+    name: Build Android (debug)
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Configurar Flutter SDK ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Instalar dependencias (flutter pub get)
+        run: flutter pub get
+
+      - name: Compilar APK de debug
+        run: flutter build apk --debug
+
+      - name: Publicar APK generado
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
+          if-no-files-found: warn
