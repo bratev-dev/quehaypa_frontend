@@ -7,16 +7,15 @@ import 'session_invalidator_providers.dart';
 import 'session_providers.dart';
 
 final dioClientProvider = Provider<DioClient>((ref) {
-    final config = ref.read(appConfigProvider);
-    final tokenManager = ref.read(tokenManagerProvider);
-    final sessionRefresher = ref.read(sessionRefresherProvider);
-    final sessionInvalidator =
-        ref.read(sessionInvalidatorProvider);
+  final config = ref.read(appConfigProvider);
+  final tokenManager = ref.read(tokenManagerProvider);
+  final sessionRefresher = ref.read(sessionRefresherProvider);
+  final sessionInvalidator = ref.read(sessionInvalidatorProvider);
 
-    return DioClient(
-        config: config,
-        tokenManager: tokenManager,
-        sessionRefresher: sessionRefresher,
-        sessionInvalidator: sessionInvalidator,
-    );
+  return DioClient(
+    config: config,
+    tokenManager: tokenManager,
+    sessionRefresher: sessionRefresher,
+    sessionInvalidator: sessionInvalidator,
+  );
 });

@@ -1,3 +1,3 @@
 abstract interface class SessionRefresher {
-    Future<String?> refreshAccessToken();
+  Future<String?> refreshAccessToken();
 }

@@ -35,7 +35,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],
@@ -57,81 +60,93 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFD600),
       body: switch (authenticationState.status) {
-        AuthenticationStatus.initial || 
-        AuthenticationStatus.loading => 
-          const SafeArea(
-            child: Center(
+        AuthenticationStatus.initial ||
+        AuthenticationStatus.loading => const SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Color(0xFF0038FF)),
+                SizedBox(height: 16),
+                Text(
+                  'Cargando elementos...',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        AuthenticationStatus.error => SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFF0038FF)),
-                  SizedBox(height: 16),
-                  Text('Cargando elementos...', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    authenticationState.errorMessage ??
+                        'Ocurrió un error inesperado.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref
+                          .read(authenticationControllerProvider.notifier)
+                          .login();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0038FF),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Intentar nuevamente'),
+                  ),
                 ],
               ),
             ),
           ),
-
-        AuthenticationStatus.error => 
-          SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      authenticationState.errorMessage ?? 'Ocurrió un error inesperado.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.read(authenticationControllerProvider.notifier).login();
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0038FF), foregroundColor: Colors.white),
-                      child: const Text('Intentar nuevamente'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+        ),
 
         _ => LoginTemplate(
-            emailController: _emailController,
-            passwordController: _passwordController,
-            obscurePassword: _obscurePassword,
-            onTogglePassword: () {
-              setState(() {
-                _obscurePassword = !_obscurePassword;
-              });
-            },
-            onLoginPressed: () {
-              final email = _emailController.text.trim();
-              final password = _passwordController.text;
+          emailController: _emailController,
+          passwordController: _passwordController,
+          obscurePassword: _obscurePassword,
+          onTogglePassword: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+          onLoginPressed: () {
+            final email = _emailController.text.trim();
+            final password = _passwordController.text;
 
-              // Validaciones manuales con mensajes limpios
-              if (email.isEmpty) {
-                _showErrorSnackBar('Por favor ingresa tu correo electrónico.');
-                return;
-              }
-              if (!emailRegex.hasMatch(email)) {
-                _showErrorSnackBar('El formato del correo electrónico no es válido.');
-                return;
-              }
-              if (password.isEmpty) {
-                _showErrorSnackBar('Por favor ingresa tu contraseña.');
-                return;
-              }
+            // Validaciones manuales con mensajes limpios
+            if (email.isEmpty) {
+              _showErrorSnackBar('Por favor ingresa tu correo electrónico.');
+              return;
+            }
+            if (!emailRegex.hasMatch(email)) {
+              _showErrorSnackBar(
+                'El formato del correo electrónico no es válido.',
+              );
+              return;
+            }
+            if (password.isEmpty) {
+              _showErrorSnackBar('Por favor ingresa tu contraseña.');
+              return;
+            }
 
-              // Si todo es correcto, ejecuta el login
-              ref.read(authenticationControllerProvider.notifier).login();
-            },
-          ),
+            // Si todo es correcto, ejecuta el login
+            ref.read(authenticationControllerProvider.notifier).login();
+          },
+        ),
       },
     );
   }

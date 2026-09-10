@@ -11,39 +11,30 @@ import '../../domain/usecases/refresh_session_use_case.dart';
 import '../../domain/usecases/restore_session_use_case.dart';
 
 final keycloakDataSourceProvider = Provider<KeycloakDataSource>((ref) {
-    return KeycloakDataSource(
-        config: ref.read(appConfigProvider),
-    );
+  return KeycloakDataSource(config: ref.read(appConfigProvider));
 });
 
-final authenticationRepositoryProvider = Provider<AuthenticationRepository>((ref) {
-    return AuthenticationRepositoryImpl(
-        keycloakDataSource:
-            ref.read(keycloakDataSourceProvider),
-        tokenManager: ref.read(tokenManagerProvider),
-    );
+final authenticationRepositoryProvider = Provider<AuthenticationRepository>((
+  ref,
+) {
+  return AuthenticationRepositoryImpl(
+    keycloakDataSource: ref.read(keycloakDataSourceProvider),
+    tokenManager: ref.read(tokenManagerProvider),
+  );
 });
 
 final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
-    return LoginUseCase(
-        ref.read(authenticationRepositoryProvider),
-    );
+  return LoginUseCase(ref.read(authenticationRepositoryProvider));
 });
 
 final restoreSessionUseCaseProvider = Provider<RestoreSessionUseCase>((ref) {
-    return RestoreSessionUseCase(
-        ref.read(authenticationRepositoryProvider),
-    );
+  return RestoreSessionUseCase(ref.read(authenticationRepositoryProvider));
 });
 
 final refreshSessionUseCaseProvider = Provider<RefreshSessionUseCase>((ref) {
-    return RefreshSessionUseCase(
-        ref.read(authenticationRepositoryProvider),
-    );
+  return RefreshSessionUseCase(ref.read(authenticationRepositoryProvider));
 });
 
 final logoutUseCaseProvider = Provider<LogoutUseCase>((ref) {
-    return LogoutUseCase(
-        ref.read(authenticationRepositoryProvider),
-    );
+  return LogoutUseCase(ref.read(authenticationRepositoryProvider));
 });

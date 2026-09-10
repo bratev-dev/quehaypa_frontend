@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../atoms/primary_button.dart';
 
 class LoginForm extends StatelessWidget {
@@ -36,7 +37,10 @@ class LoginForm extends StatelessWidget {
               hintText: 'juanchavezzp@unicauca.edu.co',
               hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 18,
+              ),
             ),
           ),
         ),
@@ -55,10 +59,15 @@ class LoginForm extends StatelessWidget {
               hintText: '*************',
               hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 18,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   color: Colors.grey[400],
                   size: 20,
                 ),
@@ -83,10 +92,7 @@ class LoginForm extends StatelessWidget {
         const SizedBox(height: 24),
 
         // Botón de Inicio de Sesión
-        PrimaryButton(
-          text: 'Inicio de Sesión',
-          onPressed: onLoginPressed,
-        ),
+        PrimaryButton(text: 'Inicio de Sesión', onPressed: onLoginPressed),
       ],
     );
   }

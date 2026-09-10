@@ -10,96 +10,84 @@ import 'authentication_state.dart';
 
 final authenticationControllerProvider =
     NotifierProvider<AuthenticationController, AuthenticationState>(
-  AuthenticationController.new,
-);
+      AuthenticationController.new,
+    );
 
 class AuthenticationController extends Notifier<AuthenticationState> {
-    late final LoginUseCase _loginUseCase;
-    late final RestoreSessionUseCase _restoreSessionUseCase;
-    late final LogoutUseCase _logoutUseCase;
+  late final LoginUseCase _loginUseCase;
+  late final RestoreSessionUseCase _restoreSessionUseCase;
+  late final LogoutUseCase _logoutUseCase;
 
-    @override
-    AuthenticationState build() {
-        _loginUseCase = ref.read(loginUseCaseProvider);
-        _restoreSessionUseCase =
-            ref.read(restoreSessionUseCaseProvider);
-        _logoutUseCase = ref.read(logoutUseCaseProvider);
+  @override
+  AuthenticationState build() {
+    _loginUseCase = ref.read(loginUseCaseProvider);
+    _restoreSessionUseCase = ref.read(restoreSessionUseCaseProvider);
+    _logoutUseCase = ref.read(logoutUseCaseProvider);
 
-        ref.listen<AsyncValue<void>>(
-            sessionInvalidatedProvider,
-            (_, next) {
-                next.whenData((_) {
-                    state = const AuthenticationState(
-                        status: AuthenticationStatus.unauthenticated,
-                    );
-                });
-            },
+    ref.listen<AsyncValue<void>>(sessionInvalidatedProvider, (_, next) {
+      next.whenData((_) {
+        state = const AuthenticationState(
+          status: AuthenticationStatus.unauthenticated,
         );
+      });
+    });
 
-        return const AuthenticationState.initial();
+    return const AuthenticationState.initial();
+  }
+
+  Future<void> restoreSession() async {
+    state = state.copyWith(status: AuthenticationStatus.loading);
+
+    try {
+      final session = await _restoreSessionUseCase();
+
+      if (session == null) {
+        state = state.copyWith(status: AuthenticationStatus.unauthenticated);
+        return;
+      }
+
+      state = state.copyWith(
+        status: AuthenticationStatus.authenticated,
+        session: session,
+      );
+    } catch (e) {
+      state = state.copyWith(status: AuthenticationStatus.unauthenticated);
     }
+  }
 
-    Future<void> restoreSession() async {
-        state = state.copyWith(
-        status: AuthenticationStatus.loading,
-        );
+  Future<void> login() async {
+    state = state.copyWith(
+      status: AuthenticationStatus.loading,
+      errorMessage: null,
+    );
 
-        try {
-            final session =
-                await _restoreSessionUseCase();
+    try {
+      final AuthSession session = await _loginUseCase();
 
-            if (session == null) {
-                state = state.copyWith(
-                status: AuthenticationStatus.unauthenticated,
-                );
-                return;
-            }
-
-            state = state.copyWith(
-                status: AuthenticationStatus.authenticated,
-                session: session,
-            );
-        } catch (e) {
-            state = state.copyWith(
-                status: AuthenticationStatus.unauthenticated,
-            );
-        }
+      state = state.copyWith(
+        status: AuthenticationStatus.authenticated,
+        session: session,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthenticationStatus.error,
+        errorMessage: e.toString(),
+      );
     }
+  }
 
-    Future<void> login() async {
-        state = state.copyWith(
-        status: AuthenticationStatus.loading,
-        errorMessage: null,
-        );
+  Future<void> logout() async {
+    try {
+      await _logoutUseCase();
 
-        try {
-            final AuthSession session =
-                await _loginUseCase();
-
-            state = state.copyWith(
-                status: AuthenticationStatus.authenticated,
-                session: session,
-            );
-        } catch (e) {
-            state = state.copyWith(
-                status: AuthenticationStatus.error,
-                errorMessage: e.toString(),
-            );
-        }
+      state = const AuthenticationState(
+        status: AuthenticationStatus.unauthenticated,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthenticationStatus.error,
+        errorMessage: e.toString(),
+      );
     }
-
-    Future<void> logout() async {
-        try {
-            await _logoutUseCase();
-
-            state = const AuthenticationState(
-                status: AuthenticationStatus.unauthenticated,
-            );
-        } catch (e) {
-            state = state.copyWith(
-                status: AuthenticationStatus.error,
-                errorMessage: e.toString(),
-            );
-        }
-    }
+  }
 }

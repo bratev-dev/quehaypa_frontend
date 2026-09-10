@@ -1,4 +1,1 @@
-enum Environment {
-    development,
-    production,
-}
+enum Environment { development, production }

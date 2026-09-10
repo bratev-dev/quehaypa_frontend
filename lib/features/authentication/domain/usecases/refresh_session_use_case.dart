@@ -2,11 +2,11 @@ import '../entities/auth_session.dart';
 import '../repositories/authentication_repository.dart';
 
 class RefreshSessionUseCase {
-    final AuthenticationRepository _repository;
+  final AuthenticationRepository _repository;
 
-    const RefreshSessionUseCase(this._repository);
+  const RefreshSessionUseCase(this._repository);
 
-    Future<AuthSession> call() {
-        return _repository.refreshSession();
-    }
+  Future<AuthSession> call() {
+    return _repository.refreshSession();
+  }
 }

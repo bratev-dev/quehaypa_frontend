@@ -5,8 +5,7 @@ import '../../features/authentication/data/services/session_refresher_impl.dart'
 import '../../features/authentication/presentation/controllers/authentication_providers.dart';
 
 final sessionRefresherProvider = Provider<SessionRefresher>((ref) {
-    return SessionRefresherImpl(
-        refreshSessionUseCase:
-            ref.read(refreshSessionUseCaseProvider),
-    );
+  return SessionRefresherImpl(
+    refreshSessionUseCase: ref.read(refreshSessionUseCaseProvider),
+  );
 });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../organisms/login_hero_header.dart';
 import '../molecules/login_form.dart';
 
@@ -29,7 +30,11 @@ class LoginTemplate extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(left: 32.0, right: 32.0, bottom: 40.0),
+              padding: const EdgeInsets.only(
+                left: 32.0,
+                right: 32.0,
+                bottom: 40.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

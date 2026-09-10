@@ -34,9 +34,7 @@ class AppConfig {
     apiBaseUrl: 'http://$_host:8080',
     keycloakIssuer: _realm,
     keycloakClientId: 'que-hay-pa-mobile',
-    keycloakRedirectUrl:
-        'com.quehaypa.app://oauth/callback',
-    keycloakEndSessionUrl:
-        '$_realm/protocol/openid-connect/logout',
+    keycloakRedirectUrl: 'com.quehaypa.app://oauth/callback',
+    keycloakEndSessionUrl: '$_realm/protocol/openid-connect/logout',
   );
 }

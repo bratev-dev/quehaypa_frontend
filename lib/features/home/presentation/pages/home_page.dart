@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
+
 import '../../../../app/router/route_paths.dart';
 
 class HomePage extends StatefulWidget {
@@ -53,14 +54,15 @@ class _HomePageState extends State<HomePage> {
             Container(color: Colors.black),
 
           // --- CAPA 2: Oscurecedor semitransparente para legibilidad ---
-          Container(
-            color: Colors.black.withOpacity(0.4),
-          ),
+          Container(color: Colors.black.withOpacity(0.4)),
 
           // --- CAPA 3: Botones de Iniciar Sesión y Registrarse ---
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32.0,
+                vertical: 48.0,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -81,7 +83,10 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: const Text(
                       'Iniciar Sesión',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -90,7 +95,9 @@ class _HomePageState extends State<HomePage> {
                   OutlinedButton(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Registro próximamente...')),
+                        const SnackBar(
+                          content: Text('Registro próximamente...'),
+                        ),
                       );
                     },
                     style: OutlinedButton.styleFrom(
@@ -103,7 +110,10 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: const Text(
                       'Registrarse',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
