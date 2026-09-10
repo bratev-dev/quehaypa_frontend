@@ -82,7 +82,7 @@ jobs:
 
       - name: Publicar reporte de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage/lcov.info
@@ -124,7 +124,7 @@ jobs:
         run: flutter build apk --debug
 
       - name: Publicar APK generado
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
