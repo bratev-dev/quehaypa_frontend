@@ -37,7 +37,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final matchedLocation = state.matchedLocation;
       final isGoingToLogin = matchedLocation == RoutePaths.login;
-      final isGoingToHome = matchedLocation == RoutePaths.home;
+      // final isGoingToHome = matchedLocation == RoutePaths.home;
 
       if (status == AuthenticationStatus.initial ||
           status == AuthenticationStatus.loading) {

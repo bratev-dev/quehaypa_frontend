@@ -54,7 +54,7 @@ class _HomePageState extends State<HomePage> {
             Container(color: Colors.black),
 
           // --- CAPA 2: Oscurecedor semitransparente para legibilidad ---
-          Container(color: Colors.black.withOpacity(0.4)),
+          Container(color: Colors.black.withValues(alpha: 0.4)),
 
           // --- CAPA 3: Botones de Iniciar Sesión y Registrarse ---
           SafeArea(
