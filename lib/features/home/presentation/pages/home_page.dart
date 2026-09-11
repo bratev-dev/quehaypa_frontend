@@ -91,14 +91,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Botón 2: Registrarse
+                  // Botón 2: Registrarse (Navega al registro usando GoRouter)
                   OutlinedButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Registro próximamente...'),
-                        ),
-                      );
+                      context.go(RoutePaths.register);
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
