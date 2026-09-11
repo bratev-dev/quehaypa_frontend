@@ -1,10 +1,10 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'environment.dart';
 
 class AppConfig {
   final Environment environment;
-
   final String apiBaseUrl;
-
   final String keycloakIssuer;
   final String keycloakClientId;
   final String keycloakRedirectUrl;
@@ -19,32 +19,19 @@ class AppConfig {
     required this.keycloakEndSessionUrl,
   });
 
-  static const development = AppConfig(
+  static final String _api = dotenv.env['API_BASE_URL'] ?? '';
+  static final String _issuer = dotenv.env['KEYCLOAK_ISSUER_URL'] ?? '';
+
+  static final development = AppConfig(
     environment: Environment.development,
-    apiBaseUrl: 'https://quehaypa-backend-production.up.railway.app',
-    keycloakIssuer: 'https://keycloak-production-58e17.up.railway.app/realms/que-hay-pa-dev',
+    apiBaseUrl: _api,
+    keycloakIssuer: _issuer,
     keycloakClientId: 'que-hay-pa-mobile',
     keycloakRedirectUrl: 'com.quehaypa.app://oauth/callback',
-    keycloakEndSessionUrl: 'https://keycloak-production-58e17.up.railway.app/realms/que-hay-pa-dev/protocol/openid-connect/logout',
-  );
-
-  static const _prodApiBaseUrl = String.fromEnvironment('API_BASE_URL');
-  static const _prodKeycloakIssuer = String.fromEnvironment(
-    'KEYCLOAK_ISSUER_URL',
-  );
-
-  static const production = AppConfig(
-    environment: Environment.production,
-    apiBaseUrl: _prodApiBaseUrl,
-    keycloakIssuer: _prodKeycloakIssuer,
-    keycloakClientId: 'que-hay-pa-mobile',
-    keycloakRedirectUrl: 'com.quehaypa.app://oauth/callback',
-    keycloakEndSessionUrl:
-        '$_prodKeycloakIssuer/protocol/openid-connect/logout',
+    keycloakEndSessionUrl: '$_issuer/protocol/openid-connect/logout',
   );
 
   static AppConfig fromEnvironment() {
-    const env = String.fromEnvironment('ENV', defaultValue: 'development');
-    return env == 'production' ? production : development;
+    return development;
   }
 }
