@@ -43,7 +43,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      final isPublicRoute = matchedLocation == RoutePaths.login ||
+      final isPublicRoute =
+          matchedLocation == RoutePaths.login ||
           matchedLocation == RoutePaths.register ||
           matchedLocation == RoutePaths.splash ||
           matchedLocation == RoutePaths.home;

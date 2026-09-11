@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+
 import '../../../../app/router/animations/circular_reveal_transition.dart';
 import '../../../authentication/presentation/pages/login_page.dart';
 import '../../../authentication/presentation/pages/register_page.dart';
