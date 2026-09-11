@@ -26,38 +26,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  // Función auxiliar para mostrar alertas flotantes
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFFD32F2F), // Rojo elegante
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final authenticationState = ref.watch(authenticationControllerProvider);
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFD600),
@@ -71,7 +42,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 CircularProgressIndicator(color: Color(0xFF0038FF)),
                 SizedBox(height: 16),
                 Text(
-                  'Cargando elementos...',
+                  'Abriendo sesión con Keycloak...',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],
@@ -90,7 +61,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   const SizedBox(height: 16),
                   Text(
                     authenticationState.errorMessage ??
-                        'Ocurrió un error inesperado.',
+                        'Ocurrió un error al autenticar.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 16,
@@ -126,26 +97,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             });
           },
           onLoginPressed: () {
-            final email = _emailController.text.trim();
-            final password = _passwordController.text;
-
-            // Validaciones manuales con mensajes limpios
-            if (email.isEmpty) {
-              _showErrorSnackBar('Por favor ingresa tu correo electrónico.');
-              return;
-            }
-            if (!emailRegex.hasMatch(email)) {
-              _showErrorSnackBar(
-                'El formato del correo electrónico no es válido.',
-              );
-              return;
-            }
-            if (password.isEmpty) {
-              _showErrorSnackBar('Por favor ingresa tu contraseña.');
-              return;
-            }
-
-            // Si todo es correcto, ejecuta el login
             ref.read(authenticationControllerProvider.notifier).login();
           },
           onRegisterPressed: () {
