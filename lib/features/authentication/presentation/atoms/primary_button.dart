@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color? backgroundColor;
   final Color? textColor;
 
@@ -16,11 +16,16 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = backgroundColor ?? const Color(0xFFFFD600);
+    final textBaseColor = textColor ?? Colors.black;
+
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor ?? const Color(0xFF0038FF),
         foregroundColor: textColor ?? Colors.white,
+        disabledBackgroundColor: baseColor,
+        disabledForegroundColor: textBaseColor,
         padding: const EdgeInsets.symmetric(vertical: 18),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         elevation: 0,
