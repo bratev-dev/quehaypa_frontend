@@ -37,4 +37,31 @@ class AppConfig {
     keycloakRedirectUrl: 'com.quehaypa.app://oauth/callback',
     keycloakEndSessionUrl: '$_realm/protocol/openid-connect/logout',
   );
+
+  // Entorno para demos/producción: las URLs de Railway se inyectan en tiempo
+  // de compilación, no se hardcodean. Ejemplo de build para la demo:
+  //   flutter build apk --dart-define=ENV=production \
+  //     --dart-define=API_BASE_URL=https://<backend>.up.railway.app \
+  //     --dart-define=KEYCLOAK_ISSUER_URL=https://<keycloak>.up.railway.app/realms/que-hay-pa-dev
+  static const _prodApiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const _prodKeycloakIssuer = String.fromEnvironment(
+    'KEYCLOAK_ISSUER_URL',
+  );
+
+  static const production = AppConfig(
+    environment: Environment.production,
+    apiBaseUrl: _prodApiBaseUrl,
+    keycloakIssuer: _prodKeycloakIssuer,
+    keycloakClientId: 'que-hay-pa-mobile',
+    keycloakRedirectUrl: 'com.quehaypa.app://oauth/callback',
+    keycloakEndSessionUrl:
+        '$_prodKeycloakIssuer/protocol/openid-connect/logout',
+  );
+
+  // Selecciona el entorno segun el dart-define ENV (development|production).
+  // Por defecto usa development para no romper el flujo local existente.
+  static AppConfig fromEnvironment() {
+    const env = String.fromEnvironment('ENV', defaultValue: 'development');
+    return env == 'production' ? production : development;
+  }
 }
