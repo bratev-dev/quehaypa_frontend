@@ -8,6 +8,7 @@ class LoginForm extends StatelessWidget {
   final bool obscurePassword;
   final VoidCallback onTogglePassword;
   final VoidCallback onLoginPressed;
+  final VoidCallback onRegisterPressed;
 
   const LoginForm({
     super.key,
@@ -16,6 +17,7 @@ class LoginForm extends StatelessWidget {
     required this.obscurePassword,
     required this.onTogglePassword,
     required this.onLoginPressed,
+    required this.onRegisterPressed,
   });
 
   @override
@@ -93,6 +95,30 @@ class LoginForm extends StatelessWidget {
 
         // Botón de Inicio de Sesión
         PrimaryButton(text: 'Inicio de Sesión', onPressed: onLoginPressed),
+        const SizedBox(height: 16),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              '¿Todavía no tienes una cuenta? ',
+              style: TextStyle(color: Colors.black87, fontSize: 13),
+            ),
+            GestureDetector(
+              onTap: onRegisterPressed,
+              child: const Text(
+                'Regístrate',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
+                  decorationColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

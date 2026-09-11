@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/route_paths.dart';
 import '../controllers/authentication_controller.dart';
 import '../controllers/authentication_state.dart';
 import '../templates/login_template.dart';
@@ -145,6 +147,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
             // Si todo es correcto, ejecuta el login
             ref.read(authenticationControllerProvider.notifier).login();
+          },
+          onRegisterPressed: () {
+            context.go(RoutePaths.register);
           },
         ),
       },

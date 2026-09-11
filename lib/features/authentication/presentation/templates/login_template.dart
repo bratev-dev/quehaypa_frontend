@@ -9,6 +9,7 @@ class LoginTemplate extends StatelessWidget {
   final bool obscurePassword;
   final VoidCallback onTogglePassword;
   final VoidCallback onLoginPressed;
+  final VoidCallback onRegisterPressed;
 
   const LoginTemplate({
     super.key,
@@ -17,6 +18,7 @@ class LoginTemplate extends StatelessWidget {
     required this.obscurePassword,
     required this.onTogglePassword,
     required this.onLoginPressed,
+    required this.onRegisterPressed,
   });
 
   @override
@@ -46,6 +48,7 @@ class LoginTemplate extends StatelessWidget {
                     obscurePassword: obscurePassword,
                     onTogglePassword: onTogglePassword,
                     onLoginPressed: onLoginPressed,
+                    onRegisterPressed: onRegisterPressed,
                   ),
                 ],
               ),
