@@ -1,7 +1,14 @@
 <!--
 Gracias por abrir un Pull Request. Completa las secciones de abajo:
 elimina las que no apliquen y borra estos comentarios antes de publicar.
+
+Título del PR: incluye la clave de Jira al inicio, ej: `[QHP-123] Login con Google`.
 -->
+
+## Issue de Jira
+
+<!-- Clave del issue en Jira asociado a este PR (obligatorio). Ej: QHP-123 -->
+Jira: QHP-
 
 ## Descripción
 

@@ -178,18 +178,36 @@ Dependabot mantiene actualizadas las dependencias de Dart/Flutter, Gradle y las 
 
 ## Flujo de ramas y contribución
 
-| Rama                | Propósito                                              |
-| -------------------- | ------------------------------------------------------- |
-| `main`                | Código estable, listo para distribución/demo            |
-| `develop`             | Integración de features antes de pasar a `main`         |
-| `feature/<nombre>`    | Desarrollo de una funcionalidad puntual                 |
-| `chore/<nombre>`      | Tareas de mantenimiento (config, dependencias, limpieza) |
+Este repositorio está conectado a Jira (proyecto **QHP**) mediante la app oficial **GitHub for Jira**. Cualquier rama, commit o Pull Request cuyo nombre incluya una clave `QHP-<número>` aparece automáticamente en el panel de desarrollo del issue correspondiente en Jira.
+
+| Rama                             | Propósito                                                          |
+| --------------------------------- | -------------------------------------------------------------------- |
+| `main`                             | Código estable, listo para distribución/demo                        |
+| `develop`                          | Integración de features antes de pasar a `main`                     |
+| `feature/QHP-<n>-<descripción>`    | Desarrollo de una Historia de Usuario (issue tipo *Story* en Jira)   |
+| `fix/QHP-<n>-<descripción>`        | Corrección de un error (issue tipo *Bug* en Jira)                    |
+| `chore/QHP-<n>-<descripción>`      | Mantenimiento: config, dependencias, limpieza (issue tipo *Task*)    |
+| `hotfix/QHP-<n>-<descripción>`     | Parche urgente sobre producción (issue tipo *Bug* urgente)            |
+
+**Convención de nombres:**
+
+```
+<tipo>/QHP-<número>-<descripción-corta-en-kebab-case>
+```
+
+- `QHP-<número>` es la clave **real** del issue en Jira, tal cual aparece en él — nunca una numeración propia (ej. no usar `1.2` de Épica.Historia).
+- La descripción va en español, en kebab-case, y es solo para que el equipo identifique la rama de un vistazo; Jira ignora esa parte.
+- Ejemplos: `feature/QHP-123-login-con-google`, `fix/QHP-145-crash-al-abrir-perfil`, `chore/QHP-150-actualizar-dependencias`, `hotfix/QHP-160-token-expirado-en-produccion`.
 
 **Reglas:**
 
-- Toda rama `feature/*` o `chore/*` se crea a partir de `develop` actualizada.
+- Toda rama `feature/*`, `fix/*` o `chore/*` se crea a partir de `develop` actualizada.
+- Toda rama `hotfix/*` se crea a partir de `main` y, al mergear, se integra tanto a `main` como a `develop`.
+- Un branch corresponde a un único issue de Jira (relación 1:1). Si el trabajo abarca más de una historia o bug, se abren ramas separadas.
+- Nunca reutilices la clave de un issue en otra rama; si retomas el trabajo, continúa en la misma rama en lugar de crear una `-v2`.
 - Los Pull Requests hacia `main` y `develop` están protegidos: requieren que el CI pase en verde.
 - Después de mergear un PR a `main`, sincroniza `develop` (`main → develop`) para que ninguna rama nueva parta de una base desactualizada.
+- Incluye la clave de Jira también en el título del Pull Request (ej: `[QHP-123] Login con Google`) — ver plantilla.
 - Los commits y los Pull Requests se redactan en español.
 
 Usa la [plantilla de Pull Request](.github/pull_request_template.md) del repositorio al abrir tu PR.
