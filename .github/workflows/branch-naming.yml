@@ -1,0 +1,22 @@
+name: Branch naming
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar convención de nombre de rama
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          PATTERN='^(feature|fix|chore|hotfix)/QHP-[0-9]+-[a-z0-9-]+$'
+          if [[ ! "$BRANCH" =~ $PATTERN ]]; then
+            echo "❌ La rama '$BRANCH' no sigue la convención <tipo>/QHP-<n>-<descripcion>"
+            echo "Ejemplo válido: feature/QHP-123-login-con-google"
+            exit 1
+          fi
+          echo "✅ Nombre de rama válido: $BRANCH"
