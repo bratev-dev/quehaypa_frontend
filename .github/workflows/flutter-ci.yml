@@ -67,6 +67,9 @@ jobs:
 
       - name: Mostrar entorno (flutter doctor)
         run: flutter doctor -v
+      
+      - name: Create .env for CI
+        run: cp .env.example .env
 
       - name: Instalar dependencias (flutter pub get)
         run: flutter pub get
