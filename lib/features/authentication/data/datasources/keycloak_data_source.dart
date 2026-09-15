@@ -21,8 +21,8 @@ class KeycloakDataSource {
           issuer: _config.keycloakIssuer,
           scopes: const ['openid', 'profile', 'email'],
           allowInsecureConnections: true,
-          additionalParameters: (loginHint != null && loginHint.isNotEmpty)
-              ? {'login_hint': loginHint}
+          loginHint: (loginHint != null && loginHint.isNotEmpty)
+              ? loginHint
               : null,
         ),
       );
