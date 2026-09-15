@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
+
 import '../atoms/custom_text_field.dart';
 import '../atoms/primary_button.dart';
 
@@ -42,7 +44,7 @@ class RegisterForm extends StatelessWidget {
           focusNode: emailFocusNode,
           hintText: 'juanchavezzp@unicauca.edu.co',
           keyboardType: TextInputType.emailAddress,
-          focusedBorderColor: const Color(0xFFFFD600),
+          focusedBorderColor: AppColors.inputFocusOnBlue,
         ),
         const SizedBox(height: 16),
 
@@ -52,7 +54,7 @@ class RegisterForm extends StatelessWidget {
           focusNode: passwordFocusNode,
           hintText: '*************',
           obscureText: obscurePassword,
-          focusedBorderColor: const Color(0xFFFFD600),
+          focusedBorderColor: AppColors.inputFocusOnBlue,
           suffixIcon: IconButton(
             icon: Icon(
               obscurePassword

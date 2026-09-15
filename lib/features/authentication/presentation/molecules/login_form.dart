@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
+
 import '../atoms/custom_text_field.dart';
 import '../atoms/primary_button.dart';
 
@@ -30,7 +32,7 @@ class LoginForm extends StatelessWidget {
           focusNode: emailFocusNode,
           hintText: 'juanchavezzp@unicauca.edu.co',
           keyboardType: TextInputType.emailAddress,
-          focusedBorderColor: const Color(0xFF0038FF),
+          focusedBorderColor: AppColors.inputFocusOnYellow,
         ),
         const SizedBox(height: 24),
 
