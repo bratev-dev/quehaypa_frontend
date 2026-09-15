@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/app_error_handler.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/security/session_events_provider.dart';
 import '../../domain/entities/auth_session.dart';
 import '../../domain/usecases/login_use_case.dart';
@@ -55,23 +57,27 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     }
   }
 
-  Future<void> login() async {
+  Future<void> login({String? loginHint}) async {
     state = state.copyWith(
       status: AuthenticationStatus.loading,
       errorMessage: null,
     );
 
     try {
-      final AuthSession session = await _loginUseCase();
+      final AuthSession session = await _loginUseCase(loginHint: loginHint);
 
       state = state.copyWith(
         status: AuthenticationStatus.authenticated,
         session: session,
       );
+    } on AuthenticationCancelledException {
+      // El usuario cerró la pantalla de Keycloak (ej. botón atrás) antes de
+      // terminar. No es un error: solo lo devolvemos al login en silencio.
+      state = state.copyWith(status: AuthenticationStatus.unauthenticated);
     } catch (e) {
       state = state.copyWith(
         status: AuthenticationStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: AppErrorHandler.getFriendlyMessage(e),
       );
     }
   }
@@ -86,7 +92,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     } catch (e) {
       state = state.copyWith(
         status: AuthenticationStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: AppErrorHandler.getFriendlyMessage(e),
       );
     }
   }

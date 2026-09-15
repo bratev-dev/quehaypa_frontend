@@ -78,8 +78,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   }
                 }
 
-                // Disparamos el login hacia Keycloak
-                ref.read(authenticationControllerProvider.notifier).login();
+                // Disparamos el login hacia Keycloak, pre-rellenando el
+                // usuario con el correo ya validado (login_hint de OIDC).
+                ref
+                    .read(authenticationControllerProvider.notifier)
+                    .login(loginHint: email.isNotEmpty ? email : null);
               },
               onRegisterPressed: () {
                 context.go(RoutePaths.register);
