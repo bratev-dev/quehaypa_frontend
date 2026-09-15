@@ -4,18 +4,12 @@ import '../atoms/primary_button.dart';
 
 class LoginForm extends StatelessWidget {
   final TextEditingController emailController;
-  final TextEditingController passwordController;
-  final bool obscurePassword;
-  final VoidCallback onTogglePassword;
   final VoidCallback onLoginPressed;
   final VoidCallback onRegisterPressed;
 
   const LoginForm({
     super.key,
     required this.emailController,
-    required this.passwordController,
-    required this.obscurePassword,
-    required this.onTogglePassword,
     required this.onLoginPressed,
     required this.onRegisterPressed,
   });
@@ -26,7 +20,7 @@ class LoginForm extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Campo Correo Electrónico
+        // Campo Correo Electrónico (Opcional para identificar o pre-llenar en Keycloak)
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -46,38 +40,6 @@ class LoginForm extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-
-        // Campo Contraseña
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: TextField(
-            controller: passwordController,
-            obscureText: obscurePassword,
-            decoration: InputDecoration(
-              hintText: '*************',
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 18,
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: Colors.grey[400],
-                  size: 20,
-                ),
-                onPressed: onTogglePassword,
-              ),
-            ),
-          ),
-        ),
         const SizedBox(height: 24),
 
         // Línea decorativa blanca
@@ -93,8 +55,8 @@ class LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        // Botón de Inicio de Sesión
-        PrimaryButton(text: 'Inicio de Sesión', onPressed: onLoginPressed),
+        // Botón de Inicio de Sesión (Lanza el flujo de Keycloak)
+        PrimaryButton(text: 'Iniciar Sesión', onPressed: onLoginPressed),
         const SizedBox(height: 16),
 
         Row(

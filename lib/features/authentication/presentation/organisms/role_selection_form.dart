@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/app_error_handler.dart';
 import '../atoms/app_snackbar.dart'; // <-- Importamos el átomo global
 import '../atoms/primary_button.dart';
 import '../controllers/register_controller.dart';
@@ -54,7 +57,8 @@ class _RoleSelectionFormState extends ConsumerState<RoleSelectionForm> {
               if (_tempSelectedRole == null) {
                 AppSnackbar.show(
                   context,
-                  'Por favor selecciona un rol para continuar.',
+                  message: AppErrorHandler.getFriendlyMessage(e),
+                  type: SnackbarType.error,
                 );
                 return;
               }
