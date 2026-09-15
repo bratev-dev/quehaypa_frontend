@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'dashboard_state.dart';
 
 class DashboardController extends Notifier<DashboardState> {
@@ -40,5 +41,5 @@ class DashboardController extends Notifier<DashboardState> {
 // Declaración moderna con NotifierProvider
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(() {
-  return DashboardController();
-});
+      return DashboardController();
+    });

@@ -65,7 +65,6 @@ class DashboardHeader extends StatelessWidget {
   }
 }
 
-
 class _HeaderClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

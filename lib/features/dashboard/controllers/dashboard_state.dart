@@ -1,7 +1,7 @@
 class DashboardState {
   final List<String> userInterests;
   final String selectedCategory;
-  final int revolverRotationOffset; 
+  final int revolverRotationOffset;
 
   const DashboardState({
     required this.userInterests,

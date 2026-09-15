@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../controllers/dashboard_controller.dart';
 import '../atoms/category_circle_atom.dart';
 
@@ -55,7 +56,9 @@ class RotatingCategoriesCarousel extends ConsumerWidget {
           );
         },
         child: Transform.translate(
-          key: ValueKey<String>(category), // Clave única para que detecte el cambio y anime
+          key: ValueKey<String>(
+            category,
+          ), // Clave única para que detecte el cambio y anime
           offset: Offset(0, verticalOffset),
           child: CategoryCircleAtom(
             label: category,

@@ -19,11 +19,13 @@ class AppSnackbar {
         iconData = Icons.check_circle_outline;
         break;
       case SnackbarType.info:
-        backgroundColor = const Color(0xFFF57C00); // Naranja institucional para advertencias/info
+        backgroundColor = const Color(
+          0xFFF57C00,
+        ); // Naranja institucional para advertencias/info
         iconData = Icons.warning_amber_rounded;
         break;
       case SnackbarType.error:
-      backgroundColor = const Color(0xFFD32F2F); // Rojo para errores
+        backgroundColor = const Color(0xFFD32F2F); // Rojo para errores
         iconData = Icons.error_outline;
         break;
     }

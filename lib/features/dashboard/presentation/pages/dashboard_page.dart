@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../templates/dashboard_templates.dart';
 
-import '../templates/dashboard_templates.dart';class DashboardPage extends ConsumerWidget {
+class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
   @override

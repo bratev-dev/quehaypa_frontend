@@ -24,7 +24,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  
   late final FocusNode _emailFocusNode;
   late final FocusNode _passwordFocusNode;
 

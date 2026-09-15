@@ -9,9 +9,7 @@ class DashboardTemplate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFF121212,
-      ), 
+      backgroundColor: const Color(0xFF121212),
       body: CustomScrollView(
         slivers: [
           // Header deslizable/colapsable con el arco y los círculos

@@ -62,13 +62,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               emailController: _emailController,
               onLoginPressed: () {
                 final email = _emailController.text.trim();
-                
+
                 if (email.isNotEmpty) {
-                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  final emailRegex = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  );
                   if (!emailRegex.hasMatch(email)) {
                     AppSnackbar.show(
                       context,
-                      message: 'El formato del correo electrónico no es válido.',
+                      message:
+                          'El formato del correo electrónico no es válido.',
                       type: SnackbarType.info, // Alerta naranja institucional
                     );
                     return;
