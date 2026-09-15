@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/app_error_handler.dart';
 import '../atoms/app_snackbar.dart'; // <-- Importamos nuestro átomo de SnackBar
 import '../atoms/primary_button.dart';
 import '../controllers/register_controller.dart';
@@ -167,7 +170,8 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
                 year.isEmpty) {
               AppSnackbar.show(
                 context,
-                'Por favor completa todos los campos de información personal.',
+                message: AppErrorHandler.getFriendlyMessage(e),
+                type: SnackbarType.error,
               );
               return;
             }
@@ -175,7 +179,8 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
             if (isOrganizer && (cc == null || cc.isEmpty)) {
               AppSnackbar.show(
                 context,
-                'Por favor ingresa tu número de cédula (CC).',
+                message: AppErrorHandler.getFriendlyMessage(e),
+                type: SnackbarType.error,
               );
               return;
             }

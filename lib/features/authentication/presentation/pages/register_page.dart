@@ -23,13 +23,64 @@ class RegisterPage extends ConsumerStatefulWidget {
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  
+  late final FocusNode _emailFocusNode;
+  late final FocusNode _passwordFocusNode;
+
   bool _obscurePassword = true;
   bool _termsAccepted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailFocusNode = FocusNode();
+    _passwordFocusNode = FocusNode();
+
+    _emailFocusNode.addListener(() {
+      if (!_emailFocusNode.hasFocus) {
+        _validateEmailOnBlur();
+      }
+    });
+
+    _passwordFocusNode.addListener(() {
+      if (!_passwordFocusNode.hasFocus) {
+        _validatePasswordOnBlur();
+      }
+    });
+  }
+
+  void _validateEmailOnBlur() {
+    final email = _emailController.text.trim();
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+    if (email.isNotEmpty && !emailRegex.hasMatch(email)) {
+      AppSnackbar.show(
+        context,
+        message: 'El formato del correo electrónico no es válido.',
+        type: SnackbarType.info,
+      );
+    }
+  }
+
+  void _validatePasswordOnBlur() {
+    final password = _passwordController.text;
+
+    if (password.isNotEmpty && password.length < 6) {
+      AppSnackbar.show(
+        context,
+        message: 'La contraseña debe tener al menos 6 caracteres.',
+        type: SnackbarType.info,
+      );
+    }
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -40,13 +91,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     ref.listen(registerControllerProvider, (previous, next) {
       if (next.status == RegisterStatus.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Registro completado con éxito!')),
+        AppSnackbar.show(
+          context,
+          message: '¡Registro completado con éxito!',
+          type: SnackbarType.success,
         );
         // context.go(RoutePaths.dashboard);
       } else if (next.status == RegisterStatus.error &&
           next.errorMessage != null) {
-        AppSnackbar.show(context, next.errorMessage!);
+        AppSnackbar.show(
+          context,
+          message: next.errorMessage!,
+          type: SnackbarType.error,
+        );
       }
     });
 
@@ -94,32 +151,40 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             if (email.isEmpty) {
               AppSnackbar.show(
                 context,
-                'Por favor ingresa tu correo electrónico.',
+                message: 'Por favor ingresa tu correo electrónico.',
+                type: SnackbarType.info,
               );
               return;
             }
             if (!emailRegex.hasMatch(email)) {
               AppSnackbar.show(
                 context,
-                'El formato del correo electrónico no es válido.',
+                message: 'El formato del correo electrónico no es válido.',
+                type: SnackbarType.info,
               );
               return;
             }
             if (password.isEmpty) {
-              AppSnackbar.show(context, 'Por favor ingresa tu contraseña.');
+              AppSnackbar.show(
+                context,
+                message: 'Por favor ingresa tu contraseña.',
+                type: SnackbarType.info,
+              );
               return;
             }
             if (password.length < 6) {
               AppSnackbar.show(
                 context,
-                'La contraseña debe tener al menos 6 caracteres.',
+                message: 'La contraseña debe tener al menos 6 caracteres.',
+                type: SnackbarType.info,
               );
               return;
             }
             if (!_termsAccepted) {
               AppSnackbar.show(
                 context,
-                'Debes aceptar los términos y condiciones.',
+                message: 'Debes aceptar los términos y condiciones.',
+                type: SnackbarType.info,
               );
               return;
             }
@@ -153,13 +218,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         );
 
       case RegisterStep.interests:
-        return SafeArea(
+        return const SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(24.0),
             child: Center(
-              child: SingleChildScrollView(
-                child: const InterestsSelectionForm(),
-              ),
+              child: SingleChildScrollView(child: InterestsSelectionForm()),
             ),
           ),
         );

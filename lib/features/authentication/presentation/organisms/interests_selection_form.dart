@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/app_error_handler.dart';
 import '../atoms/app_snackbar.dart'; // <-- Importamos nuestro átomo de SnackBar unificado
 import '../atoms/interest_chip.dart';
 import '../controllers/register_controller.dart';
@@ -78,7 +81,8 @@ class InterestsSelectionForm extends ConsumerWidget {
             if (!canProceed) {
               AppSnackbar.show(
                 context,
-                'Por favor selecciona al menos 4 intereses para continuar.',
+                message: AppErrorHandler.getFriendlyMessage(e),
+                type: SnackbarType.error,
               );
               return;
             }

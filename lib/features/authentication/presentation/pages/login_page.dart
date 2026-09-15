@@ -17,13 +17,10 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -35,7 +32,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     ref.listen(authenticationControllerProvider, (previous, next) {
       if (next.status == AuthenticationStatus.error &&
           next.errorMessage != null) {
-        AppSnackbar.show(context, next.errorMessage!);
+        AppSnackbar.show(
+          context,
+          message: next.errorMessage!,
+          type: SnackbarType.error,
+        );
       }
     });
 
@@ -59,14 +60,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             )
           : LoginTemplate(
               emailController: _emailController,
-              passwordController: _passwordController,
-              obscurePassword: _obscurePassword,
-              onTogglePassword: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
               onLoginPressed: () {
+                final email = _emailController.text.trim();
+                
+                if (email.isNotEmpty) {
+                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!emailRegex.hasMatch(email)) {
+                    AppSnackbar.show(
+                      context,
+                      message: 'El formato del correo electrónico no es válido.',
+                      type: SnackbarType.info, // Alerta naranja institucional
+                    );
+                    return;
+                  }
+                }
+
+                // Disparamos el login hacia Keycloak
                 ref.read(authenticationControllerProvider.notifier).login();
               },
               onRegisterPressed: () {
