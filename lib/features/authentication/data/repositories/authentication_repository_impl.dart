@@ -36,6 +36,27 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   }
 
   @override
+  Future<AuthSession> register() async {
+    try {
+      final model = await _keycloakDataSource.register();
+
+      await _tokenManager.saveTokens(
+        accessToken: model.accessToken,
+        refreshToken: model.refreshToken,
+        idToken: model.idToken,
+      );
+
+      return model.toEntity();
+    } on AuthenticationException {
+      rethrow;
+    } catch (e) {
+      throw AuthenticationException(
+        'No fue posible guardar la sesion despues del registro: $e',
+      );
+    }
+  }
+
+  @override
   Future<AuthSession?> restoreSession() async {
     try {
       final accessToken = await _tokenManager.getAccessToken();
