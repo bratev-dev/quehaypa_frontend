@@ -4,12 +4,14 @@ import '../atoms/primary_button.dart';
 
 class LoginForm extends StatelessWidget {
   final TextEditingController emailController;
-  final VoidCallback onLoginPressed;
+  final FocusNode? emailFocusNode;
+  final VoidCallback? onLoginPressed;
   final VoidCallback onRegisterPressed;
 
   const LoginForm({
     super.key,
     required this.emailController,
+    this.emailFocusNode,
     required this.onLoginPressed,
     required this.onRegisterPressed,
   });
@@ -28,6 +30,7 @@ class LoginForm extends StatelessWidget {
           ),
           child: TextField(
             controller: emailController,
+            focusNode: emailFocusNode,
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
               hintText: 'juanchavezzp@unicauca.edu.co',

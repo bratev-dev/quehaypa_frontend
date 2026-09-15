@@ -182,6 +182,54 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
               return;
             }
 
+            final parsedDay = int.tryParse(day);
+            final parsedMonth = int.tryParse(month);
+            final parsedYear = int.tryParse(year);
+
+            if (parsedDay == null ||
+                parsedMonth == null ||
+                parsedYear == null) {
+              AppSnackbar.show(
+                context,
+                message: 'La fecha de nacimiento debe contener solo números.',
+                type: SnackbarType.info,
+              );
+              return;
+            }
+
+            // DateTime normaliza el desborde en vez de lanzar una excepción
+            // (ej. DateTime(2024, 2, 31) se convierte en 3 de marzo), así
+            // que hay que comparar los componentes para detectar fechas
+            // que en realidad no existen.
+            final constructedDate = DateTime(
+              parsedYear,
+              parsedMonth,
+              parsedDay,
+            );
+            final isRealDate =
+                constructedDate.year == parsedYear &&
+                constructedDate.month == parsedMonth &&
+                constructedDate.day == parsedDay;
+
+            if (!isRealDate) {
+              AppSnackbar.show(
+                context,
+                message: 'La fecha de nacimiento no es válida.',
+                type: SnackbarType.info,
+              );
+              return;
+            }
+
+            if (constructedDate.isAfter(DateTime.now())) {
+              AppSnackbar.show(
+                context,
+                message:
+                    'La fecha de nacimiento no puede ser una fecha futura.',
+                type: SnackbarType.info,
+              );
+              return;
+            }
+
             final birthDate = '$day/$month/$year';
 
             ref
