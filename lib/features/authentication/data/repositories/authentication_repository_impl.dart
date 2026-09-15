@@ -15,9 +15,9 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   });
 
   @override
-  Future<AuthSession> login() async {
+  Future<AuthSession> login({String? loginHint}) async {
     try {
-      final model = await _keycloakDataSource.login();
+      final model = await _keycloakDataSource.login(loginHint: loginHint);
 
       await _tokenManager.saveTokens(
         accessToken: model.accessToken,
@@ -26,6 +26,8 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
       );
 
       return model.toEntity();
+    } on AuthenticationCancelledException {
+      rethrow;
     } on AuthenticationException {
       rethrow;
     } catch (e) {

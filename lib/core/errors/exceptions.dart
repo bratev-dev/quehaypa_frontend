@@ -34,6 +34,15 @@ class AuthenticationException implements Exception {
   String toString() => 'AuthenticationException: $message';
 }
 
+/// El usuario cerró o canceló el flujo de Keycloak (ej. botón atrás en la
+/// pantalla de login) antes de completar la autenticación. No es un error.
+class AuthenticationCancelledException implements Exception {
+  const AuthenticationCancelledException();
+
+  @override
+  String toString() => 'AuthenticationCancelledException';
+}
+
 class StorageException implements Exception {
   final String message;
 

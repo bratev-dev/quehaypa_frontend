@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 
 import '../../../../app/config/app_config.dart';
@@ -11,7 +12,7 @@ class KeycloakDataSource {
   const KeycloakDataSource({required this._config, FlutterAppAuth? appAuth})
     : _appAuth = appAuth ?? const FlutterAppAuth();
 
-  Future<AuthSessionModel> login() async {
+  Future<AuthSessionModel> login({String? loginHint}) async {
     try {
       final result = await _appAuth.authorizeAndExchangeCode(
         AuthorizationTokenRequest(
@@ -20,6 +21,9 @@ class KeycloakDataSource {
           issuer: _config.keycloakIssuer,
           scopes: const ['openid', 'profile', 'email'],
           allowInsecureConnections: true,
+          additionalParameters: (loginHint != null && loginHint.isNotEmpty)
+              ? {'login_hint': loginHint}
+              : null,
         ),
       );
 
@@ -38,11 +42,30 @@ class KeycloakDataSource {
       );
     } on AuthenticationException {
       rethrow;
+    } on PlatformException catch (e) {
+      if (_isUserCancellation(e)) {
+        throw const AuthenticationCancelledException();
+      }
+      throw AuthenticationException(
+        'No fue posible iniciar sesión con Keycloak: $e',
+      );
     } catch (e) {
       throw AuthenticationException(
         'No fue posible iniciar sesión con Keycloak: $e',
       );
     }
+  }
+
+  /// `flutter_appauth` reporta la cancelación del usuario de forma distinta
+  /// por plataforma: Android emite el mensaje "User cancelled flow" en el
+  /// código `authorize_and_exchange_code_failed`; iOS/AppAuth-iOS usa el
+  /// código `-3` (`OIDErrorCodeUserCanceledAuthorizationFlow`) en su detalle.
+  bool _isUserCancellation(PlatformException e) {
+    final message = (e.message ?? '').toLowerCase();
+    final details = e.details?.toString().toLowerCase() ?? '';
+    return message.contains('cancel') ||
+        details.contains('cancel') ||
+        details.contains('-3');
   }
 
   Future<AuthSessionModel> refreshSession(String refreshToken) async {
