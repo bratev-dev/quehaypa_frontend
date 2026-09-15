@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../atoms/custom_text_field.dart';
 import '../atoms/primary_button.dart';
 
 class RegisterForm extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final FocusNode? emailFocusNode;
+  final FocusNode? passwordFocusNode;
   final bool obscurePassword;
   final VoidCallback onTogglePassword;
   final bool termsAccepted;
@@ -16,6 +19,8 @@ class RegisterForm extends StatelessWidget {
     super.key,
     required this.emailController,
     required this.passwordController,
+    this.emailFocusNode,
+    this.passwordFocusNode,
     required this.obscurePassword,
     required this.onTogglePassword,
     required this.termsAccepted,
@@ -30,56 +35,33 @@ class RegisterForm extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // El fondo de esta pantalla es azul, así que el borde en foco va amarillo.
         // Campo Correo Electrónico
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: TextField(
-            controller: emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              hintText: 'juanchavezzp@unicauca.edu.co',
-              hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 18,
-              ),
-            ),
-          ),
+        CustomTextField(
+          controller: emailController,
+          focusNode: emailFocusNode,
+          hintText: 'juanchavezzp@unicauca.edu.co',
+          keyboardType: TextInputType.emailAddress,
+          focusedBorderColor: const Color(0xFFFFD600),
         ),
         const SizedBox(height: 16),
 
         // Campo Contraseña
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: TextField(
-            controller: passwordController,
-            obscureText: obscurePassword,
-            decoration: InputDecoration(
-              hintText: '*************',
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 18,
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: Colors.grey[400],
-                  size: 20,
-                ),
-                onPressed: onTogglePassword,
-              ),
+        CustomTextField(
+          controller: passwordController,
+          focusNode: passwordFocusNode,
+          hintText: '*************',
+          obscureText: obscurePassword,
+          focusedBorderColor: const Color(0xFFFFD600),
+          suffixIcon: IconButton(
+            icon: Icon(
+              obscurePassword
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: Colors.grey[400],
+              size: 20,
             ),
+            onPressed: onTogglePassword,
           ),
         ),
         const SizedBox(height: 12),

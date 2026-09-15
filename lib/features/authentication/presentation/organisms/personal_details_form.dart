@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../atoms/app_snackbar.dart'; // <-- Importamos nuestro átomo de SnackBar
+import '../atoms/custom_text_field.dart';
 import '../atoms/primary_button.dart';
 import '../controllers/register_controller.dart';
 import '../controllers/register_state.dart';
@@ -23,6 +24,120 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
   final _yearController = TextEditingController();
   final _idController = TextEditingController();
 
+  late final FocusNode _dayFocusNode;
+  late final FocusNode _monthFocusNode;
+  late final FocusNode _yearFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _dayFocusNode = FocusNode();
+    _monthFocusNode = FocusNode();
+    _yearFocusNode = FocusNode();
+
+    _dayFocusNode.addListener(
+      () => _handleDateFieldBlur(_dayFocusNode, _dayFieldError),
+    );
+    _monthFocusNode.addListener(
+      () => _handleDateFieldBlur(_monthFocusNode, _monthFieldError),
+    );
+    _yearFocusNode.addListener(
+      () => _handleDateFieldBlur(_yearFocusNode, _yearFieldError),
+    );
+  }
+
+  /// Al salir de un campo de fecha se avisa de inmediato si ese campo por sí
+  /// solo ya es imposible (día 32, mes 13), sin esperar a los demás. Si el
+  /// campo está bien y los tres ya tienen valor, se revisa la fecha completa
+  /// (para casos como 31/02, que solo se detectan en conjunto).
+  void _handleDateFieldBlur(FocusNode node, String? Function() fieldError) {
+    if (node.hasFocus || !mounted) return;
+
+    final error = fieldError() ?? _completeBirthDateError();
+
+    if (error != null) {
+      AppSnackbar.show(context, message: error, type: SnackbarType.info);
+    }
+  }
+
+  String? _dayFieldError() =>
+      _numberInRangeError(_dayController.text.trim(), 1, 31, 'día');
+
+  String? _monthFieldError() =>
+      _numberInRangeError(_monthController.text.trim(), 1, 12, 'mes');
+
+  String? _yearFieldError() => _numberInRangeError(
+    _yearController.text.trim(),
+    1900,
+    DateTime.now().year,
+    'año',
+  );
+
+  /// Un campo vacío no reclama todavía: el usuario puede seguir llenando.
+  String? _numberInRangeError(String value, int min, int max, String label) {
+    if (value.isEmpty) return null;
+
+    final parsed = int.tryParse(value);
+
+    if (parsed == null) return 'El $label debe ser un número.';
+    if (parsed < min || parsed > max) {
+      return 'El $label debe estar entre $min y $max.';
+    }
+
+    return null;
+  }
+
+  /// Solo aplica cuando los tres campos ya tienen valor.
+  String? _completeBirthDateError() {
+    final day = _dayController.text.trim();
+    final month = _monthController.text.trim();
+    final year = _yearController.text.trim();
+
+    if (day.isEmpty || month.isEmpty || year.isEmpty) return null;
+
+    return _birthDateError(day: day, month: month, year: year);
+  }
+
+  /// Devuelve el mensaje de error de la fecha, o null si es válida.
+  String? _birthDateError({
+    required String day,
+    required String month,
+    required String year,
+  }) {
+    // Primero los errores de cada campo por separado, para dar el mismo
+    // mensaje puntual que ya se mostró al salir del campo.
+    final fieldError =
+        _dayFieldError() ?? _monthFieldError() ?? _yearFieldError();
+    if (fieldError != null) return fieldError;
+
+    final parsedDay = int.tryParse(day);
+    final parsedMonth = int.tryParse(month);
+    final parsedYear = int.tryParse(year);
+
+    if (parsedDay == null || parsedMonth == null || parsedYear == null) {
+      return 'La fecha de nacimiento debe contener solo números.';
+    }
+
+    // DateTime normaliza el desborde en vez de lanzar una excepción (ej.
+    // DateTime(2024, 2, 31) se convierte en 3 de marzo), así que hay que
+    // comparar los componentes para detectar fechas que no existen.
+    final date = DateTime(parsedYear, parsedMonth, parsedDay);
+    final isRealDate =
+        date.year == parsedYear &&
+        date.month == parsedMonth &&
+        date.day == parsedDay;
+
+    if (!isRealDate) {
+      return 'La fecha de nacimiento no es válida.';
+    }
+
+    if (date.isAfter(DateTime.now())) {
+      return 'La fecha de nacimiento no puede ser una fecha futura.';
+    }
+
+    return null;
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -32,6 +147,9 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
     _monthController.dispose();
     _yearController.dispose();
     _idController.dispose();
+    _dayFocusNode.dispose();
+    _monthFocusNode.dispose();
+    _yearFocusNode.dispose();
     super.dispose();
   }
 
@@ -39,32 +157,24 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
     required TextEditingController controller,
     required String hintText,
     TextInputType keyboardType = TextInputType.text,
+    FocusNode? focusNode,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
-          ),
+    // El fondo de esta pantalla es azul, así que el borde en foco va amarillo.
+    return CustomTextField(
+      controller: controller,
+      focusNode: focusNode,
+      hintText: hintText,
+      keyboardType: keyboardType,
+      focusedBorderColor: const Color(0xFFFFD600),
+      hintColor: Colors.grey[400],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.06),
+          blurRadius: 6,
+          offset: const Offset(0, 3),
         ),
-      ),
+      ],
     );
   }
 
@@ -111,6 +221,7 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
                 controller: _dayController,
                 hintText: 'DD',
                 keyboardType: TextInputType.number,
+                focusNode: _dayFocusNode,
               ),
             ),
             const SizedBox(width: 10),
@@ -119,14 +230,16 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
                 controller: _monthController,
                 hintText: 'MM',
                 keyboardType: TextInputType.number,
+                focusNode: _monthFocusNode,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _buildInputPill(
                 controller: _yearController,
-                hintText: 'YY',
+                hintText: 'AAAA',
                 keyboardType: TextInputType.number,
+                focusNode: _yearFocusNode,
               ),
             ),
           ],
@@ -182,49 +295,16 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
               return;
             }
 
-            final parsedDay = int.tryParse(day);
-            final parsedMonth = int.tryParse(month);
-            final parsedYear = int.tryParse(year);
-
-            if (parsedDay == null ||
-                parsedMonth == null ||
-                parsedYear == null) {
-              AppSnackbar.show(
-                context,
-                message: 'La fecha de nacimiento debe contener solo números.',
-                type: SnackbarType.info,
-              );
-              return;
-            }
-
-            // DateTime normaliza el desborde en vez de lanzar una excepción
-            // (ej. DateTime(2024, 2, 31) se convierte en 3 de marzo), así
-            // que hay que comparar los componentes para detectar fechas
-            // que en realidad no existen.
-            final constructedDate = DateTime(
-              parsedYear,
-              parsedMonth,
-              parsedDay,
+            final birthDateError = _birthDateError(
+              day: day,
+              month: month,
+              year: year,
             );
-            final isRealDate =
-                constructedDate.year == parsedYear &&
-                constructedDate.month == parsedMonth &&
-                constructedDate.day == parsedDay;
 
-            if (!isRealDate) {
+            if (birthDateError != null) {
               AppSnackbar.show(
                 context,
-                message: 'La fecha de nacimiento no es válida.',
-                type: SnackbarType.info,
-              );
-              return;
-            }
-
-            if (constructedDate.isAfter(DateTime.now())) {
-              AppSnackbar.show(
-                context,
-                message:
-                    'La fecha de nacimiento no puede ser una fecha futura.',
+                message: birthDateError,
                 type: SnackbarType.info,
               );
               return;
