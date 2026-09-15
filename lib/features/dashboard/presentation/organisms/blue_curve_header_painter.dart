@@ -1,38 +1,28 @@
 import 'package:flutter/material.dart';
 
+import 'header_arc_geometry.dart';
+
+/// Pinta la franja azul del header como un anillo entre dos arcos de círculo
+/// concéntricos ([HeaderArcGeometry]), así que su grosor es constante en
+/// todo el arco.
 class BlueCurveHeaderPainter extends CustomPainter {
+  final HeaderArcGeometry geometry;
+
+  const BlueCurveHeaderPainter(this.geometry);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFF0A47ED)
       ..style = PaintingStyle.fill;
 
-    final path = Path();
-
-    // 1. Borde superior del arco azul (el pico sube)
-    path.moveTo(0, size.height * 0.35);
-    path.quadraticBezierTo(
-      size.width * 0.5,
-      -size.height * 0.2, // Altura del arco superior
-      size.width,
-      size.height * 0.35,
-    );
-
-    // 2. Bajamos por la derecha para darle un grosor considerable a la franja
-    path.lineTo(size.width, size.height * 0.95);
-
-    // 3. Borde inferior paralelo (sigue la misma curva pero más abajo)
-    path.quadraticBezierTo(
-      size.width * 0.5,
-      size.height * 0.4, // Curva inferior paralela que le da gran grosor
-      0,
-      size.height * 0.95,
-    );
-
-    path.close();
-    canvas.drawPath(path, paint);
+    canvas.drawPath(geometry.ringPath(), paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant BlueCurveHeaderPainter oldDelegate) =>
+      oldDelegate.geometry.width != geometry.width ||
+      oldDelegate.geometry.outerEdgeY != geometry.outerEdgeY ||
+      oldDelegate.geometry.outerSagitta != geometry.outerSagitta ||
+      oldDelegate.geometry.thickness != geometry.thickness;
 }
