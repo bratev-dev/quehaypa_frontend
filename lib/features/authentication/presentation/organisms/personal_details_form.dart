@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
+
 import '../atoms/app_snackbar.dart'; // <-- Importamos nuestro átomo de SnackBar
 import '../atoms/custom_text_field.dart';
 import '../atoms/primary_button.dart';
@@ -159,13 +161,14 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
     TextInputType keyboardType = TextInputType.text,
     FocusNode? focusNode,
   }) {
-    // El fondo de esta pantalla es azul, así que el borde en foco va amarillo.
+    // Esta pantalla tiene fondo amarillo (PersonalDetailsTemplate define su
+    // propio Scaffold), así que el borde en foco va azul.
     return CustomTextField(
       controller: controller,
       focusNode: focusNode,
       hintText: hintText,
       keyboardType: keyboardType,
-      focusedBorderColor: const Color(0xFFFFD600),
+      focusedBorderColor: AppColors.inputFocusOnYellow,
       hintColor: Colors.grey[400],
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       boxShadow: [
