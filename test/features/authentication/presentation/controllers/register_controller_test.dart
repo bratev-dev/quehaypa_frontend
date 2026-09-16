@@ -33,7 +33,7 @@ class FakeAuthRepository implements AuthenticationRepository {
   }
 
   @override
-  Future<AuthSession> login() => throw UnimplementedError();
+  Future<AuthSession> login({String? loginHint}) => throw UnimplementedError();
 
   @override
   Future<void> logout() => throw UnimplementedError();
