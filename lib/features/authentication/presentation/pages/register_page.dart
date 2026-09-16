@@ -131,6 +131,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         return RegisterTemplate(
           emailController: _emailController,
           passwordController: _passwordController,
+          emailFocusNode: _emailFocusNode,
+          passwordFocusNode: _passwordFocusNode,
           obscurePassword: _obscurePassword,
           onTogglePassword: () {
             setState(() {

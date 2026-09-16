@@ -1,12 +1,18 @@
 class AppErrorHandler {
   static String getFriendlyMessage(dynamic error) {
-    final errorString = error.toString();
+    // Se normaliza a minúsculas una sola vez: `SocketException.toString()`
+    // y otros errores de plataforma vienen con mayúsculas variables, y
+    // `String.contains` en Dart es sensible a mayúsculas.
+    final errorString = error.toString().toLowerCase();
 
     // Si es un error de descubrimiento o red de Keycloak / AppAuth
+    // (incluye el servidor de Keycloak caído o inalcanzable).
     if (errorString.contains('discovery_failed') ||
-        errorString.contains('Network error') ||
-        errorString.contains('FileNotFoundException') ||
-        errorString.contains('socketexception')) {
+        errorString.contains('network error') ||
+        errorString.contains('filenotfoundexception') ||
+        errorString.contains('socketexception') ||
+        errorString.contains('connection refused') ||
+        errorString.contains('connection timed out')) {
       return 'No pudimos conectar con el servidor de autenticación. Verifica tu conexión a internet o intenta más tarde.';
     }
 

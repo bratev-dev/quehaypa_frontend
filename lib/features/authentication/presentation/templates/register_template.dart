@@ -6,6 +6,8 @@ import '../molecules/register_form.dart';
 class RegisterTemplate extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final FocusNode? emailFocusNode;
+  final FocusNode? passwordFocusNode;
   final bool obscurePassword;
   final VoidCallback onTogglePassword;
   final bool termsAccepted;
@@ -17,6 +19,8 @@ class RegisterTemplate extends StatelessWidget {
     super.key,
     required this.emailController,
     required this.passwordController,
+    this.emailFocusNode,
+    this.passwordFocusNode,
     required this.obscurePassword,
     required this.onTogglePassword,
     required this.termsAccepted,
@@ -49,6 +53,8 @@ class RegisterTemplate extends StatelessWidget {
                   RegisterForm(
                     emailController: emailController,
                     passwordController: passwordController,
+                    emailFocusNode: emailFocusNode,
+                    passwordFocusNode: passwordFocusNode,
                     obscurePassword: obscurePassword,
                     onTogglePassword: onTogglePassword,
                     termsAccepted: termsAccepted,

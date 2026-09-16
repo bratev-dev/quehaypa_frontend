@@ -5,12 +5,14 @@ import '../molecules/login_form.dart';
 
 class LoginTemplate extends StatelessWidget {
   final TextEditingController emailController;
-  final VoidCallback onLoginPressed;
+  final FocusNode? emailFocusNode;
+  final VoidCallback? onLoginPressed;
   final VoidCallback onRegisterPressed;
 
   const LoginTemplate({
     super.key,
     required this.emailController,
+    this.emailFocusNode,
     required this.onLoginPressed,
     required this.onRegisterPressed,
   });
@@ -38,6 +40,7 @@ class LoginTemplate extends StatelessWidget {
                   SizedBox(height: size.height * 0.45),
                   LoginForm(
                     emailController: emailController,
+                    emailFocusNode: emailFocusNode,
                     onLoginPressed: onLoginPressed,
                     onRegisterPressed: onRegisterPressed,
                   ),

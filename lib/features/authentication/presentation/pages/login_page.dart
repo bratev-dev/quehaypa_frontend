@@ -17,10 +17,67 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
+  late final FocusNode _emailFocusNode;
+  bool _emailHasError = false;
+
+  static final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+  @override
+  void initState() {
+    super.initState();
+    _emailFocusNode = FocusNode();
+
+    // El formulario de login tiene un solo campo, así que el usuario casi
+    // nunca provoca un blur: se valida en vivo mientras escribe para que el
+    // botón refleje el estado del correo sin depender de la tecla Enter.
+    _emailController.addListener(_syncEmailError);
+
+    _emailFocusNode.addListener(() {
+      if (!_emailFocusNode.hasFocus) {
+        _validateEmailOnBlur();
+      }
+    });
+  }
+
+  bool get _emailIsValid {
+    final email = _emailController.text.trim();
+    return email.isEmpty || _emailRegex.hasMatch(email);
+  }
+
+  /// Mantiene el botón habilitado/deshabilitado conforme se escribe, sin
+  /// mostrar avisos en cada tecla (eso queda para el blur / Enter).
+  void _syncEmailError() {
+    final hasError = !_emailIsValid;
+
+    if (!mounted || hasError == _emailHasError) return;
+
+    setState(() => _emailHasError = hasError);
+  }
+
+  /// Al perder el foco (o al presionar Enter) sí se muestra el aviso y se
+  /// regresa el foco al campo para forzar la corrección. Un correo vacío es
+  /// válido: es opcional, solo se usa como login_hint.
+  void _validateEmailOnBlur() {
+    if (!mounted || _emailIsValid) return;
+
+    AppSnackbar.show(
+      context,
+      message: 'El formato del correo electrónico no es válido.',
+      type: SnackbarType.info,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FocusScope.of(context).requestFocus(_emailFocusNode);
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _emailController.removeListener(_syncEmailError);
     _emailController.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
@@ -60,27 +117,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             )
           : LoginTemplate(
               emailController: _emailController,
-              onLoginPressed: () {
-                final email = _emailController.text.trim();
+              emailFocusNode: _emailFocusNode,
+              onLoginPressed: _emailHasError
+                  ? null
+                  : () {
+                      final email = _emailController.text.trim();
 
-                if (email.isNotEmpty) {
-                  final emailRegex = RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  );
-                  if (!emailRegex.hasMatch(email)) {
-                    AppSnackbar.show(
-                      context,
-                      message:
-                          'El formato del correo electrónico no es válido.',
-                      type: SnackbarType.info, // Alerta naranja institucional
-                    );
-                    return;
-                  }
-                }
-
-                // Disparamos el login hacia Keycloak
-                ref.read(authenticationControllerProvider.notifier).login();
-              },
+                      // Disparamos el login hacia Keycloak, pre-rellenando
+                      // el usuario con el correo ya validado (login_hint).
+                      ref
+                          .read(authenticationControllerProvider.notifier)
+                          .login(loginHint: email.isNotEmpty ? email : null);
+                    },
               onRegisterPressed: () {
                 context.go(RoutePaths.register);
               },

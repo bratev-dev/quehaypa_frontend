@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
+
+import '../atoms/custom_text_field.dart';
 import '../atoms/primary_button.dart';
 
 class LoginForm extends StatelessWidget {
   final TextEditingController emailController;
-  final VoidCallback onLoginPressed;
+  final FocusNode? emailFocusNode;
+  final VoidCallback? onLoginPressed;
   final VoidCallback onRegisterPressed;
 
   const LoginForm({
     super.key,
     required this.emailController,
+    this.emailFocusNode,
     required this.onLoginPressed,
     required this.onRegisterPressed,
   });
@@ -21,24 +26,13 @@ class LoginForm extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Campo Correo Electrónico (Opcional para identificar o pre-llenar en Keycloak)
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: TextField(
-            controller: emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              hintText: 'juanchavezzp@unicauca.edu.co',
-              hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 18,
-              ),
-            ),
-          ),
+        // El fondo de esta pantalla es amarillo, así que el borde en foco va azul.
+        CustomTextField(
+          controller: emailController,
+          focusNode: emailFocusNode,
+          hintText: 'juanchavezzp@unicauca.edu.co',
+          keyboardType: TextInputType.emailAddress,
+          focusedBorderColor: AppColors.inputFocusOnYellow,
         ),
         const SizedBox(height: 24),
 
