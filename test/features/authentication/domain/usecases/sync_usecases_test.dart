@@ -9,8 +9,7 @@ import 'package:mocktail/mocktail.dart';
 
 class MockUserRepository extends Mock implements UserRepository {}
 
-class MockOrganizerRepository extends Mock
-    implements OrganizerRepository {}
+class MockOrganizerRepository extends Mock implements OrganizerRepository {}
 
 void main() {
   const profileParams = SyncProfileParams(
@@ -52,29 +51,30 @@ void main() {
     registerFallbackValue(organizerParams);
   });
 
-  test('SyncProfileUseCase delega al repositorio con los mismos params',
-      () async {
-    final repository = MockUserRepository();
-    when(
-      () => repository.syncProfile(any()),
-    ).thenAnswer((_) async => user);
+  test(
+    'SyncProfileUseCase delega al repositorio con los mismos params',
+    () async {
+      final repository = MockUserRepository();
+      when(() => repository.syncProfile(any())).thenAnswer((_) async => user);
 
-    final result = await SyncProfileUseCase(repository)(profileParams);
+      final result = await SyncProfileUseCase(repository)(profileParams);
 
-    expect(result.username, 'user.test');
-    verify(() => repository.syncProfile(profileParams)).called(1);
-  });
+      expect(result.username, 'user.test');
+      verify(() => repository.syncProfile(profileParams)).called(1);
+    },
+  );
 
-  test('SyncOrganizerUseCase delega al repositorio con los mismos params',
-      () async {
-    final repository = MockOrganizerRepository();
-    when(
-      () => repository.syncProfile(any()),
-    ).thenAnswer((_) async => organizer);
+  test(
+    'SyncOrganizerUseCase delega al repositorio con los mismos params',
+    () async {
+      final repository = MockOrganizerRepository();
+      when(() => repository.syncProfile(any()))
+          .thenAnswer((_) async => organizer);
 
-    final result = await SyncOrganizerUseCase(repository)(organizerParams);
+      final result = await SyncOrganizerUseCase(repository)(organizerParams);
 
-    expect(result.identificationDocument, 'CC-123');
-    verify(() => repository.syncProfile(organizerParams)).called(1);
-  });
+      expect(result.identificationDocument, 'CC-123');
+      verify(() => repository.syncProfile(organizerParams)).called(1);
+    },
+  );
 }

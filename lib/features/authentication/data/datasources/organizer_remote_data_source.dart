@@ -50,9 +50,7 @@ class OrganizerRemoteDataSource {
     }
 
     try {
-      return OrganizerModel.fromJson(
-        envelope['data'] as Map<String, dynamic>,
-      );
+      return OrganizerModel.fromJson(envelope['data'] as Map<String, dynamic>);
     } catch (_) {
       throw const ServerException(
         'El servidor devolvió un perfil con formato inesperado.',

@@ -7,8 +7,7 @@ import 'package:frontend/features/authentication/data/repositories/user_reposito
 import 'package:frontend/features/authentication/domain/usecases/sync_profile_use_case.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockUserRemoteDataSource extends Mock
-    implements UserRemoteDataSource {}
+class MockUserRemoteDataSource extends Mock implements UserRemoteDataSource {}
 
 void main() {
   late MockUserRemoteDataSource remote;
@@ -49,9 +48,8 @@ void main() {
   });
 
   test('409 se mapea a ConflictFailure', () {
-    when(
-      () => remote.syncProfile(any()),
-    ).thenThrow(const ConflictException('El correo ya está en uso'));
+    when(() => remote.syncProfile(any()))
+        .thenThrow(const ConflictException('El correo ya está en uso'));
 
     expect(
       repository.syncProfile(params),
@@ -66,31 +64,22 @@ void main() {
   });
 
   test('400 se mapea a ValidationFailure', () {
-    when(
-      () => remote.syncProfile(any()),
-    ).thenThrow(const ValidationException('Dato inválido'));
+    when(() => remote.syncProfile(any()))
+        .thenThrow(const ValidationException('Dato inválido'));
 
-    expect(
-      repository.syncProfile(params),
-      throwsA(isA<ValidationFailure>()),
-    );
+    expect(repository.syncProfile(params), throwsA(isA<ValidationFailure>()));
   });
 
   test('401 se mapea a UnauthorizedFailure', () {
-    when(
-      () => remote.syncProfile(any()),
-    ).thenThrow(const UnauthorizedException('No autorizado.'));
+    when(() => remote.syncProfile(any()))
+        .thenThrow(const UnauthorizedException('No autorizado.'));
 
-    expect(
-      repository.syncProfile(params),
-      throwsA(isA<UnauthorizedFailure>()),
-    );
+    expect(repository.syncProfile(params), throwsA(isA<UnauthorizedFailure>()));
   });
 
   test('error de red se mapea a NetworkFailure', () {
-    when(
-      () => remote.syncProfile(any()),
-    ).thenThrow(const NetworkException('Sin conexión'));
+    when(() => remote.syncProfile(any()))
+        .thenThrow(const NetworkException('Sin conexión'));
 
     expect(repository.syncProfile(params), throwsA(isA<NetworkFailure>()));
   });

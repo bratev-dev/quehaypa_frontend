@@ -39,10 +39,11 @@ final userRemoteDataSourceProvider = Provider<UserRemoteDataSource>((ref) {
   return UserRemoteDataSource(dio: ref.read(dioProvider));
 });
 
-final organizerRemoteDataSourceProvider =
-    Provider<OrganizerRemoteDataSource>((ref) {
-      return OrganizerRemoteDataSource(dio: ref.read(dioProvider));
-    });
+final organizerRemoteDataSourceProvider = Provider<OrganizerRemoteDataSource>((
+  ref,
+) {
+  return OrganizerRemoteDataSource(dio: ref.read(dioProvider));
+});
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {
   return UserRepositoryImpl(

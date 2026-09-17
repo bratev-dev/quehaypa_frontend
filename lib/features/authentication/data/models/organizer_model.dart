@@ -37,8 +37,7 @@ class OrganizerModel {
       firstName: json['firstName'] as String? ?? '',
       lastName: json['lastName'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      identificationDocument:
-          json['identificationDocument'] as String? ?? '',
+      identificationDocument: json['identificationDocument'] as String? ?? '',
       reason: json['reason'] as String?,
       contactPhone: json['contactPhone'] as String?,
       isActive: json['isActive'] as bool? ?? true,

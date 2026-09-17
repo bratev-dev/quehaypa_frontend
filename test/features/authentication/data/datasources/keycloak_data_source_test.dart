@@ -52,13 +52,12 @@ void main() {
   group('register (HTML de Keycloak)', () {
     test('usa el endpoint /registrations y retorna la sesión', () async {
       AuthorizationTokenRequest? captured;
-      when(
-        () => appAuth.authorizeAndExchangeCode(any()),
-      ).thenAnswer((invocation) async {
-        captured =
-            invocation.positionalArguments[0] as AuthorizationTokenRequest;
-        return tokenResponse();
-      });
+      when(() => appAuth.authorizeAndExchangeCode(any()))
+          .thenAnswer((invocation) async {
+            captured =
+                invocation.positionalArguments[0] as AuthorizationTokenRequest;
+            return tokenResponse();
+          });
 
       final session = await dataSource.register();
 
@@ -70,9 +69,7 @@ void main() {
     });
 
     test('sin access token lanza AuthenticationException', () {
-      when(
-        () => appAuth.authorizeAndExchangeCode(any()),
-      ).thenAnswer(
+      when(() => appAuth.authorizeAndExchangeCode(any())).thenAnswer(
         (_) async => AuthorizationTokenResponse(
           null,
           null,
@@ -91,9 +88,8 @@ void main() {
 
   group('login', () {
     test('retorna la sesión con el access token', () async {
-      when(
-        () => appAuth.authorizeAndExchangeCode(any()),
-      ).thenAnswer((_) async => tokenResponse());
+      when(() => appAuth.authorizeAndExchangeCode(any()))
+          .thenAnswer((_) async => tokenResponse());
 
       final session = await dataSource.login();
 

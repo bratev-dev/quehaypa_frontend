@@ -117,7 +117,10 @@ void main() {
       container.read(registerControllerProvider.notifier);
 
   void fillUserBasics() {
-    controller().saveCredentials(email: 'user@test.com', password: 'Secreta123');
+    controller().saveCredentials(
+      email: 'user@test.com',
+      password: 'Secreta123',
+    );
     controller().selectRole(UserRole.user);
     controller().savePersonalDetails(
       name: 'User',

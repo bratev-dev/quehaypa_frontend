@@ -28,13 +28,12 @@ final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
   return LoginUseCase(ref.read(authenticationRepositoryProvider));
 });
 
-final registerWithKeycloakUseCaseProvider = Provider<RegisterWithKeycloakUseCase>((
-  ref,
-) {
-  return RegisterWithKeycloakUseCase(
-    ref.read(authenticationRepositoryProvider),
-  );
-});
+final registerWithKeycloakUseCaseProvider =
+    Provider<RegisterWithKeycloakUseCase>((ref) {
+      return RegisterWithKeycloakUseCase(
+        ref.read(authenticationRepositoryProvider),
+      );
+    });
 
 final restoreSessionUseCaseProvider = Provider<RestoreSessionUseCase>((ref) {
   return RestoreSessionUseCase(ref.read(authenticationRepositoryProvider));
