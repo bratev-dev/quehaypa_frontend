@@ -56,6 +56,48 @@ class KeycloakDataSource {
     }
   }
 
+  /// Abre el HTML de registro de Keycloak (no el login).
+  /// La password se crea allá (mobile público, sin directAccess).
+  /// Requiere `User registration ON` en el realm vivo.
+  Future<AuthSessionModel> register() async {
+    try {
+      final result = await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          _config.keycloakClientId,
+          _config.keycloakRedirectUrl,
+          serviceConfiguration: AuthorizationServiceConfiguration(
+            authorizationEndpoint:
+                '${_config.keycloakIssuer}/protocol/openid-connect/registrations',
+            tokenEndpoint:
+                '${_config.keycloakIssuer}/protocol/openid-connect/token',
+          ),
+          scopes: const ['openid', 'profile', 'email'],
+          allowInsecureConnections: true,
+        ),
+      );
+
+      final accessToken = result.accessToken;
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw const AuthenticationException(
+          'Keycloak no devolvio un Access Token.',
+        );
+      }
+
+      return AuthSessionModel(
+        accessToken: accessToken,
+        refreshToken: result.refreshToken,
+        idToken: result.idToken,
+      );
+    } on AuthenticationException {
+      rethrow;
+    } catch (e) {
+      throw AuthenticationException(
+        'No fue posible registrarse en Keycloak: $e',
+      );
+    }
+  }
+
   /// `flutter_appauth` reporta la cancelación del usuario de forma distinta
   /// por plataforma: Android emite el mensaje "User cancelled flow" en el
   /// código `authorize_and_exchange_code_failed`; iOS/AppAuth-iOS usa el

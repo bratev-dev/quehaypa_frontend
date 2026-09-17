@@ -1,5 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/failtures.dart';
+import '../../domain/usecases/sync_organizer_use_case.dart';
+import '../../domain/usecases/sync_profile_use_case.dart';
+import 'authentication_providers.dart';
+import 'register_providers.dart';
 import 'register_state.dart';
 
 final registerControllerProvider =
@@ -35,17 +40,26 @@ class RegisterController extends Notifier<RegisterState> {
     required String birthDate,
     String? cc,
   }) {
+    final isOrganizer = state.selectedRole == UserRole.organizer;
+
     state = state.copyWith(
       name: name,
       lastname: lastname,
       username: username,
       birthDate: birthDate,
       cc: cc ?? '',
-      currentStep: state.selectedRole == UserRole.user
-          ? RegisterStep.interests
-          : RegisterStep.credentials, // O puedes disparar el registro directamente si es organizador
+      currentStep: isOrganizer
+          ? RegisterStep.personalDetails
+          : RegisterStep.interests,
       errorMessage: null,
     );
+
+    // Organizador no tiene paso de intereses: dispara el registro directo
+    // sin tocar la UI (la UX sigue intacta).
+    if (isOrganizer) {
+      // ignore: unawaited_futures
+      completeRegistration();
+    }
   }
 
   void toggleInterest(String interest) {
@@ -78,15 +92,86 @@ class RegisterController extends Notifier<RegisterState> {
     state = state.copyWith(status: RegisterStatus.loading, errorMessage: null);
 
     try {
-      // TODO: Aquí integrarás la llamada a tu caso de uso de registro enviando `state`
-      await Future.delayed(const Duration(seconds: 2));
+      // 1. Identidad en Keycloak (HTML de registro, PKCE). La password se
+      //    crea allá y nunca toca el monolito. Si cancela el browser,
+      //    error amable y no se intenta el sync.
+      try {
+        await ref.read(registerWithKeycloakUseCaseProvider)();
+      } catch (e) {
+        state = state.copyWith(
+          status: RegisterStatus.error,
+          errorMessage:
+              'No fue posible registrarte en Keycloak: ${e.toString().replaceFirst('Exception: ', '')}',
+        );
+        return;
+      }
+
+      // 2. Perfil de negocio (sin password, Bearer por interceptor).
+      //    El rol solo ramifica el endpoint; la autoridad es back/Keycloak.
+      if (state.selectedRole == UserRole.organizer) {
+        final useCase = ref.read(syncOrganizerUseCaseProvider);
+
+        await useCase(
+          SyncOrganizerParams(
+            username: state.username,
+            firstName: state.name,
+            lastName: state.lastname,
+            email: state.email,
+            identificationDocument: state.cc,
+          ),
+        );
+      } else {
+        final useCase = ref.read(syncProfileUseCaseProvider);
+
+        await useCase(
+          SyncProfileParams(
+            username: state.username,
+            firstName: state.name,
+            lastName: state.lastname,
+            email: state.email,
+            birthDate: _parseBirthDate(state.birthDate),
+          ),
+        );
+      }
 
       state = state.copyWith(status: RegisterStatus.success);
+    } on Failure catch (e) {
+      state = state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: e.message,
+      );
     } catch (e) {
       state = state.copyWith(
         status: RegisterStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: 'No fue posible completar el registro: $e',
       );
+    }
+  }
+
+  /// La UX manda "DD/MM/YYYY" (o "DD/MM/YY"). El back espera ISO yyyy-MM-dd.
+  DateTime? _parseBirthDate(String raw) {
+    final parts = raw.split('/');
+
+    if (parts.length != 3) {
+      return null;
+    }
+
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    var year = int.tryParse(parts[2]);
+
+    if (day == null || month == null || year == null) {
+      return null;
+    }
+
+    if (year < 100) {
+      year += year <= 30 ? 2000 : 1900;
+    }
+
+    try {
+      return DateTime(year, month, day);
+    } catch (_) {
+      return null;
     }
   }
 }
