@@ -5,47 +5,75 @@ import '../molecules/rotating_categories_carousel.dart';
 import 'blue_curve_header_painter.dart';
 import 'header_arc_geometry.dart';
 
-class DashboardHeader extends StatelessWidget {
-  const DashboardHeader({super.key});
+class DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const DashboardHeaderDelegate();
 
-  // --- Parámetros ajustables del header ------------------------------------
-  // Para reducir más el espacio amarillo: baja _logoHeight (el logo se
-  // escala proporcionalmente, sin dejar espacio muerto) o _topPadding.
-  // Para cambiar qué tan pronunciado se ve el arco azul: ajusta _arcSagitta
-  // (cuánto sube en el centro). Para engrosar/adelgazar la franja azul:
-  // ajusta _arcThickness. El resto (radio del arco, alto total del header,
-  // posición de los círculos) se deriva de estos valores en
-  // HeaderArcGeometry — no hay que recalcular nada a mano.
   static const double _topPadding = 8;
   static const double _logoHeight = 100;
   static const double _logoToArcGap = 12;
   static const double _arcSagitta = 56;
   static const double _arcThickness = 115;
-  static const double _bottomMargin = 45;
+  static const double _bottomMargin = 45; // Tu regla de oro intacta
 
   @override
-  Widget build(BuildContext context) {
+  double get maxExtent {
+    final topMargin = 24.0 + _topPadding; // Margen superior seguro estándar
+    final arcTopAtCenter = topMargin + _logoHeight + _logoToArcGap;
+    final outerEdgeY = arcTopAtCenter + _arcSagitta;
+    final dummyGeometry = HeaderArcGeometry(
+      width: 400,
+      outerEdgeY: outerEdgeY,
+      outerSagitta: _arcSagitta,
+      thickness: _arcThickness,
+    );
+    return dummyGeometry.bottomAtSides + _bottomMargin;
+  }
+
+  @override
+  double get minExtent {
+    final topMargin = 24.0 + _topPadding;
+    final arcTopAtCenter = topMargin + _logoHeight + _logoToArcGap;
+    final dummyGeometry = HeaderArcGeometry(
+      width: 400,
+      outerEdgeY: arcTopAtCenter,
+      outerSagitta: 0,
+      thickness: _arcThickness,
+    );
+    return dummyGeometry.bottomAtSides + _bottomMargin;
+  }
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final topMargin = MediaQuery.of(context).padding.top + _topPadding;
 
-    // El arco se posiciona por su CIMA (el punto más alto, en el centro),
-    // no por los costados: en el centro el arco sube _arcSagitta por encima
-    // de outerEdgeY, y es ahí donde puede chocar con el logo.
+    // Calculamos el progreso del scroll basado estrictamente en el tamaño de tu header
+    final range = maxExtent - minExtent;
+    final scrollProgress = range > 0
+        ? (shrinkOffset / range).clamp(0.0, 1.0)
+        : 0.0;
+
+    // La sagitta de tu diseño original pasa suavemente de 56 a 0 (línea recta)
+    final dynamicSagitta = _arcSagitta * (1.0 - scrollProgress);
+
     final arcTopAtCenter = topMargin + _logoHeight + _logoToArcGap;
-    final outerEdgeY = arcTopAtCenter + _arcSagitta;
+    final outerEdgeY = arcTopAtCenter + dynamicSagitta;
 
     final geometry = HeaderArcGeometry(
       width: screenWidth,
       outerEdgeY: outerEdgeY,
-      outerSagitta: _arcSagitta,
+      outerSagitta:
+          dynamicSagitta, // Tu arco animado manteniendo tus proporciones
       thickness: _arcThickness,
     );
 
     final headerHeight = geometry.bottomAtSides + _bottomMargin;
 
     return ClipPath(
-      // Recorta TODO el header siguiendo el borde interior del arco
-      // (misma geometría que pinta la franja azul, así que calzan).
       clipper: _HeaderClipper(geometry),
       child: SizedBox(
         width: screenWidth,
@@ -54,34 +82,35 @@ class DashboardHeader extends StatelessWidget {
           color: const Color(0xFFFFD600),
           child: Stack(
             children: [
-              // FRANJA AZUL: anillo entre el arco exterior y el interior.
               Positioned.fill(
                 child: CustomPaint(painter: BlueCurveHeaderPainter(geometry)),
               ),
 
-              // LOGO
+              // LOGO: Tu logo original desplazándose hacia arriba y desvaneciéndose al scrollear
               Positioned(
-                top: topMargin,
+                top: topMargin - (shrinkOffset * 0.9),
                 left: 0,
                 right: 0,
                 height: _logoHeight,
-                child: SvgPicture.asset(
-                  'assets/images/Que_Hay_Pa_title.svg',
-                  fit: BoxFit.contain,
-                  placeholderBuilder: (context) => const Center(
-                    child: Text(
-                      '¿Qué Hay Pa?',
-                      style: TextStyle(
-                        fontSize: 44,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                child: Opacity(
+                  opacity: (1.0 - (scrollProgress * 2.0)).clamp(0.0, 1.0),
+                  child: SvgPicture.asset(
+                    'assets/images/Que_Hay_Pa_title.svg',
+                    fit: BoxFit.contain,
+                    placeholderBuilder: (context) => const Center(
+                      child: Text(
+                        '¿Qué Hay Pa?',
+                        style: TextStyle(
+                          fontSize: 44,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // CATEGORÍAS, posicionadas sobre la línea media del arco.
               Positioned.fill(
                 child: RotatingCategoriesCarousel(geometry: geometry),
               ),
@@ -91,6 +120,9 @@ class DashboardHeader extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  bool shouldRebuild(covariant DashboardHeaderDelegate oldDelegate) => true;
 }
 
 class _HeaderClipper extends CustomClipper<Path> {
