@@ -21,21 +21,6 @@ class DashboardController extends Notifier<DashboardState> {
   void selectCategory(String category) {
     state = state.copyWith(selectedCategory: category);
   }
-
-  // Efecto de rotación tipo tambor de revólver
-  void rotateRevolver(bool clockwise) {
-    final currentOffset = state.revolverRotationOffset;
-    final totalInterests = state.userInterests.length;
-
-    int newOffset;
-    if (clockwise) {
-      newOffset = (currentOffset + 1) % totalInterests;
-    } else {
-      newOffset = (currentOffset - 1 + totalInterests) % totalInterests;
-    }
-
-    state = state.copyWith(revolverRotationOffset: newOffset);
-  }
 }
 
 // Declaración moderna con NotifierProvider
