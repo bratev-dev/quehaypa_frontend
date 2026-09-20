@@ -5,42 +5,46 @@ import '../molecules/rotating_categories_carousel.dart';
 import 'blue_curve_header_painter.dart';
 import 'header_arc_geometry.dart';
 
+/// Header del dashboard. Al hacer scroll, el arco azul se aplana y sube hasta
+/// quedar como una franja fija en el borde superior de la pantalla (cubriendo
+/// la zona del notch) mientras el título se desvanece detrás de ella.
+///
+/// Todo se deriva de un único progreso `p` (0 = arco completo, 1 = franja
+/// fija) proporcional al scroll, así que la animación es reversible y el alto
+/// dibujado coincide exactamente con el que reserva el sliver en cada momento.
 class DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
-  const DashboardHeaderDelegate();
+  /// Alto de la zona superior del sistema (notch / barra de estado), es decir
+  /// `MediaQuery.padding.top`.
+  final double topInset;
+
+  const DashboardHeaderDelegate({required this.topInset});
 
   static const double _topPadding = 8;
   static const double _logoHeight = 100;
   static const double _logoToArcGap = 12;
   static const double _arcSagitta = 56;
   static const double _arcThickness = 115;
-  static const double _bottomMargin = 45; // Tu regla de oro intacta
+  static const double _bottomMargin = 45;
+
+  /// Cuánto sube el título (en px, al final del recorrido) mientras se
+  /// desvanece, además de quedar tapado por la franja.
+  static const double _logoRise = 40;
+
+  /// Fracción del recorrido tras la cual el título ya es totalmente
+  /// transparente.
+  static const double _logoFadeEnd = 0.7;
+
+  /// Y del borde exterior del arco en los costados cuando el header está
+  /// completamente expandido.
+  double get _expandedOuterEdgeY =>
+      topInset + _topPadding + _logoHeight + _logoToArcGap + _arcSagitta;
 
   @override
-  double get maxExtent {
-    final topMargin = 24.0 + _topPadding; // Margen superior seguro estándar
-    final arcTopAtCenter = topMargin + _logoHeight + _logoToArcGap;
-    final outerEdgeY = arcTopAtCenter + _arcSagitta;
-    final dummyGeometry = HeaderArcGeometry(
-      width: 400,
-      outerEdgeY: outerEdgeY,
-      outerSagitta: _arcSagitta,
-      thickness: _arcThickness,
-    );
-    return dummyGeometry.bottomAtSides + _bottomMargin;
-  }
+  double get maxExtent => _expandedOuterEdgeY + _arcThickness + _bottomMargin;
 
+  // Colapsado: solo la franja, con el notch incluido y sin margen inferior.
   @override
-  double get minExtent {
-    final topMargin = 24.0 + _topPadding;
-    final arcTopAtCenter = topMargin + _logoHeight + _logoToArcGap;
-    final dummyGeometry = HeaderArcGeometry(
-      width: 400,
-      outerEdgeY: arcTopAtCenter,
-      outerSagitta: 0,
-      thickness: _arcThickness,
-    );
-    return dummyGeometry.bottomAtSides + _bottomMargin;
-  }
+  double get minExtent => topInset + _arcThickness;
 
   @override
   Widget build(
@@ -48,30 +52,26 @@ class DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final topMargin = MediaQuery.of(context).padding.top + _topPadding;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final logoTop = topInset + _topPadding;
 
-    // Calculamos el progreso del scroll basado estrictamente en el tamaño de tu header
     final range = maxExtent - minExtent;
-    final scrollProgress = range > 0
-        ? (shrinkOffset / range).clamp(0.0, 1.0)
-        : 0.0;
-
-    // La sagitta de tu diseño original pasa suavemente de 56 a 0 (línea recta)
-    final dynamicSagitta = _arcSagitta * (1.0 - scrollProgress);
-
-    final arcTopAtCenter = topMargin + _logoHeight + _logoToArcGap;
-    final outerEdgeY = arcTopAtCenter + dynamicSagitta;
+    final progress = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 0.0;
+    final remaining = 1.0 - progress;
 
     final geometry = HeaderArcGeometry(
       width: screenWidth,
-      outerEdgeY: outerEdgeY,
-      outerSagitta:
-          dynamicSagitta, // Tu arco animado manteniendo tus proporciones
-      thickness: _arcThickness,
+      outerEdgeY: _expandedOuterEdgeY * remaining,
+      outerSagitta: _arcSagitta * remaining,
+      thickness: _arcThickness + topInset * progress,
+      topInset: topInset * progress,
     );
 
-    final headerHeight = geometry.bottomAtSides + _bottomMargin;
+    // Misma fórmula que usa el sliver para el alto que reserva. Calcularlo
+    // como bottomAtSides + margen da lo mismo salvo por redondeo de punto
+    // flotante, y esa diferencia basta para que Flutter falle con
+    // "layoutExtent exceeds paintExtent".
+    final headerHeight = (maxExtent - shrinkOffset).clamp(minExtent, maxExtent);
 
     return ClipPath(
       clipper: _HeaderClipper(geometry),
@@ -82,18 +82,15 @@ class DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
           color: const Color(0xFFFFD600),
           child: Stack(
             children: [
-              Positioned.fill(
-                child: CustomPaint(painter: BlueCurveHeaderPainter(geometry)),
-              ),
-
-              // LOGO: Tu logo original desplazándose hacia arriba y desvaneciéndose al scrollear
+              // El título va ANTES que la franja para que el azul lo cubra
+              // al subir, en vez de pintarse encima de ella.
               Positioned(
-                top: topMargin - (shrinkOffset * 0.9),
+                top: logoTop - _logoRise * progress,
                 left: 0,
                 right: 0,
                 height: _logoHeight,
                 child: Opacity(
-                  opacity: (1.0 - (scrollProgress * 2.0)).clamp(0.0, 1.0),
+                  opacity: (1.0 - progress / _logoFadeEnd).clamp(0.0, 1.0),
                   child: SvgPicture.asset(
                     'assets/images/Que_Hay_Pa_title.svg',
                     fit: BoxFit.contain,
@@ -112,6 +109,10 @@ class DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
               ),
 
               Positioned.fill(
+                child: CustomPaint(painter: BlueCurveHeaderPainter(geometry)),
+              ),
+
+              Positioned.fill(
                 child: RotatingCategoriesCarousel(geometry: geometry),
               ),
             ],
@@ -122,7 +123,8 @@ class DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant DashboardHeaderDelegate oldDelegate) => true;
+  bool shouldRebuild(covariant DashboardHeaderDelegate oldDelegate) =>
+      oldDelegate.topInset != topInset;
 }
 
 class _HeaderClipper extends CustomClipper<Path> {
