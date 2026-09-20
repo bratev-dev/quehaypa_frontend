@@ -55,9 +55,11 @@ class _HomeFeedView extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         // Header persistente y anclado nativamente que maneja la animación del arco y del logo
-        const SliverPersistentHeader(
+        SliverPersistentHeader(
           pinned: true,
-          delegate: DashboardHeaderDelegate(),
+          delegate: DashboardHeaderDelegate(
+            topInset: MediaQuery.paddingOf(context).top,
+          ),
         ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
