@@ -3,10 +3,13 @@ updates:
   # Dependencias de Dart/Flutter (pubspec.yaml)
   - package-ecosystem: "pub"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
     labels:
       - "dependencies"
       - "pub"
@@ -14,10 +17,13 @@ updates:
   # Dependencias de Gradle en el módulo Android (build.gradle.kts)
   - package-ecosystem: "gradle"
     directory: "/android"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
     labels:
       - "dependencies"
       - "android"
@@ -25,10 +31,13 @@ updates:
   # Versiones de las Actions usadas en los workflows de GitHub
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
     labels:
       - "dependencies"
       - "github-actions"
