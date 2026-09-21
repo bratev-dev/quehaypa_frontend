@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/failtures.dart';
+import '../../../dashboard/controllers/dashboard_controller.dart';
+import '../../../preferences/presentation/controllers/preferences_providers.dart';
 import '../../domain/usecases/sync_organizer_use_case.dart';
 import '../../domain/usecases/sync_profile_use_case.dart';
 import 'authentication_providers.dart';
@@ -132,6 +134,22 @@ class RegisterController extends Notifier<RegisterState> {
             birthDate: _parseBirthDate(state.birthDate),
           ),
         );
+
+        // 3. Intereses (PUT /api/v1/preferences/me, Bearer por interceptor).
+        //    Solo usuario regular: el back rechaza organizadores.
+        if (state.selectedInterests.isNotEmpty) {
+          final saved = await ref.read(saveMyPreferencesUseCaseProvider)(
+            List<String>.from(state.selectedInterests),
+          );
+          // Hidrata el dashboard para el filtrado local de eventos (QHP-78).
+          try {
+            ref
+                .read(dashboardControllerProvider.notifier)
+                .setUserInterests(saved);
+          } catch (_) {
+            // El dashboard aún no está montado: se hidratará al entrar.
+          }
+        }
       }
 
       state = state.copyWith(status: RegisterStatus.success);

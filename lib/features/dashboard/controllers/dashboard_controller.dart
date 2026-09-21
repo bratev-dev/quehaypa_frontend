@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/mocked_events.dart';
 import 'dashboard_state.dart';
 
 class DashboardController extends Notifier<DashboardState> {
@@ -13,13 +14,38 @@ class DashboardController extends Notifier<DashboardState> {
         'Arte',
         'Cine',
         'Gastronomía',
-      ], // Los intereses del usuario se deben de sacar de la clase usuario. Para Camilo
+      ], // TODO(QHP-78): hidratar desde User + PUT /preferences/me.
     );
   }
 
-  // Seleccionar una categoría al hacer clic
+  /// Hidrata intereses persistidos (ej. tras registro) y re-filtra.
+  void setUserInterests(List<String> interests) {
+    state = state.copyWith(userInterests: interests);
+    _applyFilter(state.selectedCategory);
+  }
+
+  // Seleccionar una categoría al hacer clic y filtrar eventos quemados.
   void selectCategory(String category) {
     state = state.copyWith(selectedCategory: category);
+    _applyFilter(category);
+  }
+
+  void _applyFilter(String category) {
+    if (category == 'General') {
+      // Feed general: solo eventos de mis intereses (filtrado local QHP-78).
+      final filtered = kMockedEvents
+          .where((e) => state.userInterests.contains(e.category))
+          .toList();
+      state = state.copyWith(
+        visibleEvents: filtered.isEmpty ? kMockedEvents : filtered,
+      );
+      return;
+    }
+    state = state.copyWith(
+      visibleEvents: kMockedEvents
+          .where((e) => e.category == category)
+          .toList(),
+    );
   }
 }
 
