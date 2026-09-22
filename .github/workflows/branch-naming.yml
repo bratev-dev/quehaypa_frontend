@@ -7,9 +7,14 @@ on:
 
 jobs:
   check-branch-name:
-    # Dependabot usa ramas dependabot/<ecosistema>/... que no pueden seguir la convención QHP
-    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    # Las ramas de Dependabot (dependabot/<ecosistema>/...) nunca van a
+    # cumplir la convención QHP-<n>, y no depende de nosotros renombrarlas.
+    # Las ramas principales (main, develop) tampoco necesitan cumplir la convención:
+    # un PR de sincronización develop -> main usa "develop" como head_ref.
+    # Al saltar el job (no fallarlo), GitHub lo marca "skipped", que cuenta
+    # como aprobado para checks requeridos y no bloquea el merge.
+    if: github.actor != 'dependabot[bot]' && github.head_ref != 'main' && github.head_ref != 'develop'
     steps:
       - name: Validar convención de nombre de rama
         env:
