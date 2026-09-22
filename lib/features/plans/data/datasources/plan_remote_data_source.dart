@@ -45,7 +45,7 @@ class PlanRemoteDataSource {
           'title': params.title,
           'description': params.description,
           if (params.meetingDate != null)
-            'meetingDate': params.meetingDate!.toIso8601String(),
+            'meetingDate': _toBackendDate(params.meetingDate!),
         },
       );
       return _parseSingleEnvelope(response.data);
@@ -62,7 +62,7 @@ class PlanRemoteDataSource {
           'title': params.title,
           'description': params.description,
           if (params.meetingDate != null)
-            'meetingDate': params.meetingDate!.toIso8601String(),
+            'meetingDate': _toBackendDate(params.meetingDate!),
         },
       );
       return _parseSingleEnvelope(response.data);
@@ -79,8 +79,7 @@ class PlanRemoteDataSource {
     }
   }
 
-  PlanModel _parseSingleEnvelope(Map<String, dynamic>? envelope) {
-    if (envelope == null || envelope['data'] is! Map<String, dynamic>) {
+  PlanModel _parseSingleEnvelope(Map<String, dynamic>? envelope) {    if (envelope == null || envelope['data'] is! Map<String, dynamic>) {
       throw const ServerException(
         'El servidor devolvió una respuesta inesperada.',
       );
@@ -131,5 +130,18 @@ class PlanRemoteDataSource {
     }
     if (data is String && data.isNotEmpty) return data;
     return 'Ocurrió un error inesperado en el servidor.';
+  }
+
+  /// El back usa LocalDateTime sin zona (yyyy-MM-dd'T'HH:mm:ss).
+  /// toIso8601String() con milis/Z rompe a Jackson -> 400/500.
+  String _toBackendDate(DateTime date) {
+    final local = date.toLocal();
+    final y = local.year.toString().padLeft(4, '0');
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    final h = local.hour.toString().padLeft(2, '0');
+    final min = local.minute.toString().padLeft(2, '0');
+    final s = local.second.toString().padLeft(2, '0');
+    return '$y-$m-${d}T$h:$min:$s';
   }
 }

@@ -110,6 +110,8 @@ class RegisterController extends Notifier<RegisterState> {
 
       // 2. Perfil de negocio (sin password, Bearer por interceptor).
       //    El rol solo ramifica el endpoint; la autoridad es back/Keycloak.
+      //    Si el sync devuelve 409 "otro tipo de usuario", no reintentar
+      //    con el otro endpoint: mostrar el mensaje tal cual.
       if (state.selectedRole == UserRole.organizer) {
         final useCase = ref.read(syncOrganizerUseCaseProvider);
 
@@ -152,7 +154,18 @@ class RegisterController extends Notifier<RegisterState> {
         }
       }
 
-      state = state.copyWith(status: RegisterStatus.success);
+      // 4. El token obtenido en el paso 1 no trae aún ROLE_* (se asignó
+      // en el sync). Refrescar para que el accessToken ya incluya
+      // realm_access.roles y planes/preferencias no den 401/403.
+      try {
+        await ref.read(refreshSessionUseCaseProvider)();
+      } catch (_) {
+        // Si el refresh falla, el AuthInterceptor lo reintentará en la
+        // siguiente llamada. No bloquear el registro por esto.
+      }
+
+      // 5. Higiene Guía §11: no retener la password en memoria.
+      state = state.copyWith(status: RegisterStatus.success, password: '');
     } on Failure catch (e) {
       state = state.copyWith(
         status: RegisterStatus.error,

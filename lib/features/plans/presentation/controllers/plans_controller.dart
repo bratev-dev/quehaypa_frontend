@@ -103,6 +103,7 @@ class PlansController extends Notifier<PlansState> {
     );
     try {
       await ref.read(deletePlanUseCaseProvider)(planId);
+      await loadMyPlans();
       return true;
     } on Failure catch (e) {
       state = state.copyWith(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../my_plans/presentation/pages/my_plans_page.dart';
 import '../../../navigation/presentation/organisms/custom_bottom_nav.dart';
 import '../../../navigation/providers/navigation_provider.dart';
-import '../../../plans/presentation/pages/my_plans_page.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../organisms/dashboard_header.dart';
 import '../molecules/event_card.dart';
@@ -16,20 +16,20 @@ class DashboardTemplate extends ConsumerWidget {
     final currentIndex = ref.watch(navigationIndexProvider);
 
     final List<Widget> screens = [
-      const _HomeFeedView(),
+      const _HomeFeedView(), // Índice 0: Feed principal con tu header intacto
       const Center(
         child: Text(
           'Vista de Mapa 🗺️',
           style: TextStyle(color: Colors.white, fontSize: 24),
         ),
-      ),
-      const MyPlansPage(),
+      ), // Índice 1: Mapa
+      const MyPlansPage(), // Índice 2: Mis Planes (UI Spotify + backend real)
       const Center(
         child: Text(
           'Vista de Mi Perfil 👤',
           style: TextStyle(color: Colors.white, fontSize: 24),
         ),
-      ),
+      ), // Índice 3: Perfil
     ];
 
     return Scaffold(
@@ -55,7 +55,7 @@ class _HomeFeedView extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        // Header persistente y anclado nativamente que maneja la animación del arco y del logo
+        // Tu header persistente intacto con su delegate original
         SliverPersistentHeader(
           pinned: true,
           delegate: DashboardHeaderDelegate(

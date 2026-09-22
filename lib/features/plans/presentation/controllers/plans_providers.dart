@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../authentication/presentation/controllers/register_providers.dart';
+import '../../../../app/providers/network_providers.dart';
 import '../../data/datasources/plan_remote_data_source.dart';
 import '../../data/repositories/plan_repository_impl.dart';
 import '../../domain/repositories/plan_repository.dart';

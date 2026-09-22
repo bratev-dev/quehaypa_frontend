@@ -149,7 +149,16 @@ class _MyPlansPageState extends ConsumerState<MyPlansPage> {
     if (saved != true || !context.mounted) return;
 
     final title = titleController.text.trim();
-    if (title.isEmpty) return;
+    if (title.isEmpty || title.length > 255) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El título es obligatorio y máximo 255 caracteres.'),
+          ),
+        );
+      }
+      return;
+    }
 
     final notifier = ref.read(plansControllerProvider.notifier);
     if (plan == null) {

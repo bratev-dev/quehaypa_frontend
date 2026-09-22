@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../authentication/presentation/controllers/register_providers.dart';
+import '../../../../app/providers/network_providers.dart';
 import '../../data/datasources/preferences_remote_data_source.dart';
 import '../../data/repositories/preferences_repository_impl.dart';
 import '../../domain/repositories/preferences_repository.dart';
