@@ -79,7 +79,8 @@ class PlanRemoteDataSource {
     }
   }
 
-  PlanModel _parseSingleEnvelope(Map<String, dynamic>? envelope) {    if (envelope == null || envelope['data'] is! Map<String, dynamic>) {
+  PlanModel _parseSingleEnvelope(Map<String, dynamic>? envelope) {
+    if (envelope == null || envelope['data'] is! Map<String, dynamic>) {
       throw const ServerException(
         'El servidor devolvió una respuesta inesperada.',
       );

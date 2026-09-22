@@ -150,11 +150,12 @@ void showCreatePlanModal(BuildContext context) {
                         Navigator.pop(sheetContext);
                       } else {
                         final msg =
-                            container.read(plansControllerProvider).errorMessage ??
+                            container
+                                .read(plansControllerProvider)
+                                .errorMessage ??
                             'No fue posible crear el plan.';
-                        ScaffoldMessenger.of(sheetContext).showSnackBar(
-                          SnackBar(content: Text(msg)),
-                        );
+                        ScaffoldMessenger.of(sheetContext)
+                            .showSnackBar(SnackBar(content: Text(msg)));
                       }
                     },
                     child: const Text(

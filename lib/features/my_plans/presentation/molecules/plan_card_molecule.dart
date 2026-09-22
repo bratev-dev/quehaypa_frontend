@@ -44,9 +44,8 @@ class PlanCardMolecule extends StatelessWidget {
       builder: (context, constraints) {
         // Blindaje B: la escala de accesibilidad del sistema no puede
         // estirar la celda más allá de 1.15x (origen del overflow 3.2px).
-        final scaler = MediaQuery.textScalerOf(
-          context,
-        ).clamp(maxScaleFactor: 1.15);
+        final scaler = MediaQuery.textScalerOf(context)
+            .clamp(maxScaleFactor: 1.15);
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: scaler),
           child: Container(
