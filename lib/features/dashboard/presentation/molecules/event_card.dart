@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../saved_to_plans/presentation/modals/save_to_plans_bottom_sheet.dart';
+
 class EventCard extends StatelessWidget {
   final String title;
   final String category;
@@ -15,7 +17,6 @@ class EventCard extends StatelessWidget {
   static const Color _pink = Color(0xFFFF4081);
   static const double _cardRadius = 24;
   static const double _contentPadding = 12;
-  // Concéntrico con la tarjeta: radio de la tarjeta menos la separación.
   static const double _imageRadius = _cardRadius - _contentPadding;
   static const double _imageHeight = 180;
   static const double _actionSize = 44;
@@ -41,7 +42,7 @@ class EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Imagen o banner del evento (placeholder gris claro)
+            // Imagen o banner del evento
             Container(
               height: _imageHeight,
               decoration: BoxDecoration(
@@ -59,7 +60,7 @@ class EventCard extends StatelessWidget {
             const SizedBox(height: _contentPadding),
             Row(
               children: [
-                // Etiqueta de categoría: ocupa todo el espacio libre
+                // Etiqueta de categoría
                 Expanded(
                   child: Container(
                     height: _actionSize,
@@ -79,14 +80,21 @@ class EventCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: _gap),
+                // Botón de compartir
                 _CircleActionButton(
                   icon: Icons.share_outlined,
-                  onPressed: () {},
+                  onPressed: () {
+                    // Acción de compartir
+                  },
                 ),
                 const SizedBox(width: _gap),
+                // Botón de guardar / marcador (¡Aquí está la integración!)
                 _CircleActionButton(
                   icon: Icons.bookmark_border,
-                  onPressed: () {},
+                  onPressed: () {
+                    // Despliega el bottom sheet estilo Spotify para guardar en planes
+                    showSaveToPlansBottomSheet(context);
+                  },
                 ),
               ],
             ),
