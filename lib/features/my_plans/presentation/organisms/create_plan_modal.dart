@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
 void showCreatePlanModal(BuildContext context) {
   final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final dateController = TextEditingController();
+  final logger = Logger();
 
   showModalBottomSheet(
     context: context,
@@ -113,9 +115,10 @@ void showCreatePlanModal(BuildContext context) {
                     ),
                     onPressed: () {
                       if (formKey.currentState!.validate()) {
-                        print('Nombre: ${nameController.text}');
-                        print('Descripción: ${descriptionController.text}');
-                        print('Fecha: ${dateController.text}');
+                        logger.i('Nombre: ${nameController.text}');
+                        logger.i('Descripción: ${descriptionController.text}');
+                        logger.i('Fecha: ${dateController.text}');
+
                         Navigator.pop(context);
                       }
                     },
