@@ -7,6 +7,7 @@ import '../../features/authentication/presentation/pages/login_page.dart';
 import '../../features/authentication/presentation/pages/register_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/my_plans/presentation/pages/my_plans_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import 'route_names.dart';
 import 'route_paths.dart';
@@ -54,9 +55,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return RoutePaths.dashboard;
       }
 
-      // Si no está autenticado y trata de estar en el dashboard, mándalo al Home
+      // Si no está autenticado y trata de entrar a zona privada, mándalo al login
       if (!isAuthenticated && matchedLocation == RoutePaths.dashboard) {
-        return RoutePaths.home;
+        return RoutePaths.login;
+      }
+
+      if (!isAuthenticated && matchedLocation == RoutePaths.myPlans) {
+        return RoutePaths.login;
       }
 
       return null;
@@ -87,6 +92,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.dashboard,
         path: RoutePaths.dashboard,
         builder: (context, state) => const DashboardPage(),
+      ),
+      GoRoute(
+        name: RouteNames.myPlans,
+        path: RoutePaths.myPlans,
+        builder: (context, state) => const MyPlansPage(),
       ),
     ],
   );

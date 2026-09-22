@@ -9,6 +9,7 @@ import '../../domain/usecases/logout_use_case.dart';
 import '../../domain/usecases/restore_session_use_case.dart';
 import 'authentication_providers.dart';
 import 'authentication_state.dart';
+import 'register_providers.dart';
 
 final authenticationControllerProvider =
     NotifierProvider<AuthenticationController, AuthenticationState>(
@@ -66,6 +67,11 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     try {
       final AuthSession session = await _loginUseCase(loginHint: loginHint);
 
+      // Guía §10: tras el token, resolver el perfil de negocio (quién soy).
+      // Intenta regular y luego organizador; si no hay perfil (404),
+      // se mantiene autenticado y el sync se hará desde el registro/perfil.
+      await _resolveProfileBestEffort();
+
       state = state.copyWith(
         status: AuthenticationStatus.authenticated,
         session: session,
@@ -94,6 +100,21 @@ class AuthenticationController extends Notifier<AuthenticationState> {
         status: AuthenticationStatus.error,
         errorMessage: AppErrorHandler.getFriendlyMessage(e),
       );
+    }
+  }
+
+  /// Best-effort: no debe tumbar el login si el perfil aún no existe.
+  Future<void> _resolveProfileBestEffort() async {
+    try {
+      await ref.read(userRemoteDataSourceProvider).getProfile();
+      return;
+    } catch (_) {
+      // No es regular (404/403) -> probar organizador.
+    }
+    try {
+      await ref.read(organizerRemoteDataSourceProvider).getProfile();
+    } catch (_) {
+      // Sin perfil en el monolito -> el flujo de sync lo creará.
     }
   }
 }

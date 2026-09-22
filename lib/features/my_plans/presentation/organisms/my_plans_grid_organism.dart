@@ -1,21 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../plans/presentation/controllers/plans_controller.dart';
+import '../../../plans/presentation/controllers/plans_state.dart';
 import '../molecules/plan_card_molecule.dart';
 import 'create_plan_modal.dart'; // Importa tu modal de creación
 
-class MyPlansGridOrganism extends StatefulWidget {
+/// Grid Spotify conectado al backend: lee `GET /my-plans` vía
+/// PlansController y elimina con `DELETE /{id}/delete` (optimista +
+/// recarga). Mantiene la UX original (add-card + swipe + UNDO).
+class MyPlansGridOrganism extends ConsumerStatefulWidget {
   const MyPlansGridOrganism({super.key});
 
   @override
-  State<MyPlansGridOrganism> createState() => _MyPlansGridOrganismState();
+  ConsumerState<MyPlansGridOrganism> createState() =>
+      _MyPlansGridOrganismState();
 }
 
-class _MyPlansGridOrganismState extends State<MyPlansGridOrganism> {
-  final List<String> _plans = ['P0', 'Plan 2', 'Plan 3', 'Plan 4', 'Plan 5'];
+class _MyPlansGridOrganismState extends ConsumerState<MyPlansGridOrganism> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(plansControllerProvider.notifier).loadMyPlans(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final totalCount = _plans.length + 1;
+    final state = ref.watch(plansControllerProvider);
+
+    if (state.status == PlansStatus.loading && state.plans.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.status == PlansStatus.error && state.plans.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                state.errorMessage ?? 'Error al cargar planes.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  ref.read(plansControllerProvider.notifier).loadMyPlans(),
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final plans = state.plans;
+    final totalCount = plans.length + 1;
 
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
@@ -24,11 +66,14 @@ class _MyPlansGridOrganismState extends State<MyPlansGridOrganism> {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 1.1,
+        // Blindaje B: celda más alta (0.92) como colchón base; la tarjeta
+        // además reparte el alto con Flexible, así que ni fuentes grandes
+        // ni títulos de 255 chars desbordan los ~3.2px originales.
+        childAspectRatio: 0.92,
       ),
       itemCount: totalCount,
       itemBuilder: (context, index) {
-        if (index == _plans.length) {
+        if (index == plans.length) {
           return PlanCardMolecule(
             isAddCard: true,
             title: '',
@@ -39,10 +84,10 @@ class _MyPlansGridOrganismState extends State<MyPlansGridOrganism> {
           );
         }
 
-        final planName = _plans[index];
+        final plan = plans[index];
 
         return Dismissible(
-          key: Key(planName),
+          key: ValueKey(plan.id),
           direction: DismissDirection.horizontal,
           background: Container(
             alignment: Alignment.centerLeft,
@@ -70,41 +115,43 @@ class _MyPlansGridOrganismState extends State<MyPlansGridOrganism> {
               size: 32,
             ),
           ),
-          onDismissed: (direction) {
-            final deletedPlan = planName;
-            final deletedIndex = index;
+          onDismissed: (direction) async {
+            final notifier = ref.read(plansControllerProvider.notifier);
+            final ok = await notifier.deletePlan(plan.id);
 
-            setState(() {
-              _plans.removeAt(index);
-            });
-
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: const Color(0xFF1E1E1E),
-                content: Text(
-                  'Plan "$deletedPlan" eliminado',
-                  style: const TextStyle(color: Colors.white),
+            if (ok) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: const Color(0xFF1E1E1E),
+                  content: Text(
+                    'Plan "${plan.title}" eliminado',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(seconds: 4),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                duration: const Duration(seconds: 4),
-                action: SnackBarAction(
-                  label: 'DESHACER',
-                  textColor: const Color(0xFFFFD600),
-                  onPressed: () {
-                    setState(() {
-                      _plans.insert(deletedIndex, deletedPlan);
-                    });
-                  },
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: const Color(0xFF1E1E1E),
+                  content: Text(
+                    ref.read(plansControllerProvider).errorMessage ??
+                        'No fue posible eliminar el plan.',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  behavior: SnackBarBehavior.floating,
                 ),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
+              );
+            }
           },
           child: PlanCardMolecule(
-            title: planName,
+            title: plan.title,
             onTap: () {
               // Lógica al tocar la tarjeta del plan
             },

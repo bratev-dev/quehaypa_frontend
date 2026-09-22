@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../my_plans/presentation/pages/my_plans_page.dart';
 import '../../../navigation/presentation/organisms/custom_bottom_nav.dart';
 import '../../../navigation/providers/navigation_provider.dart';
+import '../../controllers/dashboard_controller.dart';
 import '../organisms/dashboard_header.dart';
 import '../molecules/event_card.dart';
 
@@ -22,7 +23,7 @@ class DashboardTemplate extends ConsumerWidget {
           style: TextStyle(color: Colors.white, fontSize: 24),
         ),
       ), // Índice 1: Mapa
-      const MyPlansPage(), // Índice 2: ¡Aquí está tu nueva vista funcional de Mis Planes!
+      const MyPlansPage(), // Índice 2: Mis Planes (UI Spotify + backend real)
       const Center(
         child: Text(
           'Vista de Mi Perfil 👤',
@@ -43,11 +44,15 @@ class DashboardTemplate extends ConsumerWidget {
   }
 }
 
-class _HomeFeedView extends StatelessWidget {
+class _HomeFeedView extends ConsumerWidget {
   const _HomeFeedView();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visibleEvents = ref.watch(
+      dashboardControllerProvider.select((s) => s.visibleEvents),
+    );
+
     return CustomScrollView(
       slivers: [
         // Tu header persistente intacto con su delegate original
@@ -60,15 +65,28 @@ class _HomeFeedView extends StatelessWidget {
 
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            return EventCard(
-              title: 'Evento Cultural en Popayán #${index + 1}',
-              category: index.isEven ? 'Tecnología' : 'Música',
-              date: '15 Oct - 8:00 PM',
-            );
-          }, childCount: 6),
-        ),
+        if (visibleEvents.isEmpty)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'No hay eventos para tus intereses por ahora.',
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final event = visibleEvents[index];
+              return EventCard(
+                title: event.title,
+                category: event.category,
+                date: event.date,
+              );
+            }, childCount: visibleEvents.length),
+          ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],

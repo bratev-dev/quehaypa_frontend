@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/failtures.dart';
+import '../../../dashboard/controllers/dashboard_controller.dart';
+import '../../../preferences/presentation/controllers/preferences_providers.dart';
 import '../../domain/usecases/sync_organizer_use_case.dart';
 import '../../domain/usecases/sync_profile_use_case.dart';
 import 'authentication_providers.dart';
@@ -108,6 +110,8 @@ class RegisterController extends Notifier<RegisterState> {
 
       // 2. Perfil de negocio (sin password, Bearer por interceptor).
       //    El rol solo ramifica el endpoint; la autoridad es back/Keycloak.
+      //    Si el sync devuelve 409 "otro tipo de usuario", no reintentar
+      //    con el otro endpoint: mostrar el mensaje tal cual.
       if (state.selectedRole == UserRole.organizer) {
         final useCase = ref.read(syncOrganizerUseCaseProvider);
 
@@ -132,9 +136,36 @@ class RegisterController extends Notifier<RegisterState> {
             birthDate: _parseBirthDate(state.birthDate),
           ),
         );
+
+        // 3. Intereses (PUT /api/v1/preferences/me, Bearer por interceptor).
+        //    Solo usuario regular: el back rechaza organizadores.
+        if (state.selectedInterests.isNotEmpty) {
+          final saved = await ref.read(saveMyPreferencesUseCaseProvider)(
+            List<String>.from(state.selectedInterests),
+          );
+          // Hidrata el dashboard para el filtrado local de eventos (QHP-78).
+          try {
+            ref
+                .read(dashboardControllerProvider.notifier)
+                .setUserInterests(saved);
+          } catch (_) {
+            // El dashboard aún no está montado: se hidratará al entrar.
+          }
+        }
       }
 
-      state = state.copyWith(status: RegisterStatus.success);
+      // 4. El token obtenido en el paso 1 no trae aún ROLE_* (se asignó
+      // en el sync). Refrescar para que el accessToken ya incluya
+      // realm_access.roles y planes/preferencias no den 401/403.
+      try {
+        await ref.read(refreshSessionUseCaseProvider)();
+      } catch (_) {
+        // Si el refresh falla, el AuthInterceptor lo reintentará en la
+        // siguiente llamada. No bloquear el registro por esto.
+      }
+
+      // 5. Higiene Guía §11: no retener la password en memoria.
+      state = state.copyWith(status: RegisterStatus.success, password: '');
     } on Failure catch (e) {
       state = state.copyWith(
         status: RegisterStatus.error,
