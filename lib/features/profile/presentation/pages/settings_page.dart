@@ -9,6 +9,8 @@ import '../profile_colors.dart';
 import 'edit_profile_page.dart';
 import 'interests_page.dart';
 
+const _comingSoonSubtitle = 'Próximamente';
+
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -138,17 +140,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 _SettingsItem(
                   icon: Icons.help_outline,
                   title: 'Preguntas frecuentes',
-                  subtitle: 'Próximamente',
+                  subtitle: _comingSoonSubtitle,
                 ),
                 _SettingsItem(
                   icon: Icons.description_outlined,
                   title: 'Términos del servicio',
-                  subtitle: 'Próximamente',
+                  subtitle: _comingSoonSubtitle,
                 ),
                 _SettingsItem(
                   icon: Icons.policy_outlined,
                   title: 'Política de usuario',
-                  subtitle: 'Próximamente',
+                  subtitle: _comingSoonSubtitle,
                 ),
               ],
             ),
