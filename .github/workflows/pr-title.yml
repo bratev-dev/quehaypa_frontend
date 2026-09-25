@@ -1,0 +1,42 @@
+name: PR title
+
+# Exige que el título del PR siga Conventional Commits con la clave de Jira:
+#   tipo(QHP-n): descripción        p. ej.  feat(QHP-12): seleccionar intereses del usuario
+# Los PR a develop se fusionan con squash y el título del PR pasa a ser el mensaje del
+# commit en develop, así que este check garantiza que develop quede con commits convencionales.
+# Jira enlaza la tarjeta por la clave QHP-n presente en el título y en el nombre de la rama.
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, edited]
+
+# El job solo lee el título del PR: no necesita ningún permiso sobre el repositorio.
+permissions: {}
+
+jobs:
+  check-pr-title:
+    runs-on: ubuntu-latest
+    # Se omite (no falla) para Dependabot, que ya usa "chore(deps): ..." sin clave de Jira,
+    # y para los PR de sincronización develop -> main. Un job omitido cuenta como aprobado
+    # en los checks requeridos. Se detecta por el nombre de la rama, no por el actor.
+    if: >-
+      !startsWith(github.head_ref, 'dependabot/') &&
+      github.head_ref != 'main' &&
+      github.head_ref != 'develop'
+    steps:
+      - name: Validar título del PR (Conventional Commits + clave de Jira)
+        env:
+          # El título llega por variable de entorno (no interpolado en el script) para que
+          # un título malicioso no pueda inyectar comandos en el runner.
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)\(QHP-[0-9]+\)!?: .+$'
+          if [[ ! "$TITLE" =~ $PATTERN ]]; then
+            echo "❌ El título del PR no sigue la convención tipo(QHP-n): descripción"
+            echo "   Título actual:  $TITLE"
+            echo "   Ejemplo válido: feat(QHP-12): seleccionar intereses del usuario"
+            echo "   Tipos válidos:  feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert"
+            echo "   Corrige el título del PR: al editarlo este check se ejecuta de nuevo."
+            exit 1
+          fi
+          echo "✅ Título válido: $TITLE"
