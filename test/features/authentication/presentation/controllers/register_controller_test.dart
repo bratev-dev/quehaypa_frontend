@@ -236,21 +236,23 @@ void main() {
       expect(state.errorMessage, contains('perfil'));
     });
 
-    test('si intereses falla indica el paso aunque el perfil quedo creado',
-        () async {
-      preferencesRepo.failSave = true;
-      fillUserBasics();
-      controller().toggleInterest('Musica');
-      controller().toggleInterest('Cine');
-      controller().toggleInterest('Arte');
-      controller().toggleInterest('Lectura');
-      await controller().completeRegistration();
+    test(
+      'si intereses falla indica el paso aunque el perfil quedo creado',
+      () async {
+        preferencesRepo.failSave = true;
+        fillUserBasics();
+        controller().toggleInterest('Musica');
+        controller().toggleInterest('Cine');
+        controller().toggleInterest('Arte');
+        controller().toggleInterest('Lectura');
+        await controller().completeRegistration();
 
-      final state = container.read(registerControllerProvider);
-      expect(state.status, RegisterStatus.error);
-      expect(state.errorMessage, contains('intereses'));
-      // El perfil sí quedó creado (estricto solo bloquea el éxito).
-      expect(userRepo.lastParams, isNotNull);
-    });
+        final state = container.read(registerControllerProvider);
+        expect(state.status, RegisterStatus.error);
+        expect(state.errorMessage, contains('intereses'));
+        // El perfil sí quedó creado (estricto solo bloquea el éxito).
+        expect(userRepo.lastParams, isNotNull);
+      },
+    );
   });
 }

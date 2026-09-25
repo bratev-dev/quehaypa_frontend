@@ -6,7 +6,8 @@ import 'preferences_state.dart';
 
 final preferencesControllerProvider =
     NotifierProvider<PreferencesController, PreferencesState>(
-        PreferencesController.new);
+      PreferencesController.new,
+    );
 
 /// Controller del catalogo real (GET /interests) + mis preferencias.
 /// La Page muestra Loading/Success/Error segun Guia 14.

@@ -112,10 +112,11 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     try {
       await ref.read(userRemoteDataSourceProvider).getProfile();
       try {
-        final prefs =
-            await ref.read(getMyPreferencesUseCaseProvider)();
+        final prefs = await ref.read(getMyPreferencesUseCaseProvider)();
         try {
-          ref.read(dashboardControllerProvider.notifier).setUserInterests(prefs);
+          ref
+              .read(dashboardControllerProvider.notifier)
+              .setUserInterests(prefs);
         } catch (_) {
           // Dashboard no montado aun: se hidrata al entrar.
         }

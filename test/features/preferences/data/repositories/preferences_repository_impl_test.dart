@@ -37,8 +37,7 @@ void main() {
   });
 
   test('getMyPreferences retorna guardadas', () async {
-    when(() => remote.getMyPreferences())
-        .thenAnswer((_) async => ['Musica']);
+    when(() => remote.getMyPreferences()).thenAnswer((_) async => ['Musica']);
 
     final result = await repository.getMyPreferences();
 
@@ -47,9 +46,8 @@ void main() {
   });
 
   test('getInterests mapea Model a Entity', () async {
-    when(() => remote.getInterests()).thenAnswer(
-      (_) async => const [InterestModel(id: 1, name: 'Musica')],
-    );
+    when(() => remote.getInterests())
+        .thenAnswer((_) async => const [InterestModel(id: 1, name: 'Musica')]);
 
     final result = await repository.getInterests();
 

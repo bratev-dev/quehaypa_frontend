@@ -22,8 +22,7 @@ void main() {
   });
 
   test('GetMyPlans delega al repositorio', () async {
-    when(() => repository.getMyPlans())
-        .thenAnswer((_) async => [plan]);
+    when(() => repository.getMyPlans()).thenAnswer((_) async => [plan]);
 
     final result = await GetMyPlans(repository)();
 

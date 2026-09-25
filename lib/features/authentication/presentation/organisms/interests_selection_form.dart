@@ -86,8 +86,11 @@ class _InterestsSelectionFormState
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.refresh,
-                      color: Colors.white70, size: 18),
+                  icon: const Icon(
+                    Icons.refresh,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
                   onPressed: () => ref
                       .read(preferencesControllerProvider.notifier)
                       .loadCatalog(),

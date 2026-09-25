@@ -19,7 +19,9 @@ class EventSeedModel {
   factory EventSeedModel.fromJson(Map<String, dynamic> json) {
     final rawId = json['id'];
     if (rawId is! num) {
-      throw const FormatException('Campo id ausente o inválido en EventSeedModel');
+      throw const FormatException(
+        'Campo id ausente o inválido en EventSeedModel',
+      );
     }
     return EventSeedModel(
       id: rawId.toInt(),
@@ -31,10 +33,10 @@ class EventSeedModel {
   }
 
   EventSeed toEntity() => EventSeed(
-        id: id,
-        title: title,
-        category: category,
-        eventText: eventText,
-        description: description,
-      );
+    id: id,
+    title: title,
+    category: category,
+    eventText: eventText,
+    description: description,
+  );
 }

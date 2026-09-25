@@ -10,7 +10,9 @@ class InterestModel {
   factory InterestModel.fromJson(Map<String, dynamic> json) {
     final rawId = json['id'];
     if (rawId is! num) {
-      throw const FormatException('Campo id ausente o inválido en InterestModel');
+      throw const FormatException(
+        'Campo id ausente o inválido en InterestModel',
+      );
     }
     return InterestModel(
       id: rawId.toInt(),

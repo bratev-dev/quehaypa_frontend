@@ -8,8 +8,7 @@ import 'package:frontend/features/preferences/domain/usecases/get_my_preferences
 import 'package:frontend/features/preferences/domain/usecases/save_preferences_use_case.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockPreferencesRepository extends Mock
-    implements PreferencesRepository {}
+class MockPreferencesRepository extends Mock implements PreferencesRepository {}
 
 void main() {
   late MockPreferencesRepository repository;
@@ -19,9 +18,8 @@ void main() {
   });
 
   test('GetInterests delega al repositorio', () async {
-    when(() => repository.getInterests()).thenAnswer(
-      (_) async => const [Interest(id: 1, name: 'Musica')],
-    );
+    when(() => repository.getInterests())
+        .thenAnswer((_) async => const [Interest(id: 1, name: 'Musica')]);
 
     final result = await GetInterests(repository)();
 
@@ -44,8 +42,7 @@ void main() {
     when(() => repository.saveMyPreferences(any()))
         .thenAnswer((_) async => ['Musica']);
 
-    final result =
-        await SaveMyPreferences(repository)(['Musica']);
+    final result = await SaveMyPreferences(repository)(['Musica']);
 
     expect(result, ['Musica']);
     verify(() => repository.saveMyPreferences(['Musica'])).called(1);
