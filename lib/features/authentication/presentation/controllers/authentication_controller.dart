@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/app_error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/security/session_events_provider.dart';
+import '../../../dashboard/controllers/dashboard_controller.dart';
+import '../../../preferences/presentation/controllers/preferences_providers.dart';
 import '../../domain/entities/auth_session.dart';
 import '../../domain/usecases/login_use_case.dart';
 import '../../domain/usecases/logout_use_case.dart';
@@ -104,9 +106,23 @@ class AuthenticationController extends Notifier<AuthenticationState> {
   }
 
   /// Best-effort: no debe tumbar el login si el perfil aún no existe.
+  /// Si es regular, hidrata el dashboard con GET /preferences/me para que
+  /// el feed local filtre por intereses reales (no solo defaults).
   Future<void> _resolveProfileBestEffort() async {
     try {
       await ref.read(userRemoteDataSourceProvider).getProfile();
+      try {
+        final prefs = await ref.read(getMyPreferencesUseCaseProvider)();
+        try {
+          ref
+              .read(dashboardControllerProvider.notifier)
+              .setUserInterests(prefs);
+        } catch (_) {
+          // Dashboard no montado aun: se hidrata al entrar.
+        }
+      } catch (_) {
+        // Sin preferencias guardadas: se mantiene el default local.
+      }
       return;
     } catch (_) {
       // No es regular (404/403) -> probar organizador.

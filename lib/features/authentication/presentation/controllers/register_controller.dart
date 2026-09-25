@@ -115,34 +115,51 @@ class RegisterController extends Notifier<RegisterState> {
       if (state.selectedRole == UserRole.organizer) {
         final useCase = ref.read(syncOrganizerUseCaseProvider);
 
-        await useCase(
-          SyncOrganizerParams(
-            username: state.username,
-            firstName: state.name,
-            lastName: state.lastname,
-            email: state.email,
-            identificationDocument: state.cc,
-          ),
-        );
+        try {
+          await useCase(
+            SyncOrganizerParams(
+              username: state.username,
+              firstName: state.name,
+              lastName: state.lastname,
+              email: state.email,
+              identificationDocument: state.cc,
+            ),
+          );
+        } on Failure catch (e) {
+          throw _StepFailure('No fue posible crear tu perfil: ${e.message}');
+        }
       } else {
         final useCase = ref.read(syncProfileUseCaseProvider);
 
-        await useCase(
-          SyncProfileParams(
-            username: state.username,
-            firstName: state.name,
-            lastName: state.lastname,
-            email: state.email,
-            birthDate: _parseBirthDate(state.birthDate),
-          ),
-        );
+        try {
+          await useCase(
+            SyncProfileParams(
+              username: state.username,
+              firstName: state.name,
+              lastName: state.lastname,
+              email: state.email,
+              birthDate: _parseBirthDate(state.birthDate),
+            ),
+          );
+        } on Failure catch (e) {
+          throw _StepFailure('No fue posible crear tu perfil: ${e.message}');
+        }
 
         // 3. Intereses (PUT /api/v1/preferences/me, Bearer por interceptor).
         //    Solo usuario regular: el back rechaza organizadores.
+        //    Estricto: si falla, el registro marca error (el perfil ya quedó
+        //    creado; reintentar muestra el 409 correspondiente).
         if (state.selectedInterests.isNotEmpty) {
-          final saved = await ref.read(saveMyPreferencesUseCaseProvider)(
-            List<String>.from(state.selectedInterests),
-          );
+          late final List<String> saved;
+          try {
+            saved = await ref.read(saveMyPreferencesUseCaseProvider)(
+              List<String>.from(state.selectedInterests),
+            );
+          } on Failure catch (e) {
+            throw _StepFailure(
+              'Tu cuenta se creó pero no fue posible guardar tus intereses: ${e.message}',
+            );
+          }
           // Hidrata el dashboard para el filtrado local de eventos (QHP-78).
           try {
             ref
@@ -166,6 +183,11 @@ class RegisterController extends Notifier<RegisterState> {
 
       // 5. Higiene Guía §11: no retener la password en memoria.
       state = state.copyWith(status: RegisterStatus.success, password: '');
+    } on _StepFailure catch (e) {
+      state = state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: e.message,
+      );
     } on Failure catch (e) {
       state = state.copyWith(
         status: RegisterStatus.error,
@@ -205,4 +227,16 @@ class RegisterController extends Notifier<RegisterState> {
       return null;
     }
   }
+}
+
+/// Error con contexto de paso para el registro estricto: indica si falló
+/// el perfil (sync) o los intereses (PUT /preferences/me), porque el
+/// mensaje crudo del servidor no lo distingue.
+class _StepFailure implements Exception {
+  final String message;
+
+  const _StepFailure(this.message);
+
+  @override
+  String toString() => message;
 }
