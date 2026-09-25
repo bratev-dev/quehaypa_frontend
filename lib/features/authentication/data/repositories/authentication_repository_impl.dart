@@ -128,7 +128,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     } on AuthenticationException {
       rethrow;
     } catch (e) {
-      throw AuthenticationException('No fue posible renovar la sesion: $e');
+      throw AuthenticationException('No fue posible renovar la sesión: $e');
     }
   }
 

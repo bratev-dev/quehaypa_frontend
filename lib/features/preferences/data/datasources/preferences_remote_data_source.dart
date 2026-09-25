@@ -20,7 +20,7 @@ class PreferencesRemoteDataSource {
       final data = response.data?['data'];
       if (data is! List) {
         throw const ServerException(
-          'El servidor devolvio preferencias con formato inesperado.',
+          'El servidor devolvió preferencias con formato inesperado.',
         );
       }
       return data.map((e) => e.toString()).toList();
@@ -37,7 +37,7 @@ class PreferencesRemoteDataSource {
       final data = response.data?['data'];
       if (data is! List) {
         throw const ServerException(
-          'El servidor devolvio preferencias con formato inesperado.',
+          'El servidor devolvió preferencias con formato inesperado.',
         );
       }
       return data.map((e) => e.toString()).toList();
@@ -54,7 +54,7 @@ class PreferencesRemoteDataSource {
       final data = response.data?['data'];
       if (data is! List) {
         throw const ServerException(
-          'El servidor devolvio el catalogo con formato inesperado.',
+          'El servidor devolvió el catálogo con formato inesperado.',
         );
       }
       try {
@@ -64,7 +64,7 @@ class PreferencesRemoteDataSource {
             .toList();
       } catch (_) {
         throw const ServerException(
-          'El servidor devolvio un interes con formato inesperado.',
+          'El servidor devolvió un interés con formato inesperado.',
         );
       }
     } on DioException catch (e) {
@@ -101,7 +101,7 @@ class PreferencesRemoteDataSource {
     final data = envelope?['data'];
     if (data is! List) {
       throw const ServerException(
-        'El servidor devolvio eventos con formato inesperado.',
+        'El servidor devolvió eventos con formato inesperado.',
       );
     }
     try {
@@ -111,7 +111,7 @@ class PreferencesRemoteDataSource {
           .toList();
     } catch (_) {
       throw const ServerException(
-        'El servidor devolvio un evento con formato inesperado.',
+        'El servidor devolvió un evento con formato inesperado.',
       );
     }
   }
@@ -126,7 +126,7 @@ class PreferencesRemoteDataSource {
     }
     if (statusCode == 403) {
       return const UnauthorizedException(
-        'No tienes permisos para esta operacion.',
+        'No tienes permisos para esta operación.',
       );
     }
     if (statusCode == 404) {
@@ -137,7 +137,7 @@ class PreferencesRemoteDataSource {
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.connectionError) {
       return const NetworkException(
-        'No fue posible conectarse con el servidor. Revisa tu conexion.',
+        'No fue posible conectarse con el servidor. Revisa tu conexión.',
       );
     }
     return ServerException(message);
@@ -149,6 +149,6 @@ class PreferencesRemoteDataSource {
       if (message is String && message.isNotEmpty) return message;
     }
     if (data is String && data.isNotEmpty) return data;
-    return 'Ocurrio un error inesperado en el servidor.';
+    return 'Ocurrió un error inesperado en el servidor.';
   }
 }

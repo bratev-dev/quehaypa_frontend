@@ -53,7 +53,7 @@ class _InterestsSelectionFormState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'Que te apasiona?',
+          '¿Qué te apasiona?',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -80,7 +80,7 @@ class _InterestsSelectionFormState
               children: [
                 const Flexible(
                   child: Text(
-                    'Sin conexion al catalogo, usando lista local.',
+                    'Sin conexión al catálogo, usando lista local.',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                     textAlign: TextAlign.center,
                   ),

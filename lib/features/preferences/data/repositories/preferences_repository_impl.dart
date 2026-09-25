@@ -18,7 +18,7 @@ class PreferencesRepositoryImpl implements PreferencesRepository {
       throw ValidationFailure(e.message);
     } on UnauthorizedException {
       throw const UnauthorizedFailure(
-        'Sesion invalida. Inicia sesion de nuevo.',
+        'Sesión inválida. Inicia sesión de nuevo.',
       );
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);
@@ -37,7 +37,7 @@ class PreferencesRepositoryImpl implements PreferencesRepository {
       throw ValidationFailure(e.message);
     } on UnauthorizedException {
       throw const UnauthorizedFailure(
-        'Sesion invalida. Inicia sesion de nuevo.',
+        'Sesión inválida. Inicia sesión de nuevo.',
       );
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);
@@ -57,14 +57,14 @@ class PreferencesRepositoryImpl implements PreferencesRepository {
       throw ValidationFailure(e.message);
     } on UnauthorizedException {
       throw const UnauthorizedFailure(
-        'Sesion invalida. Inicia sesion de nuevo.',
+        'Sesión inválida. Inicia sesión de nuevo.',
       );
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);
     } on ServerException catch (e) {
       throw ServerFailure(e.message);
     } catch (e) {
-      throw UnknownFailure('No fue posible cargar el catalogo: $e');
+      throw UnknownFailure('No fue posible cargar el catálogo: $e');
     }
   }
 
@@ -75,7 +75,7 @@ class PreferencesRepositoryImpl implements PreferencesRepository {
       return models.map((m) => m.toEntity()).toList();
     } on UnauthorizedException {
       throw const UnauthorizedFailure(
-        'Sesion invalida. Inicia sesion de nuevo.',
+        'Sesión inválida. Inicia sesión de nuevo.',
       );
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);

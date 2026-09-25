@@ -157,7 +157,7 @@ class RegisterController extends Notifier<RegisterState> {
             );
           } on Failure catch (e) {
             throw _StepFailure(
-              'Tu cuenta se creo pero no fue posible guardar tus intereses: ${e.message}',
+              'Tu cuenta se creó pero no fue posible guardar tus intereses: ${e.message}',
             );
           }
           // Hidrata el dashboard para el filtrado local de eventos (QHP-78).

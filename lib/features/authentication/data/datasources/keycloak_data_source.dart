@@ -31,7 +31,7 @@ class KeycloakDataSource {
 
       if (accessToken == null || accessToken.isEmpty) {
         throw const AuthenticationException(
-          'Keycloak no devolvio un Access Token.',
+          'Keycloak no devolvió un Access Token.',
         );
       }
 
@@ -80,7 +80,7 @@ class KeycloakDataSource {
 
       if (accessToken == null || accessToken.isEmpty) {
         throw const AuthenticationException(
-          'Keycloak no devolvio un Access Token.',
+          'Keycloak no devolvió un Access Token.',
         );
       }
 
@@ -127,7 +127,7 @@ class KeycloakDataSource {
 
       if (accessToken == null || accessToken.isEmpty) {
         throw const AuthenticationException(
-          'Keycloak no devolvio un nuevo Access Token.',
+          'Keycloak no devolvió un nuevo Access Token.',
         );
       }
 
@@ -140,7 +140,7 @@ class KeycloakDataSource {
       rethrow;
     } catch (e) {
       throw AuthenticationException(
-        'No fue posible renovar la sesion con Keycloak: $e',
+        'No fue posible renovar la sesión con Keycloak: $e',
       );
     }
   }
@@ -163,7 +163,7 @@ class KeycloakDataSource {
       );
     } catch (e) {
       throw AuthenticationException(
-        'No fue posible cerrar la sesion en Keycloak: $e',
+        'No fue posible cerrar la sesión en Keycloak: $e',
       );
     }
   }
