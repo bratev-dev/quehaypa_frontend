@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../my_plans/presentation/pages/my_plans_page.dart';
 import '../../../navigation/presentation/organisms/custom_bottom_nav.dart';
 import '../../../navigation/providers/navigation_provider.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../organisms/dashboard_header.dart';
 import '../molecules/event_card.dart';
@@ -24,12 +25,7 @@ class DashboardTemplate extends ConsumerWidget {
         ),
       ), // Índice 1: Mapa
       const MyPlansPage(), // Índice 2: Mis Planes (UI Spotify + backend real)
-      const Center(
-        child: Text(
-          'Vista de Mi Perfil 👤',
-          style: TextStyle(color: Colors.white, fontSize: 24),
-        ),
-      ), // Índice 3: Perfil
+      const ProfilePage(), // Índice 3: Perfil
     ];
 
     return Scaffold(

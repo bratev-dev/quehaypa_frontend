@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../preferences/presentation/controllers/preferences_controller.dart';
 import '../../../preferences/presentation/controllers/preferences_state.dart';
+import '../../../preferences/presentation/interest_catalog_fallback.dart';
 import '../atoms/app_snackbar.dart';
 import '../atoms/interest_chip.dart';
 import '../controllers/register_controller.dart';
@@ -17,19 +18,6 @@ class InterestsSelectionForm extends ConsumerStatefulWidget {
 
 class _InterestsSelectionFormState
     extends ConsumerState<InterestsSelectionForm> {
-  static const List<String> kFallbackInterests = [
-    'Tecnología',
-    'Música',
-    'Deportes',
-    'Arte',
-    'Cine',
-    'Gastronomía',
-    'Lectura',
-    'Viajes',
-    'Fotografía',
-    'Emprendimiento',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -47,7 +35,7 @@ class _InterestsSelectionFormState
 
     final List<String> available = prefsState.catalog.isNotEmpty
         ? prefsState.catalog
-        : kFallbackInterests;
+        : fallbackInterests;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

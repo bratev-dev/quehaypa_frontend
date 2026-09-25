@@ -51,4 +51,34 @@ class UserRepositoryImpl implements UserRepository {
       throw UnknownFailure('No fue posible obtener tu perfil: $e');
     }
   }
+
+  @override
+  Future<User> updateProfile({
+    required int id,
+    required String firstName,
+    required String lastName,
+    DateTime? birthDate,
+  }) async {
+    try {
+      final model = await _remoteDataSource.updateProfile(
+        id: id,
+        firstName: firstName,
+        lastName: lastName,
+        birthDate: birthDate,
+      );
+      return model.toEntity();
+    } on ValidationException catch (e) {
+      throw ValidationFailure(e.message);
+    } on UnauthorizedException {
+      throw const UnauthorizedFailure(
+        'Sesión inválida. Inicia sesión de nuevo.',
+      );
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
+    } on ServerException catch (e) {
+      throw ServerFailure(e.message);
+    } catch (e) {
+      throw UnknownFailure('No fue posible actualizar tu perfil: $e');
+    }
+  }
 }
