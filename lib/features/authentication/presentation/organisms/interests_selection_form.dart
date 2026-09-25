@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../atoms/app_snackbar.dart'; // <-- Importamos nuestro átomo de SnackBar unificado
+import '../../../preferences/presentation/controllers/preferences_controller.dart';
+import '../../../preferences/presentation/controllers/preferences_state.dart';
+import '../atoms/app_snackbar.dart';
 import '../atoms/interest_chip.dart';
 import '../controllers/register_controller.dart';
 
-class InterestsSelectionForm extends ConsumerWidget {
+class InterestsSelectionForm extends ConsumerStatefulWidget {
   const InterestsSelectionForm({super.key});
 
-  // Lista simulada de intereses disponibles en la plataforma
-  final List<String> _availableInterests = const [
+  @override
+  ConsumerState<InterestsSelectionForm> createState() =>
+      _InterestsSelectionFormState();
+}
+
+class _InterestsSelectionFormState
+    extends ConsumerState<InterestsSelectionForm> {
+  static const List<String> kFallbackInterests = [
     'Tecnología',
     'Música',
     'Deportes',
@@ -23,16 +31,29 @@ class InterestsSelectionForm extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(preferencesControllerProvider.notifier).loadCatalog(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final registerState = ref.watch(registerControllerProvider);
     final selectedInterests = registerState.selectedInterests;
     final bool canProceed = selectedInterests.length >= 4;
+    final prefsState = ref.watch(preferencesControllerProvider);
+
+    final List<String> available = prefsState.catalog.isNotEmpty
+        ? prefsState.catalog
+        : kFallbackInterests;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          '¿Qué te apasiona?',
+          'Que te apasiona?',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -46,12 +67,40 @@ class InterestsSelectionForm extends ConsumerWidget {
           style: const TextStyle(fontSize: 14, color: Colors.white70),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 24),
+        if (prefsState.status == PreferencesStatus.loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        if (prefsState.status == PreferencesStatus.error)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Flexible(
+                  child: Text(
+                    'Sin conexion al catalogo, usando lista local.',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh,
+                      color: Colors.white70, size: 18),
+                  onPressed: () => ref
+                      .read(preferencesControllerProvider.notifier)
+                      .loadCatalog(),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 16),
         Wrap(
           spacing: 8.0,
           runSpacing: 10.0,
           alignment: WrapAlignment.center,
-          children: _availableInterests.map((interest) {
+          children: available.map((interest) {
             final isSelected = selectedInterests.contains(interest);
             return InterestChip(
               label: interest,
