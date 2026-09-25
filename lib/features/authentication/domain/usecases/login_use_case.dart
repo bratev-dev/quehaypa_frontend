@@ -6,7 +6,7 @@ class LoginUseCase {
 
   const LoginUseCase(this._repository);
 
-  Future<AuthSession> call() {
-    return _repository.login();
+  Future<AuthSession> call({String? loginHint}) {
+    return _repository.login(loginHint: loginHint);
   }
 }

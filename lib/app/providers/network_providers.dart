@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/dio_client.dart';
@@ -18,4 +19,11 @@ final dioClientProvider = Provider<DioClient>((ref) {
     sessionRefresher: sessionRefresher,
     sessionInvalidator: sessionInvalidator,
   );
+});
+
+/// Dio centralizado con Bearer automático (AuthInterceptor).
+/// Guía §8/§12: toda Feature debe tomar el Dio de aquí, nunca crearlo
+/// ni importarlo desde otra Feature.
+final dioProvider = Provider<Dio>((ref) {
+  return ref.read(dioClientProvider).dio;
 });

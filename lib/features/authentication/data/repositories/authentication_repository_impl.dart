@@ -15,9 +15,32 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   });
 
   @override
-  Future<AuthSession> login() async {
+  Future<AuthSession> login({String? loginHint}) async {
     try {
-      final model = await _keycloakDataSource.login();
+      final model = await _keycloakDataSource.login(loginHint: loginHint);
+
+      await _tokenManager.saveTokens(
+        accessToken: model.accessToken,
+        refreshToken: model.refreshToken,
+        idToken: model.idToken,
+      );
+
+      return model.toEntity();
+    } on AuthenticationCancelledException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } catch (e) {
+      throw AuthenticationException(
+        'No fue posible guardar la sesion despues del inicio de sesion: $e',
+      );
+    }
+  }
+
+  @override
+  Future<AuthSession> register() async {
+    try {
+      final model = await _keycloakDataSource.register();
 
       await _tokenManager.saveTokens(
         accessToken: model.accessToken,
@@ -30,7 +53,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
       rethrow;
     } catch (e) {
       throw AuthenticationException(
-        'No fue posible guardar la sesion despues del inicio de sesion: $e',
+        'No fue posible guardar la sesion despues del registro: $e',
       );
     }
   }
@@ -105,7 +128,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     } on AuthenticationException {
       rethrow;
     } catch (e) {
-      throw AuthenticationException('No fue posible renovar la sesion: $e');
+      throw AuthenticationException('No fue posible renovar la sesión: $e');
     }
   }
 

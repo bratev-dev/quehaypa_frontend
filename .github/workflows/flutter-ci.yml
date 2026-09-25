@@ -1,8 +1,9 @@
 name: Flutter CI
 
 # Cuándo se ejecuta este workflow:
-# - En cada push a las ramas principales.
-# - En cada Pull Request que apunte a esas ramas.
+# - En cada push a las ramas principales (se omite si solo cambió documentación).
+# - En cada Pull Request que apunte a esas ramas, siempre: sus jobs son checks
+#   obligatorios y, si se omitieran, un PR solo de documentación quedaría bloqueado.
 # - Manualmente, desde la pestaña "Actions" de GitHub (workflow_dispatch).
 on:
   push:
@@ -16,9 +17,6 @@ on:
     branches:
       - main
       - develop
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
   workflow_dispatch: {}
 
 # Si se hace push varias veces seguidas a la misma rama/PR, cancela la
@@ -49,6 +47,9 @@ jobs:
     steps:
       - name: Descargar el código del repositorio
         uses: actions/checkout@v4
+        with:
+          # SonarCloud necesita el historial completo para calcular el "código nuevo" y los blame.
+          fetch-depth: 0
 
       # El toolchain de Android (Gradle) que usan los plugins de Flutter
       # necesita un JDK disponible, aunque este job no compile el APK.
@@ -67,6 +68,9 @@ jobs:
 
       - name: Mostrar entorno (flutter doctor)
         run: flutter doctor -v
+      
+      - name: Create .env for CI
+        run: cp .env.example .env
 
       - name: Instalar dependencias (flutter pub get)
         run: flutter pub get
@@ -77,16 +81,38 @@ jobs:
       - name: Analizar el código (flutter analyze)
         run: flutter analyze
 
+      # Sin esto, los archivos que ninguna prueba importa no aparecen en el lcov
+      # y la cobertura se infla (QHP-85). Va después de format/analyze porque el
+      # archivo generado no se versiona.
+      - name: Incluir todos los archivos de lib/ en la cobertura
+        run: bash tool/coverage_all_files.sh
+
       - name: Ejecutar pruebas unitarias (flutter test)
         run: flutter test --coverage
 
+      - name: Resumen de cobertura
+        run: python3 tool/coverage_summary.py
+
+      # Análisis de calidad y seguridad con cobertura real (lcov), desde el CI (QHP-64).
+      # Reemplaza el análisis automático de SonarCloud, que no importa cobertura.
+      # Configuración en sonar-project.properties. Los PR de Dependabot usan el
+      # secreto SONAR_TOKEN del almacén de Dependabot.
+      - name: Análisis de SonarCloud (calidad, seguridad y cobertura)
+        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # La cuota gratuita de artefactos de la cuenta es de 500 MB compartidos entre todos los
+      # repositorios. Subir el binario en cada PR la agotó (QHP-64): ahora solo se sube fuera de
+      # los PR, con retención corta, y una subida fallida no invalida pruebas que ya pasaron.
       - name: Publicar reporte de cobertura
-        if: always()
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/lcov.info
-          retention-days: 14
+          retention-days: 3
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------
@@ -120,13 +146,96 @@ jobs:
       - name: Instalar dependencias (flutter pub get)
         run: flutter pub get
 
+      - name: Create .env for CI
+        run: cp .env.example .env
+
       - name: Compilar APK de debug
         run: flutter build apk --debug
 
+
+      # La cuota gratuita de artefactos de la cuenta es de 500 MB compartidos entre todos los
+      # repositorios. Subir el binario en cada PR la agotó (QHP-64): ahora solo se sube fuera de
+      # los PR, con retención corta, y una subida fallida no invalida pruebas que ya pasaron.
       - name: Publicar APK generado
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 14
+          retention-days: 1
           if-no-files-found: warn
+
+  # ---------------------------------------------------------------------
+  # Job 3: despliegue al ambiente de pruebas (QHP-64). En cada push a develop
+  # compila el APK de release apuntando al backend y al Keycloak de Railway y lo
+  # publica en la pre-release fija "develop-latest" de GitHub Releases, que se
+  # reemplaza en cada build: un solo enlace estable para el equipo y el docente.
+  # ---------------------------------------------------------------------
+  publish-apk:
+    name: Publicar APK de pruebas (GitHub Releases)
+    needs: [analyze-and-test, build-android]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Único job con escritura: crear/reemplazar la release y su etiqueta.
+    permissions:
+      contents: write
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Configurar Flutter SDK ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      # URLs reales del ambiente de pruebas (Railway), desde Variables del repositorio.
+      # No son secretos: quedan dentro del APK de todas formas.
+      - name: Crear .env del ambiente de pruebas
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          KEYCLOAK_ISSUER_URL: ${{ vars.KEYCLOAK_ISSUER_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$KEYCLOAK_ISSUER_URL" ]; then
+            echo "❌ Faltan las variables API_BASE_URL o KEYCLOAK_ISSUER_URL del repositorio"
+            exit 1
+          fi
+          printf 'API_BASE_URL=%s\nKEYCLOAK_ISSUER_URL=%s\n' "$API_BASE_URL" "$KEYCLOAK_ISSUER_URL" > .env
+
+      - name: Instalar dependencias (flutter pub get)
+        run: flutter pub get
+
+      # Firma: el build de release usa la clave de depuración (android/app/build.gradle.kts).
+      # Sirve para pruebas; no es un APK para tienda.
+      - name: Compilar APK de release
+        run: flutter build apk --release
+
+      - name: Publicar en GitHub Releases (develop-latest)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APK: build/app/outputs/flutter-apk/app-release.apk
+        run: |
+          cp "$APK" que-hay-pa-develop.apk
+          NOTAS="APK de pruebas generado automáticamente desde \`develop\`.
+          - Commit: ${GITHUB_SHA::7}
+          - Fecha (UTC): $(date -u '+%Y-%m-%d %H:%M')
+          - Ejecución: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          - Backend: ${{ vars.API_BASE_URL }}
+
+          Firmado con la clave de depuración: si ya tienes instalada otra versión y no actualiza, desinstálala primero."
+          gh release delete develop-latest --cleanup-tag --yes 2>/dev/null || true
+          gh release create develop-latest que-hay-pa-develop.apk \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Que Hay Pa'? — build de pruebas (develop)" \
+            --notes "$NOTAS"

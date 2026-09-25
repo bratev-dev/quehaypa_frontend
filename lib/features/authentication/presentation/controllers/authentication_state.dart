@@ -32,7 +32,7 @@ class AuthenticationState {
     return AuthenticationState(
       status: status ?? this.status,
       session: session ?? this.session,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage,
     );
   }
 }

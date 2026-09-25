@@ -15,15 +15,24 @@ jobs:
     # ¡Clave de seguridad! Solo corre si el creador del PR es el robot oficial de Dependabot
     if: github.actor == 'dependabot[bot]'
     steps:
-      # Paso 1: El bot aprueba el Pull Request usando GitHub CLI
+      # Paso 0: Obtiene el tipo de actualización (patch/minor/major)
+      - name: Obtener metadata de Dependabot
+        id: metadata
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Paso 1: El bot aprueba el Pull Request usando GitHub CLI (solo patch y minor)
       - name: Aprobar PR de Dependabot
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Paso 2: El bot activa la orden de fusión automática ("en cola")
+      # Paso 2: El bot activa la orden de fusión automática ("en cola"); los major requieren revisión manual
       - name: Programar Auto-merge (Squash)
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}

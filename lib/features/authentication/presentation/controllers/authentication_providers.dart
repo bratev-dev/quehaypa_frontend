@@ -8,6 +8,7 @@ import '../../domain/repositories/authentication_repository.dart';
 import '../../domain/usecases/login_use_case.dart';
 import '../../domain/usecases/logout_use_case.dart';
 import '../../domain/usecases/refresh_session_use_case.dart';
+import '../../domain/usecases/register_with_keycloak_use_case.dart';
 import '../../domain/usecases/restore_session_use_case.dart';
 
 final keycloakDataSourceProvider = Provider<KeycloakDataSource>((ref) {
@@ -26,6 +27,13 @@ final authenticationRepositoryProvider = Provider<AuthenticationRepository>((
 final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
   return LoginUseCase(ref.read(authenticationRepositoryProvider));
 });
+
+final registerWithKeycloakUseCaseProvider =
+    Provider<RegisterWithKeycloakUseCase>((ref) {
+      return RegisterWithKeycloakUseCase(
+        ref.read(authenticationRepositoryProvider),
+      );
+    });
 
 final restoreSessionUseCaseProvider = Provider<RestoreSessionUseCase>((ref) {
   return RestoreSessionUseCase(ref.read(authenticationRepositoryProvider));
