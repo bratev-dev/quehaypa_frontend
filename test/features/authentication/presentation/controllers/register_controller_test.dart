@@ -74,6 +74,14 @@ class FakeUserRepository implements UserRepository {
 
   @override
   Future<User> getProfile() => throw UnimplementedError();
+
+  @override
+  Future<User> updateProfile({
+    required int id,
+    required String firstName,
+    required String lastName,
+    DateTime? birthDate,
+  }) => throw UnimplementedError();
 }
 
 class FakeOrganizerRepository implements OrganizerRepository {

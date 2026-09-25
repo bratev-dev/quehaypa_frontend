@@ -90,18 +90,20 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     }
   }
 
-  Future<void> logout() async {
+  Future<bool> logout() async {
     try {
       await _logoutUseCase();
-
       state = const AuthenticationState(
         status: AuthenticationStatus.unauthenticated,
       );
+      return true;
     } catch (e) {
-      state = state.copyWith(
-        status: AuthenticationStatus.error,
+      // El repositorio elimina los tokens locales incluso si Keycloak falla.
+      state = AuthenticationState(
+        status: AuthenticationStatus.unauthenticated,
         errorMessage: AppErrorHandler.getFriendlyMessage(e),
       );
+      return false;
     }
   }
 

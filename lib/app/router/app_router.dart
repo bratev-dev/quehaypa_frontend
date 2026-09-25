@@ -55,13 +55,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return RoutePaths.dashboard;
       }
 
-      // Si no está autenticado y trata de entrar a zona privada, mándalo al login
+      // Tras cerrar sesión, la navegación privada vuelve al menú del video.
       if (!isAuthenticated && matchedLocation == RoutePaths.dashboard) {
-        return RoutePaths.login;
+        return RoutePaths.home;
       }
 
       if (!isAuthenticated && matchedLocation == RoutePaths.myPlans) {
-        return RoutePaths.login;
+        return RoutePaths.home;
       }
 
       return null;

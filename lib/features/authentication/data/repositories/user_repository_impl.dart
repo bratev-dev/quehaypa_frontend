@@ -39,4 +39,28 @@ class UserRepositoryImpl implements UserRepository {
       );
     }
   }
+
+  @override
+  Future<User> updateProfile({
+    required int id,
+    required String firstName,
+    required String lastName,
+    DateTime? birthDate,
+  }) async {
+    try {
+      final model = await _remoteDataSource.updateProfile(
+        id: id,
+        firstName: firstName,
+        lastName: lastName,
+        birthDate: birthDate,
+      );
+      return model.toEntity();
+    } catch (e) {
+      throw toProfileFailure(
+        e,
+        unauthorizedMessage: 'Sesión inválida. Inicia sesión de nuevo.',
+        unknownMessage: 'No fue posible actualizar tu perfil',
+      );
+    }
+  }
 }

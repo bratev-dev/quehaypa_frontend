@@ -83,6 +83,44 @@ void main() {
       expect(user.username, 'ana.ruiz');
     });
 
+    test(
+      'updateProfile envía PUT con los datos editables y fecha ISO',
+      () async {
+        adapter.reply = const FakeReply(200, {'data': _user});
+
+        final user = await dataSource.updateProfile(
+          id: 7,
+          firstName: 'Ana',
+          lastName: 'Ruiz',
+          birthDate: DateTime(1998, 2, 5),
+        );
+
+        expect(adapter.last.method, 'PUT');
+        expect(adapter.last.path, '/api/v1/regular-users/7');
+        expect(adapter.last.data, {
+          'firstName': 'Ana',
+          'lastName': 'Ruiz',
+          'birthDate': '1998-02-05',
+        });
+        expect(user.id, 7);
+      },
+    );
+
+    test('updateProfile usa el mapeo compartido para 400', () async {
+      adapter.reply = const FakeReply(400, {'message': 'Nombre inválido'});
+
+      expect(
+        dataSource.updateProfile(id: 7, firstName: '', lastName: 'Ruiz'),
+        throwsA(
+          isA<ValidationException>().having(
+            (e) => e.message,
+            'message',
+            'Nombre inválido',
+          ),
+        ),
+      );
+    });
+
     test('respuesta sin data lanza ServerException', () async {
       adapter.reply = const FakeReply(200, {'message': 'ok'});
 
