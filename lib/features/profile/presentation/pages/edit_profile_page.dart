@@ -86,44 +86,44 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           const SizedBox(height: 30),
           Form(
             key: formKey,
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF242426),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _field('Nombre', firstName),
-                  const SizedBox(height: 10),
-                  _field('Apellido', lastName),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    title: const Text(
-                      'Fecha de nacimiento',
-                      style: TextStyle(color: Colors.white),
+            child: Material(
+              color: const Color(0xFF242426),
+              borderRadius: BorderRadius.circular(22),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _field('Nombre', firstName),
+                    const SizedBox(height: 10),
+                    _field('Apellido', lastName),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      title: const Text(
+                        'Fecha de nacimiento',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      subtitle: Text(
+                        birthDate == null
+                            ? 'Sin registrar'
+                            : '${birthDate!.day}/${birthDate!.month}/${birthDate!.year}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      trailing: const Icon(
+                        Icons.calendar_today_outlined,
+                        color: profileYellow,
+                      ),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: birthDate ?? DateTime(2000),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) setState(() => birthDate = picked);
+                      },
                     ),
-                    subtitle: Text(
-                      birthDate == null
-                          ? 'Sin registrar'
-                          : '${birthDate!.day}/${birthDate!.month}/${birthDate!.year}',
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    trailing: const Icon(
-                      Icons.calendar_today_outlined,
-                      color: profileYellow,
-                    ),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: birthDate ?? DateTime(2000),
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      );
-                      if (picked != null) setState(() => birthDate = picked);
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
