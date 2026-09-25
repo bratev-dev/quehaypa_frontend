@@ -83,8 +83,17 @@ jobs:
       - name: Analizar el código (flutter analyze)
         run: flutter analyze
 
+      # Sin esto, los archivos que ninguna prueba importa no aparecen en el lcov
+      # y la cobertura se infla (QHP-85). Va después de format/analyze porque el
+      # archivo generado no se versiona.
+      - name: Incluir todos los archivos de lib/ en la cobertura
+        run: bash tool/coverage_all_files.sh
+
       - name: Ejecutar pruebas unitarias (flutter test)
         run: flutter test --coverage
+
+      - name: Resumen de cobertura
+        run: python3 tool/coverage_summary.py
 
       # Análisis de calidad y seguridad con cobertura real (lcov), desde el CI (QHP-64).
       # Reemplaza el análisis automático de SonarCloud, que no importa cobertura.
