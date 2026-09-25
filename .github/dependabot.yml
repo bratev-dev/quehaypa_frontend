@@ -13,6 +13,13 @@ updates:
     labels:
       - "dependencies"
       - "pub"
+    # Un solo PR por semana con todas las actualizaciones menores y de parche.
+    # Las mayores siguen llegando como PR individuales, para revisión manual.
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # Dependencias de Gradle en el módulo Android (build.gradle.kts)
   - package-ecosystem: "gradle"
@@ -27,6 +34,13 @@ updates:
     labels:
       - "dependencies"
       - "android"
+    # Un solo PR por semana con todas las actualizaciones menores y de parche.
+    # Las mayores siguen llegando como PR individuales, para revisión manual.
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # Versiones de las Actions usadas en los workflows de GitHub
   - package-ecosystem: "github-actions"
@@ -41,3 +55,10 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    # Un solo PR por semana con todas las actualizaciones menores y de parche.
+    # Las mayores siguen llegando como PR individuales, para revisión manual.
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

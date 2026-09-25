@@ -15,6 +15,17 @@ Jira: QHP-
 <!-- ¿Qué cambia este PR y por qué? Da suficiente contexto para alguien
 que no conoce el problema de antemano. -->
 
+## Uso de IA generativa
+
+<!-- Rúbrica 8.2: si este PR incluye código generado o asistido por IA, marca la casilla,
+antepón [IA-ASISTIDO] a la primera línea de la Descripción y completa herramienta y validación.
+Si no usaste IA, deja la casilla sin marcar y borra los dos campos. -->
+
+- [ ] Este PR incluye código asistido por IA (antepón `[IA-ASISTIDO]` a la Descripción)
+
+Herramienta: <!-- Ej: GitHub Copilot, ChatGPT, Claude Code -->
+Validación: <!-- Ej: pruebas unitarias + revisión manual + revisión de seguridad -->
+
 ## Tipo de cambio
 
 - [ ] 🐛 Corrección de bug
