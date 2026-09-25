@@ -165,17 +165,19 @@ void main() {
     test('cierra sesión y queda no autenticado', () async {
       when(() => repository.logout()).thenAnswer((_) async {});
 
-      await controller().logout();
+      final success = await controller().logout();
 
+      expect(success, isTrue);
       expect(state().status, AuthenticationStatus.unauthenticated);
     });
 
-    test('si falla deja el error amigable', () async {
+    test('si falla el cierre remoto deja la sesión local cerrada y el error amigable', () async {
       when(() => repository.logout()).thenThrow(Exception('SocketException'));
 
-      await controller().logout();
+      final success = await controller().logout();
 
-      expect(state().status, AuthenticationStatus.error);
+      expect(success, isFalse);
+      expect(state().status, AuthenticationStatus.unauthenticated);
       expect(state().errorMessage, contains('No pudimos conectar'));
     });
   });

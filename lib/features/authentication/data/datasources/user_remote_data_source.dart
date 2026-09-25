@@ -61,7 +61,7 @@ class UserRemoteDataSource {
       );
       return _parseEnvelope(response.data);
     } on DioException catch (e) {
-      throw _mapDioError(e);
+      throw mapProfileDioError(e);
     }
   }
 

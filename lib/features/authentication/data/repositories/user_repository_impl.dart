@@ -55,18 +55,12 @@ class UserRepositoryImpl implements UserRepository {
         birthDate: birthDate,
       );
       return model.toEntity();
-    } on ValidationException catch (e) {
-      throw ValidationFailure(e.message);
-    } on UnauthorizedException {
-      throw const UnauthorizedFailure(
-        'Sesión inválida. Inicia sesión de nuevo.',
-      );
-    } on NetworkException catch (e) {
-      throw NetworkFailure(e.message);
-    } on ServerException catch (e) {
-      throw ServerFailure(e.message);
     } catch (e) {
-      throw UnknownFailure('No fue posible actualizar tu perfil: $e');
+      throw toProfileFailure(
+        e,
+        unauthorizedMessage: 'Sesión inválida. Inicia sesión de nuevo.',
+        unknownMessage: 'No fue posible actualizar tu perfil',
+      );
     }
   }
 }
