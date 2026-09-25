@@ -83,13 +83,17 @@ jobs:
       - name: Ejecutar pruebas unitarias (flutter test)
         run: flutter test --coverage
 
+      # La cuota gratuita de artefactos de la cuenta es de 500 MB compartidos entre todos los
+      # repositorios. Subir el binario en cada PR la agotó (QHP-64): ahora solo se sube fuera de
+      # los PR, con retención corta, y una subida fallida no invalida pruebas que ya pasaron.
       - name: Publicar reporte de cobertura
-        if: always()
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/lcov.info
-          retention-days: 14
+          retention-days: 3
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------
@@ -130,10 +134,15 @@ jobs:
         run: flutter build apk --debug
 
 
+      # La cuota gratuita de artefactos de la cuenta es de 500 MB compartidos entre todos los
+      # repositorios. Subir el binario en cada PR la agotó (QHP-64): ahora solo se sube fuera de
+      # los PR, con retención corta, y una subida fallida no invalida pruebas que ya pasaron.
       - name: Publicar APK generado
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 14
+          retention-days: 1
           if-no-files-found: warn
