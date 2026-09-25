@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../domain/usecases/sync_profile_use_case.dart';
 import '../models/user_model.dart';
+import 'profile_api_errors.dart';
 
 class UserRemoteDataSource {
   final Dio _dio;
@@ -26,7 +27,7 @@ class UserRemoteDataSource {
 
       return _parseEnvelope(response.data);
     } on DioException catch (e) {
-      throw _mapDioError(e);
+      throw mapProfileDioError(e);
     }
   }
 
@@ -39,7 +40,7 @@ class UserRemoteDataSource {
 
       return _parseEnvelope(response.data);
     } on DioException catch (e) {
-      throw _mapDioError(e);
+      throw mapProfileDioError(e);
     }
   }
 
@@ -78,58 +79,6 @@ class UserRemoteDataSource {
         'El servidor devolvió un perfil con formato inesperado.',
       );
     }
-  }
-
-  Exception _mapDioError(DioException e) {
-    final statusCode = e.response?.statusCode;
-    final message = _extractMessage(e.response?.data);
-
-    if (statusCode == 409) {
-      return ConflictException(message);
-    }
-
-    if (statusCode == 400) {
-      return ValidationException(message);
-    }
-
-    if (statusCode == 401) {
-      return const UnauthorizedException('No autorizado.');
-    }
-
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.sendTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.connectionError) {
-      return NetworkException(
-        'No fue posible conectarse con el servidor. Revisa tu conexión.',
-      );
-    }
-
-    return ServerException(message);
-  }
-
-  String _extractMessage(dynamic data) {
-    if (data is Map<String, dynamic>) {
-      final message = data['message'];
-
-      if (message is String && message.isNotEmpty) {
-        return message;
-      }
-      final errors = data['errors'];
-      if (errors is List && errors.isNotEmpty) {
-        return errors.map((e) => e.toString()).join('; ');
-      }
-      final error = data['error'];
-      if (error is String && error.isNotEmpty) {
-        return error;
-      }
-    }
-
-    if (data is String && data.isNotEmpty) {
-      return data;
-    }
-
-    return 'Ocurrió un error inesperado en el servidor.';
   }
 
   String _toIsoDate(DateTime date) {
