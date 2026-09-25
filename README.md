@@ -1,13 +1,15 @@
 # Qué Hay Pa'? — Frontend
 
-[![Flutter CI](https://github.com/bratev-dev/quehaypa_frontend/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/bratev-dev/quehaypa_frontend/actions/workflows/flutter-ci.yml)
+[![Flutter CI](https://github.com/bratev-dev/quehaypa_frontend/actions/workflows/flutter-ci.yml/badge.svg?branch=develop)](https://github.com/bratev-dev/quehaypa_frontend/actions/workflows/flutter-ci.yml)
 ![Flutter](https://img.shields.io/badge/Flutter-3.47.3-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.13-0175C2?logo=dart&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
 
-Aplicación móvil cliente de **Qué Hay Pa'?**, construida en Flutter. Consume la [API de backend](https://github.com/bratev-dev/quehaypa_backend) mediante REST y delega la autenticación a un servidor de identidad OAuth2/OIDC (Keycloak).
+Aplicación móvil de **Qué Hay Pa'?**, construida en Flutter. Consume la [API del backend](https://github.com/bratev-dev/quehaypa-backend) por REST y delega la autenticación en Keycloak (OAuth2 / OpenID Connect con PKCE).
 
-Este repositorio contiene únicamente el frontend. El backend (Spring Boot) y la infraestructura de identidad viven en repositorios/servicios independientes.
+Este repositorio contiene solo el cliente móvil. El backend (Spring Boot) y Keycloak viven en el [repositorio del backend](https://github.com/bratev-dev/quehaypa-backend) y se despliegan en Railway.
+
+**APK de pruebas más reciente:** [pre-release `develop-latest`](https://github.com/bratev-dev/quehaypa_frontend/releases/tag/develop-latest). Se regenera con cada cambio en `develop`.
 
 ---
 
@@ -19,78 +21,86 @@ Este repositorio contiene únicamente el frontend. El backend (Spring Boot) y la
 - [Requisitos previos](#requisitos-previos)
 - [Configuración de entornos](#configuración-de-entornos)
 - [Puesta en marcha](#puesta-en-marcha)
-- [Pruebas y calidad de código](#pruebas-y-calidad-de-código)
-- [Compilación para distribución](#compilación-para-distribución)
-- [Integración continua](#integración-continua)
-- [Flujo de ramas y contribución](#flujo-de-ramas-y-contribución)
+- [Pruebas, calidad y cobertura](#pruebas-calidad-y-cobertura)
+- [Integración y entrega continua](#integración-y-entrega-continua)
+- [Flujo de ramas, commits y Pull Requests](#flujo-de-ramas-commits-y-pull-requests)
+- [Dependencias y Dependabot](#dependencias-y-dependabot)
+- [Versiones](#versiones)
 
 ---
 
 ## Arquitectura
 
-El proyecto sigue **Clean Architecture** por feature, con la capa de presentación organizada bajo los principios de **Atomic Design**:
+Cada feature sigue **Clean Architecture**, y su capa de presentación se organiza con **Atomic Design**:
 
 ```
 feature/
-├── data/            # Fuentes de datos, modelos y repositorios concretos
-├── domain/          # Entidades y casos de uso (reglas de negocio puras)
+├── data/            # Datasources (Dio), modelos JSON y repositorios concretos
+├── domain/          # Entidades, contratos de repositorio y casos de uso (Dart puro)
 └── presentation/
-    ├── atoms/       # Componentes UI mínimos y reutilizables (botones, campos)
-    ├── molecules/   # Composición de átomos (formularios)
-    ├── organisms/   # Secciones completas de una pantalla (headers, heroes)
-    ├── templates/   # Layout de una pantalla, sin lógica de estado
-    ├── pages/       # Widgets con estado, conectados a los controladores
-    └── controllers/ # Estado de la feature (Riverpod)
+    ├── atoms/       # Componentes UI mínimos (botones, campos, chips)
+    ├── molecules/   # Composición de átomos (formularios, tarjetas)
+    ├── organisms/   # Secciones completas de una pantalla
+    ├── templates/   # Layout de una pantalla, sin estado
+    ├── pages/       # Pantallas conectadas a los controladores
+    └── controllers/ # Estado de la feature (Riverpod) y providers
 ```
 
-La capa `domain` no depende de Flutter ni de ningún paquete externo, lo que permite testear las reglas de negocio de forma aislada. La comunicación entre capas fluye en una sola dirección: `presentation → domain → data`.
+- Las dependencias fluyen en una sola dirección: `presentation → domain → data`. `domain` no importa Flutter, Dio ni JSON.
+- Los datasources traducen los errores HTTP a excepciones (`core/errors/exceptions.dart`), y los repositorios los convierten en *failures* del dominio (`core/errors/failtures.dart`), que la UI muestra.
+- Toda feature usa el `Dio` central (`dioProvider`). Su `AuthInterceptor` agrega el `Bearer` y, ante un 401, renueva el token una sola vez y reintenta. Si la renovación falla, cierra la sesión.
 
 ## Stack tecnológico
 
-| Categoría          | Tecnología                                          |
-| ------------------ | ---------------------------------------------------- |
-| Framework           | [Flutter](https://flutter.dev) 3.47.3 (Dart 3.13)    |
-| Gestión de estado   | [Riverpod](https://riverpod.dev) 3.x                 |
-| Navegación          | [go_router](https://pub.dev/packages/go_router)      |
-| Autenticación       | [flutter_appauth](https://pub.dev/packages/flutter_appauth) (OAuth2 / OIDC contra Keycloak) |
-| Cliente HTTP        | [Dio](https://pub.dev/packages/dio)                  |
-| Almacenamiento seguro | [flutter_secure_storage](https://pub.dev/packages/flutter_secure_storage) |
-| CI/CD               | GitHub Actions                                       |
+| Categoría | Tecnología |
+| --- | --- |
+| Framework | [Flutter](https://flutter.dev) 3.47.3 (Dart 3.13) |
+| Gestión de estado | [Riverpod](https://riverpod.dev) 3.x |
+| Navegación | [go_router](https://pub.dev/packages/go_router) |
+| Autenticación | [flutter_appauth](https://pub.dev/packages/flutter_appauth) (Authorization Code + PKCE contra Keycloak) |
+| Cliente HTTP | [Dio](https://pub.dev/packages/dio) |
+| Almacenamiento seguro de tokens | [flutter_secure_storage](https://pub.dev/packages/flutter_secure_storage) |
+| Configuración | [flutter_dotenv](https://pub.dev/packages/flutter_dotenv) (archivo `.env`) |
+| Pruebas | `flutter_test`, [mocktail](https://pub.dev/packages/mocktail) |
+| Calidad | `flutter analyze`, SonarCloud |
+| CI/CD | GitHub Actions + GitHub Releases |
 
-> **Nota sobre plataformas:** `flutter_appauth` no tiene implementación web. El flujo de login solo está soportado en Android e iOS; en web la navegación es funcional pero la autenticación no.
+> **Plataformas:** `flutter_appauth` no tiene implementación web, así que el inicio de sesión solo funciona en Android e iOS. El objetivo del proyecto es Android.
 
 ## Estructura del proyecto
 
 ```
 frontend/
-├── android/                  # Proyecto nativo Android
-├── assets/
-│   ├── images/                # SVGs e imágenes estáticas
-│   └── videos/                 # Recursos multimedia
+├── android/ ios/ ...          # Proyectos nativos
+├── assets/                    # Imágenes (SVG) y videos
 ├── lib/
-│   ├── app/
-│   │   ├── config/              # AppConfig por entorno (development/production)
-│   │   ├── providers/           # Providers transversales (red, sesión)
-│   │   └── router/               # Configuración de GoRouter, rutas y nombres
+│   ├── app/                   # AppConfig (.env), router, tema y providers transversales
 │   ├── core/
-│   │   ├── errors/                # Excepciones y failures compartidos
-│   │   ├── network/                # Cliente Dio e interceptores
-│   │   └── security/                # Gestión de tokens y sesión
+│   │   ├── errors/            # Excepciones, failures y mensajes amigables
+│   │   ├── network/           # Cliente Dio y AuthInterceptor
+│   │   └── security/          # TokenManager, almacenamiento seguro y eventos de sesión
 │   ├── features/
-│   │   ├── authentication/          # Login, registro, sesión
-│   │   └── home/                     # Pantalla principal
-│   └── main.dart
-├── test/                      # Pruebas unitarias y de widgets
-└── .github/workflows/          # Pipelines de CI
+│   │   ├── authentication/    # Login, registro por pasos y sincronización del perfil
+│   │   ├── preferences/       # Catálogo de intereses, preferencias y feed de eventos
+│   │   ├── plans/             # CRUD de planes contra el backend (datos y controlador)
+│   │   ├── my_plans/          # Pantalla "Mis planes" y modal de creación
+│   │   ├── dashboard/         # Inicio con categorías y eventos
+│   │   ├── saved_to_plans/    # Guardar un evento en un plan
+│   │   ├── navigation/        # Barra de navegación inferior
+│   │   ├── home/ splash/      # Bienvenida y arranque
+│   └── main.dart              # Carga .env y arranca la app
+├── test/                      # Pruebas unitarias y de widgets (misma estructura que lib/)
+├── tool/                      # Scripts de medición de cobertura
+├── docs/                      # Documento de arquitectura del frontend
+└── .github/                   # Workflows, Dependabot y plantilla de PR
 ```
 
 ## Requisitos previos
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) `3.47.3` (usa `fvm` o `asdf` si necesitas fijar la versión exacta)
-- Android SDK / [Android Studio](https://developer.android.com/studio) para compilar y depurar en Android
-- Un backend y una instancia de Keycloak accesibles (locales o remotos) — ver [Configuración de entornos](#configuración-de-entornos)
-
-Verifica tu entorno con:
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) `3.47.3` (con `fvm` o `asdf` puedes fijar la versión exacta)
+- Android SDK / [Android Studio](https://developer.android.com/studio) y un emulador o un teléfono con depuración USB
+- JDK 17 (lo usa Gradle)
+- Backend y Keycloak accesibles desde el dispositivo, sea en tu PC o en Railway. Ver [Configuración de entornos](#configuración-de-entornos)
 
 ```bash
 flutter doctor -v
@@ -98,116 +108,141 @@ flutter doctor -v
 
 ## Configuración de entornos
 
-La app no hardcodea URLs de backend. El entorno activo se resuelve en `lib/app/config/app_config.dart` a partir de variables inyectadas en tiempo de compilación (`--dart-define`).
-
-### Desarrollo local
-
-Por defecto, `AppConfig.fromEnvironment()` usa el entorno `development`, que apunta a `localhost`. Si vas a probar desde un dispositivo físico (no un emulador), el celular no puede resolver `localhost` como tu máquina — pasa la IP LAN de tu PC:
+La app lee su configuración de un archivo **`.env`** en la raíz del proyecto, que `main.dart` carga al arrancar. Ese archivo está en `.gitignore` y nunca se sube al repositorio. Para crearlo, parte de la plantilla:
 
 ```bash
-flutter run --dart-define=BACKEND_HOST=192.168.1.19
+cp .env.example .env
 ```
 
-### Producción / demo
+| Variable | Descripción |
+| --- | --- |
+| `API_BASE_URL` | URL base del backend, sin `/api/v1`. Ej.: `http://192.168.1.19:5001` |
+| `KEYCLOAK_ISSUER_URL` | Emisor del realm: `http(s)://<host>/realms/que-hay-pa-dev` |
 
-Para apuntar a un backend desplegado, compila con `ENV=production` y las URLs correspondientes:
+Otros valores fijos del cliente OIDC, que viven en `lib/app/config/app_config.dart`:
 
-```bash
-flutter build apk --release \
-  --dart-define=ENV=production \
-  --dart-define=API_BASE_URL=https://<tu-backend>.example.com \
-  --dart-define=KEYCLOAK_ISSUER_URL=https://<tu-keycloak>.example.com/realms/<realm>
-```
+- client id: `que-hay-pa-mobile`
+- redirect URI: `com.quehaypa.app://oauth/callback`
 
-> Ninguna URL de infraestructura vive en el código fuente. Solicita las URLs vigentes a quien administre los despliegues del equipo.
+**Reglas importantes:**
+
+- **`KEYCLOAK_ISSUER_URL` debe ser idéntico a `JWT_ISSUER_URI` del backend.** El claim `iss` del token toma la URL por la que la app llegó a Keycloak. Si no coincide con la que valida el backend, todas las peticiones responden 401.
+- En un **teléfono físico**, `localhost` es el propio teléfono. Usa la IP LAN de tu PC en ambas variables y en el backend.
+- Para usar los servicios de Railway, pide las URLs vigentes a quien administra los despliegues. En el CI se inyectan desde las *Variables* del repositorio (`API_BASE_URL` y `KEYCLOAK_ISSUER_URL`), no desde el código.
 
 ## Puesta en marcha
 
 ```bash
-# 1. Clonar el repositorio
 git clone https://github.com/bratev-dev/quehaypa_frontend.git
 cd quehaypa_frontend
-
-# 2. Instalar dependencias
+cp .env.example .env        # y completa las URLs
 flutter pub get
-
-# 3. Ejecutar en modo desarrollo (emulador o dispositivo conectado)
-flutter run
+flutter run                 # emulador o dispositivo conectado
 ```
 
-## Pruebas y calidad de código
+Para instalar la versión de pruebas sin compilar, descarga `que-hay-pa-develop.apk` de la pre-release [`develop-latest`](https://github.com/bratev-dev/quehaypa_frontend/releases/tag/develop-latest). Ese APK apunta a los servicios de Railway.
 
-Antes de abrir un Pull Request, corre localmente lo mismo que valida el pipeline de CI:
+## Pruebas, calidad y cobertura
+
+Antes de abrir un Pull Request, corre localmente lo mismo que valida el CI:
 
 ```bash
-# Formato de código
-dart format --output=none --set-exit-if-changed .
+dart format --output=none --set-exit-if-changed .   # formato
+flutter analyze                                      # análisis estático
+flutter test                                         # pruebas unitarias y de widgets
+```
 
-# Análisis estático
-flutter analyze
+### Cobertura medida sin trampas
 
-# Pruebas unitarias y de widgets
+`flutter test --coverage` solo reporta los archivos que alguna prueba importa. Un archivo sin pruebas desaparece del reporte e infla el porcentaje. Para medir como el CI, genera primero una prueba que importe todo `lib/`:
+
+```bash
+bash tool/coverage_all_files.sh      # genera test/coverage_all_files_test.dart (no se versiona)
 flutter test --coverage
+python tool/coverage_summary.py      # muestra el porcentaje con el alcance de SonarCloud y el total
 ```
 
-## Compilación para distribución
+**Alcance de la métrica.** Se excluyen del porcentaje solo los widgets de presentación **sin reglas de negocio**: dibujo, animaciones, tema y composición de pantallas. La lista está en `sonar.coverage.exclusions` de [`sonar-project.properties`](sonar-project.properties) y es la única fuente: el resumen del CI la lee de ahí. Los widgets que contienen validaciones se miden y tienen pruebas de widget. Hoy son:
 
-```bash
-# APK de debug (rápido, para pruebas internas)
-flutter build apk --debug
+- login y registro (correo, contraseña, términos)
+- datos personales (fecha de nacimiento, CC)
+- selección de intereses (mínimo 4)
+- modal de creación de planes
 
-# APK de release apuntando a producción
-flutter build apk --release \
-  --dart-define=ENV=production \
-  --dart-define=API_BASE_URL=<url> \
-  --dart-define=KEYCLOAK_ISSUER_URL=<url>
+Si agregas un widget con reglas de negocio, no lo pongas en la lista de exclusión: escríbele pruebas.
+
+**Convenciones de pruebas:**
+
+- Los datasources se prueban con `test/helpers/fake_http_adapter.dart`, un adaptador HTTP falso para Dio que no usa red.
+- Los repositorios y controladores se prueban con `mocktail` y `ProviderContainer`.
+- Los widgets usan `test/helpers/widget_finders.dart`.
+
+## Integración y entrega continua
+
+El workflow [`flutter-ci.yml`](.github/workflows/flutter-ci.yml) corre en cada push y Pull Request hacia `develop` y `main`:
+
+| Job | Qué hace |
+| --- | --- |
+| **Analizar y probar** | `dart format`, `flutter analyze`, generación de la prueba que importa todo `lib/`, `flutter test --coverage`, resumen de cobertura en la página del run y análisis de **SonarCloud** con el `lcov` (calidad, seguridad y cobertura) |
+| **Build Android (debug)** | Compila un APK de debug para verificar que el build completo (Gradle y JDK) sigue funcionando |
+| **Publicar APK de pruebas** | Solo en push a `develop`. Compila el APK de release con el `.env` armado desde las *Variables* del repositorio y lo publica en la pre-release `develop-latest` |
+
+Otros workflows:
+
+| Workflow | Función |
+| --- | --- |
+| [`branch-naming.yml`](.github/workflows/branch-naming.yml) | Rechaza ramas que no sigan la convención (las ramas `dependabot/*` están exentas) |
+| [`pr-title.yml`](.github/workflows/pr-title.yml) | Exige un título de PR con formato Conventional Commits y clave de Jira |
+| [`dependabot-automerge.yml`](.github/workflows/dependabot-automerge.yml) | Aprueba y fusiona solas las actualizaciones *patch* y *minor* cuando el CI pasa |
+
+**SonarCloud** (proyecto `bratev-dev_QueHayPa_Alta`) comenta cada PR y su Quality Gate (*Sonar way*: al menos 80 % de cobertura y sin incidencias nuevas en el código nuevo) es un check obligatorio. El análisis automático de SonarCloud está desactivado: solo analiza el CI, que es el que aporta la cobertura.
+
+**Protección de ramas.** Para fusionar en `develop` y en `main` deben pasar `Analizar y probar`, `Build Android (debug)`, `check-branch-name`, `check-pr-title` y `SonarCloud Code Analysis`. Además, `main` exige 1 aprobación y las reglas también aplican a los administradores.
+
+## Flujo de ramas, commits y Pull Requests
+
+El repositorio está conectado a Jira (proyecto **QHP**) con la app **GitHub for Jira**. Una rama, un commit o un PR que incluya `QHP-<número>` aparece en el panel de desarrollo del issue.
+
+| Rama | Propósito | Se crea desde | Se fusiona en |
+| --- | --- | --- | --- |
+| `main` | Versión estable y liberada (tags `vX.Y.Z-…`) | — | — |
+| `develop` | Integración continua del sprint | — | — |
+| `feature/QHP-<n>-<descripción>` | Historia de usuario | `develop` | `develop` (squash) |
+| `fix/QHP-<n>-<descripción>` | Corrección de un error | `develop` | `develop` (squash) |
+| `chore/QHP-<n>-<descripción>` | Mantenimiento, CI, pruebas, documentación | `develop` | `develop` (squash) |
+| `hotfix/QHP-<n>-<descripción>` | Parche urgente sobre lo liberado | `main` | `main` y luego `develop` |
+
+La descripción va en español y en kebab-case. Ejemplo: `feature/QHP-123-login-con-google`. `QHP-<n>` es la clave real del issue en Jira. Una rama corresponde a un solo issue.
+
+**Título del Pull Request.** Se valida con Conventional Commits y la clave de Jira:
+
+```
+<tipo>(QHP-<n>): <descripción en español>
 ```
 
-El APK generado queda en `build/app/outputs/flutter-apk/`.
+Los tipos válidos son `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci` y `revert`. Para un cambio que rompe compatibilidad se agrega `!`, como en `feat(QHP-90)!: ...`. Ejemplos: `feat(QHP-78): crear planes desde la app`, `test(QHP-85): cobertura real del frontend`.
 
-## Integración continua
+**Métodos de fusión.**
 
-El workflow [`flutter-ci.yml`](.github/workflows/flutter-ci.yml) se ejecuta en cada push y Pull Request contra `main` y `develop`, y valida en orden:
+- Hacia `develop`, solo **squash**: cada PR queda como un único commit cuyo mensaje es el título del PR, y así el historial de `develop` sigue Conventional Commits.
+- Hacia `main`, solo **merge commit**, usado para las releases `develop → main`. Así `main` conserva exactamente los commits de `develop` y no divergen.
+- Las ramas se borran solas al fusionar.
 
-1. **Formato** — `dart format --set-exit-if-changed`
-2. **Análisis estático** — `flutter analyze`
-3. **Pruebas** — `flutter test --coverage` (el reporte de cobertura se publica como artefacto)
-4. **Build de verificación** — compila un APK de debug para confirmar que el proyecto completo (incluyendo el toolchain de Android/Gradle) sigue siendo compilable
+**Release.** Se abre un PR `develop → main` con título `chore(QHP-<n>): release …`, se fusiona con merge commit tras la aprobación y se etiqueta `main` con la versión, por ejemplo `v0.1.0-sprint1`.
 
-Dependabot mantiene actualizadas las dependencias de Dart/Flutter, Gradle y las propias GitHub Actions (ver [`dependabot.yml`](.github/dependabot.yml)).
+**Uso de IA generativa.** Si un PR incluye código generado o asistido por IA, se marca la casilla de la [plantilla de PR](.github/pull_request_template.md) y se antepone **`[IA-ASISTIDO]`** a la primera línea de la descripción. También se indica la herramienta usada y cómo se validó el código.
 
-## Flujo de ramas y contribución
+Los commits, los PR y las revisiones se redactan en español.
 
-Este repositorio está conectado a Jira (proyecto **QHP**) mediante la app oficial **GitHub for Jira**. Cualquier rama, commit o Pull Request cuyo nombre incluya una clave `QHP-<número>` aparece automáticamente en el panel de desarrollo del issue correspondiente en Jira.
+## Dependencias y Dependabot
 
-| Rama                             | Propósito                                                          |
-| --------------------------------- | -------------------------------------------------------------------- |
-| `main`                             | Código estable, listo para distribución/demo                        |
-| `develop`                          | Integración de features antes de pasar a `main`                     |
-| `feature/QHP-<n>-<descripción>`    | Desarrollo de una Historia de Usuario (issue tipo *Story* en Jira)   |
-| `fix/QHP-<n>-<descripción>`        | Corrección de un error (issue tipo *Bug* en Jira)                    |
-| `chore/QHP-<n>-<descripción>`      | Mantenimiento: config, dependencias, limpieza (issue tipo *Task*)    |
-| `hotfix/QHP-<n>-<descripción>`     | Parche urgente sobre producción (issue tipo *Bug* urgente)            |
+[`dependabot.yml`](.github/dependabot.yml) revisa cada lunes las dependencias de `pub`, `gradle` y `github-actions`, y abre los PR contra `develop`:
 
-**Convención de nombres:**
+- Las actualizaciones *minor* y *patch* se agrupan en un solo PR por ecosistema. `dependabot-automerge.yml` las aprueba y las fusiona cuando el CI pasa.
+- Las actualizaciones *major* quedan abiertas para revisión manual.
 
-```
-<tipo>/QHP-<número>-<descripción-corta-en-kebab-case>
-```
+## Versiones
 
-- `QHP-<número>` es la clave **real** del issue en Jira, tal cual aparece en él — nunca una numeración propia (ej. no usar `1.2` de Épica.Historia).
-- La descripción va en español, en kebab-case, y es solo para que el equipo identifique la rama de un vistazo; Jira ignora esa parte.
-- Ejemplos: `feature/QHP-123-login-con-google`, `fix/QHP-145-crash-al-abrir-perfil`, `chore/QHP-150-actualizar-dependencias`, `hotfix/QHP-160-token-expirado-en-produccion`.
-
-**Reglas:**
-
-- Toda rama `feature/*`, `fix/*` o `chore/*` se crea a partir de `develop` actualizada.
-- Toda rama `hotfix/*` se crea a partir de `main` y, al mergear, se integra tanto a `main` como a `develop`.
-- Un branch corresponde a un único issue de Jira (relación 1:1). Si el trabajo abarca más de una historia o bug, se abren ramas separadas.
-- Nunca reutilices la clave de un issue en otra rama; si retomas el trabajo, continúa en la misma rama en lugar de crear una `-v2`.
-- Los Pull Requests hacia `main` y `develop` están protegidos: requieren que el CI pase en verde.
-- Después de mergear un PR a `main`, sincroniza `develop` (`main → develop`) para que ninguna rama nueva parta de una base desactualizada.
-- Incluye la clave de Jira también en el título del Pull Request (ej: `[QHP-123] Login con Google`) — ver plantilla.
-- Los commits y los Pull Requests se redactan en español.
-
-Usa la [plantilla de Pull Request](.github/pull_request_template.md) del repositorio al abrir tu PR.
+| Versión | Fecha | Contenido |
+| --- | --- | --- |
+| `v0.1.0-sprint1` | 25-sep-2026 | Sprint 1: registro e inicio de sesión con Keycloak, intereses y feed de eventos, CRUD de planes, CI con SonarCloud y APK de pruebas |
