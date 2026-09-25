@@ -33,6 +33,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+# Generado por tool/coverage_all_files.sh antes de medir la cobertura.
+/test/coverage_all_files_test.dart
 
 # Symbolication related
 app.*.symbols
