@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../my_plans/presentation/pages/my_plans_page.dart';
 import '../../../navigation/presentation/organisms/custom_bottom_nav.dart';
+import '../../../navigation/presentation/organisms/sliding_navigation_stack.dart';
 import '../../../navigation/providers/navigation_provider.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../controllers/dashboard_controller.dart';
@@ -32,7 +33,7 @@ class DashboardTemplate extends ConsumerWidget {
       backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
-          IndexedStack(index: currentIndex, children: screens),
+          SlidingNavigationStack(index: currentIndex, children: screens),
           const CustomBottomNav(),
         ],
       ),

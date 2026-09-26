@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/router/animations/slide_page_route.dart';
+
 import '../../../authentication/domain/entities/user.dart';
 import '../molecules/profile_info_row.dart';
 import '../organisms/profile_section_panel.dart';
@@ -48,7 +50,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       color: Colors.white,
                     ),
                     onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
+                      SlidePageRoute<void>(
                         builder: (_) => const SettingsPage(),
                       ),
                     ),
@@ -82,6 +84,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               data: (user) => _ProfileHeader(user: user),
             ),
+            const SizedBox(height: 16),
             Expanded(
               child: ProfileSectionPanel(
                 section: section,

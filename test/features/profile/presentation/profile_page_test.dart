@@ -6,6 +6,7 @@ import 'package:frontend/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend/features/profile/presentation/pages/settings_page.dart';
 import 'package:frontend/features/profile/presentation/profile_providers.dart';
 import 'package:frontend/features/profile/presentation/organisms/profile_section_panel.dart';
+import 'package:frontend/features/profile/presentation/atoms/profile_section_tab.dart';
 import 'package:frontend/features/navigation/presentation/molecules/floating_nav_bar.dart';
 import 'package:frontend/features/navigation/presentation/organisms/custom_bottom_nav.dart';
 
@@ -79,6 +80,11 @@ void main() {
       await tester.pumpAndSettle();
 
       final panel = find.byType(ProfileSectionPanel);
+      final usernameBottom = tester.getBottomLeft(find.text('@juan').first).dy;
+      final tabsTop = tester
+          .getTopLeft(find.byType(ProfileSectionTab).first)
+          .dy;
+      expect(tabsTop - usernameBottom, greaterThanOrEqualTo(16));
       Path yellowPath() => tester
           .widget<ClipPath>(
             find.descendant(of: panel, matching: find.byType(ClipPath)),
@@ -102,4 +108,71 @@ void main() {
       expect(yellowPath().contains(const Offset(356, 20)), isFalse);
     },
   );
+
+  testWidgets('el saliente no recorta el panel en pestañas ni transiciones', (
+    tester,
+  ) async {
+    for (final width in [360.0, 393.0, 440.0]) {
+      var section = 2;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: width,
+                height: 400,
+                child: StatefulBuilder(
+                  builder: (context, setState) => ProfileSectionPanel(
+                    section: section,
+                    onSectionSelected: (value) =>
+                        setState(() => section = value),
+                    child: const SizedBox(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      void expectContinuousPanel() {
+        final panel = find.byType(ProfileSectionPanel);
+        final size = tester.getSize(panel);
+        final path = tester
+            .widget<ClipPath>(
+              find.descendant(of: panel, matching: find.byType(ClipPath)),
+            )
+            .clipper!
+            .getClip(size);
+        final body = RRect.fromRectAndRadius(
+          Rect.fromLTRB(0, 55, size.width, size.height),
+          const Radius.circular(40),
+        );
+        for (var y = 56.0; y < 96; y += 2) {
+          for (var x = 1.0; x < size.width; x += 2) {
+            final point = Offset(x, y);
+            if (body.contains(point)) {
+              expect(
+                path.contains(point),
+                isTrue,
+                reason: 'Corte en $point, ancho $width, sección $section',
+              );
+            }
+          }
+        }
+      }
+
+      expectContinuousPanel();
+      for (final label in ['Favoritos', 'Amigos', 'Perfil']) {
+        await tester.tap(find.text(label));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 120));
+        expectContinuousPanel();
+        await tester.pumpAndSettle();
+        expectContinuousPanel();
+      }
+      expect(tester.takeException(), isNull);
+    }
+  });
 }
