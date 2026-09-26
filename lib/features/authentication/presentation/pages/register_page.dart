@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
+import '../../../preferences/presentation/interests_colors.dart';
+import '../../../preferences/presentation/templates/interests_template.dart';
 import '../atoms/app_snackbar.dart';
 import '../controllers/register_controller.dart';
 import '../controllers/register_state.dart';
@@ -107,14 +109,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A47ED),
+      backgroundColor: registerState.currentStep == RegisterStep.interests
+          ? interestsYellow
+          : const Color(0xFF0A47ED),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: registerState.currentStep != RegisterStep.credentials
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: registerState.currentStep == RegisterStep.interests
+                      ? interestsBlue
+                      : Colors.white,
+                ),
                 onPressed: () {
                   ref.read(registerControllerProvider.notifier).previousStep();
                 },
@@ -219,14 +229,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         );
 
       case RegisterStep.interests:
-        return const SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Center(
-              child: SingleChildScrollView(child: InterestsSelectionForm()),
-            ),
-          ),
-        );
+        return const InterestsTemplate(content: InterestsSelectionForm());
     }
   }
 }
