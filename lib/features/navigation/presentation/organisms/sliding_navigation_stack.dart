@@ -18,6 +18,17 @@ class SlidingNavigationStack extends StatefulWidget {
 class _SlidingNavigationStackState extends State<SlidingNavigationStack> {
   int? previousIndex;
 
+  Offset _offsetFor(int index) {
+    if (index == widget.index) return Offset.zero;
+    return Offset(index < widget.index ? -1 : 1, 0);
+  }
+
+  void _finishTransition(int index) {
+    if (mounted && index == widget.index && previousIndex != null) {
+      setState(() => previousIndex = null);
+    }
+  }
+
   @override
   void didUpdateWidget(SlidingNavigationStack oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -47,22 +58,14 @@ class _SlidingNavigationStackState extends State<SlidingNavigationStack> {
                   child: TickerMode(
                     enabled: index == widget.index || previousIndex != null,
                     child: AnimatedSlide(
-                      offset: index == widget.index
-                          ? Offset.zero
-                          : Offset(index < widget.index ? -1 : 1, 0),
+                      offset: _offsetFor(index),
                       duration: reduceMotion
                           ? Duration.zero
                           : const Duration(milliseconds: 280),
                       curve: Curves.easeOutCubic,
                       onEnd: reduceMotion
                           ? null
-                          : () {
-                              if (mounted &&
-                                  index == widget.index &&
-                                  previousIndex != null) {
-                                setState(() => previousIndex = null);
-                              }
-                            },
+                          : () => _finishTransition(index),
                       child: ColoredBox(
                         color: const Color(0xFF121212),
                         child: widget.children[index],
