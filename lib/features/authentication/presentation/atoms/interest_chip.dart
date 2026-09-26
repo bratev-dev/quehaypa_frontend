@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../preferences/presentation/interests_colors.dart';
+
 class InterestChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -14,27 +16,34 @@ class InterestChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.white
-              : Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFFFD600) : Colors.white54,
-            width: 1.5,
+    return Semantics(
+      selected: isSelected,
+      button: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 37),
+        child: Material(
+          color: isSelected ? interestsSelected : Colors.white,
+          shape: StadiumBorder(
+            side: BorderSide(
+              color: isSelected ? interestsBlue : Colors.transparent,
+              width: 3,
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.black87 : Colors.white,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: interestsBlue,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
           ),
         ),
       ),

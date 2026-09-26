@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../preferences/presentation/controllers/preferences_controller.dart';
 import '../../../preferences/presentation/controllers/preferences_state.dart';
 import '../../../preferences/presentation/interest_catalog_fallback.dart';
+import '../../../preferences/presentation/interests_colors.dart';
+import '../../../preferences/presentation/organisms/interest_options.dart';
 import '../atoms/app_snackbar.dart';
-import '../atoms/interest_chip.dart';
 import '../controllers/register_controller.dart';
 
 class InterestsSelectionForm extends ConsumerStatefulWidget {
@@ -43,22 +44,18 @@ class _InterestsSelectionFormState
         const Text(
           '¿Qué te apasiona?',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: interestsBlue,
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Selecciona al menos 4 intereses (${selectedInterests.length}/4)',
-          style: const TextStyle(fontSize: 14, color: Colors.white70),
           textAlign: TextAlign.center,
         ),
         if (prefsState.status == PreferencesStatus.loading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(
+              child: CircularProgressIndicator(color: interestsBlue),
+            ),
           ),
         if (prefsState.status == PreferencesStatus.error)
           Padding(
@@ -69,14 +66,14 @@ class _InterestsSelectionFormState
                 const Flexible(
                   child: Text(
                     'Sin conexión al catálogo, usando lista local.',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(color: interestsBlue, fontSize: 12),
                     textAlign: TextAlign.center,
                   ),
                 ),
                 IconButton(
                   icon: const Icon(
                     Icons.refresh,
-                    color: Colors.white70,
+                    color: interestsBlue,
                     size: 18,
                   ),
                   onPressed: () => ref
@@ -87,50 +84,51 @@ class _InterestsSelectionFormState
             ),
           ),
         const SizedBox(height: 16),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 10.0,
-          alignment: WrapAlignment.center,
-          children: available.map((interest) {
-            final isSelected = selectedInterests.contains(interest);
-            return InterestChip(
-              label: interest,
-              isSelected: isSelected,
-              onTap: () {
-                ref
-                    .read(registerControllerProvider.notifier)
-                    .toggleInterest(interest);
-              },
-            );
-          }).toList(),
+        InterestOptions(
+          catalog: available,
+          selected: selectedInterests,
+          onToggle: (interest) => ref
+              .read(registerControllerProvider.notifier)
+              .toggleInterest(interest),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Selecciona al menos 4 intereses (${selectedInterests.length}/4)',
+          style: const TextStyle(fontSize: 14, color: interestsBlue),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD600),
-            foregroundColor: Colors.black,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          onPressed: () {
-            if (!canProceed) {
-              AppSnackbar.show(
-                context,
-                message: 'Selecciona al menos 4 intereses para continuar.',
-                type: SnackbarType.info,
-              );
-              return;
-            }
+        Center(
+          child: SizedBox(
+            width: 259,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: interestsBlue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size.fromHeight(57),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: const StadiumBorder(),
+              ),
+              onPressed: () {
+                if (!canProceed) {
+                  AppSnackbar.show(
+                    context,
+                    message: 'Selecciona al menos 4 intereses para continuar.',
+                    type: SnackbarType.info,
+                  );
+                  return;
+                }
 
-            ref
-                .read(registerControllerProvider.notifier)
-                .completeRegistration();
-          },
-          child: const Text(
-            'Finalizar Registro',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ref
+                    .read(registerControllerProvider.notifier)
+                    .completeRegistration();
+              },
+              child: const Text(
+                'Finalizar Registro',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ),
       ],
