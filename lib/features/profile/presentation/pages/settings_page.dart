@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
+import '../../../../app/router/animations/slide_page_route.dart';
 import '../../../authentication/presentation/controllers/authentication_controller.dart';
 import '../profile_providers.dart';
 import '../profile_colors.dart';
@@ -78,7 +79,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       color: Colors.white54,
                     ),
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
+                      SlidePageRoute<void>(
                         builder: (_) => EditProfilePage(user: user),
                       ),
                     ),
@@ -110,7 +111,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onTap: profile.asData?.value == null
                       ? null
                       : () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
+                          SlidePageRoute<void>(
                             builder: (_) =>
                                 EditProfilePage(user: profile.asData!.value),
                           ),
@@ -126,9 +127,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   icon: Icons.interests_outlined,
                   title: 'Mis intereses',
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const InterestsPage(),
-                    ),
+                    SlidePageRoute<void>(builder: (_) => const InterestsPage()),
                   ),
                 ),
               ],
