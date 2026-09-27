@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../preferences/presentation/controllers/preferences_controller.dart';
 import '../../../preferences/presentation/controllers/preferences_state.dart';
-import '../../../preferences/presentation/interest_catalog_fallback.dart';
+import '../controllers/register_state.dart';
 import '../../../preferences/presentation/interests_colors.dart';
 import '../../../preferences/presentation/organisms/interest_options.dart';
 import '../atoms/app_snackbar.dart';
@@ -34,9 +34,9 @@ class _InterestsSelectionFormState
     final bool canProceed = selectedInterests.length >= 4;
     final prefsState = ref.watch(preferencesControllerProvider);
 
-    final List<String> available = prefsState.catalog.isNotEmpty
-        ? prefsState.catalog
-        : fallbackInterests;
+    final available = prefsState.catalog;
+    final catalogReady =
+        prefsState.status == PreferencesStatus.success && available.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -65,7 +65,7 @@ class _InterestsSelectionFormState
               children: [
                 const Flexible(
                   child: Text(
-                    'Sin conexión al catálogo, usando lista local.',
+                    'No pudimos cargar el catálogo de intereses. Reintenta.',
                     style: TextStyle(color: interestsBlue, fontSize: 12),
                     textAlign: TextAlign.center,
                   ),
@@ -76,6 +76,7 @@ class _InterestsSelectionFormState
                     color: interestsBlue,
                     size: 18,
                   ),
+                  tooltip: 'Reintentar',
                   onPressed: () => ref
                       .read(preferencesControllerProvider.notifier)
                       .loadCatalog(),
@@ -84,13 +85,20 @@ class _InterestsSelectionFormState
             ),
           ),
         const SizedBox(height: 16),
-        InterestOptions(
-          catalog: available,
-          selected: selectedInterests,
-          onToggle: (interest) => ref
-              .read(registerControllerProvider.notifier)
-              .toggleInterest(interest),
-        ),
+        if (catalogReady)
+          InterestOptions(
+            catalog: available,
+            selected: selectedInterests,
+            onToggle: (interest) => ref
+                .read(registerControllerProvider.notifier)
+                .toggleInterest(interest),
+          ),
+        if (prefsState.status == PreferencesStatus.success && available.isEmpty)
+          const Text(
+            'No hay intereses disponibles por ahora.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: interestsBlue),
+          ),
         const SizedBox(height: 14),
         Text(
           'Selecciona al menos 4 intereses (${selectedInterests.length}/4)',
@@ -110,20 +118,25 @@ class _InterestsSelectionFormState
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: const StadiumBorder(),
               ),
-              onPressed: () {
-                if (!canProceed) {
-                  AppSnackbar.show(
-                    context,
-                    message: 'Selecciona al menos 4 intereses para continuar.',
-                    type: SnackbarType.info,
-                  );
-                  return;
-                }
+              onPressed:
+                  !catalogReady ||
+                      registerState.status == RegisterStatus.loading
+                  ? null
+                  : () {
+                      if (!canProceed) {
+                        AppSnackbar.show(
+                          context,
+                          message:
+                              'Selecciona al menos 4 intereses para continuar.',
+                          type: SnackbarType.info,
+                        );
+                        return;
+                      }
 
-                ref
-                    .read(registerControllerProvider.notifier)
-                    .completeRegistration();
-              },
+                      ref
+                          .read(registerControllerProvider.notifier)
+                          .completeRegistration();
+                    },
               child: const Text(
                 'Finalizar Registro',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

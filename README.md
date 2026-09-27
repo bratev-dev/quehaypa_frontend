@@ -162,9 +162,16 @@ flutter test --coverage
 python tool/coverage_summary.py      # muestra el porcentaje con el alcance de SonarCloud y el total
 ```
 
+En Windows también puedes generar el mismo archivo desde PowerShell:
+
+```powershell
+.\tool\coverage_all_files.ps1
+flutter test --coverage
+```
+
 **Alcance de la métrica.** Se excluyen del porcentaje solo los widgets de presentación **sin reglas de negocio**: dibujo, animaciones, tema y composición de pantallas. La lista está en `sonar.coverage.exclusions` de [`sonar-project.properties`](sonar-project.properties) y es la única fuente: el resumen del CI la lee de ahí. Los widgets que contienen validaciones se miden y tienen pruebas de widget. Hoy son:
 
-- login y registro (correo, contraseña, términos)
+- acceso a Keycloak y continuación del registro (cancelación, rol y navegación)
 - datos personales (fecha de nacimiento, CC)
 - selección de intereses (mínimo 4)
 - modal de creación de planes
@@ -246,3 +253,26 @@ Los commits, los PR y las revisiones se redactan en español.
 | Versión | Fecha | Contenido |
 | --- | --- | --- |
 | `v0.1.0-sprint1` | 25-sep-2026 | Sprint 1: registro e inicio de sesión con Keycloak, intereses y feed de eventos, CRUD de planes, CI con SonarCloud y APK de pruebas |
+
+### Registro pendiente en el backend (QHP-92 / QHP-94)
+
+El frontend requiere el backend QHP-93 con la migración V7. Tras login, registro
+o restauración consulta POST /api/v1/registrations/me: PENDING abre selección de
+rol y COMPLETED habilita dashboard. Nombre y apellidos se precargan desde
+given_name y family_name de los tokens OIDC.
+
+Después del perfil e intereses se confirma POST /api/v1/registrations/me/complete
+antes de habilitar dashboard. Atrás desde selección de rol llama DELETE
+/api/v1/registrations/me antes de cerrar sesión. Si falla, conserva formulario y
+sesión para reintentar. Cancelar dentro de Keycloak antes de obtener tokens sigue
+volviendo al vídeo sin errores. Cerrar el proceso no ejecuta una cancelación
+garantizada; el siguiente login recupera el estado pendiente del backend.
+
+Verificar ambos roles y la reutilización del correo tras cancelar con
+Keycloak/API reales. No activar esta versión del cliente contra el backend
+anterior que carece de estas rutas.
+
+Después de editar nombre/apellidos, el backend sincroniza Keycloak y Flutter
+renueva los tokens y recarga el perfil. Si falla la renovación tras un guardado
+confirmado, la app informa que los datos se guardaron y pide volver a iniciar
+sesión para actualizar los claims. No confundirlo con un fallo de persistencia.

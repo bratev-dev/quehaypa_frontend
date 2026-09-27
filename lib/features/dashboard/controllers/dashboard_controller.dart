@@ -1,56 +1,93 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/mocked_events.dart';
+import '../../../core/errors/failtures.dart';
+import '../../preferences/presentation/controllers/preferences_providers.dart';
 import 'dashboard_state.dart';
 
 class DashboardController extends Notifier<DashboardState> {
+  bool _feedStarted = false;
+  int _request = 0;
+  int _preferencesVersion = 0;
+
   @override
-  DashboardState build() {
-    return const DashboardState(
-      userInterests: [
-        'Tecnología',
-        'Música',
-        'Deportes',
-        'Arte',
-        'Cine',
-        'Gastronomía',
-      ], // TODO(QHP-78): hidratar desde User + PUT /preferences/me.
-    );
-  }
+  DashboardState build() => const DashboardState();
 
-  /// Hidrata intereses persistidos (ej. tras registro) y re-filtra.
   void setUserInterests(List<String> interests) {
-    state = state.copyWith(userInterests: interests);
-    _applyFilter(state.selectedCategory);
+    _preferencesVersion++;
+    final category = interests.contains(state.selectedCategory)
+        ? state.selectedCategory
+        : 'General';
+    state = state.copyWith(
+      userInterests: List<String>.unmodifiable(interests),
+      selectedCategory: category,
+    );
+    if (_feedStarted) {
+      loadEvents();
+    }
   }
 
-  // Seleccionar una categoría al hacer clic y filtrar eventos quemados.
+  Future<void> load() async {
+    _feedStarted = true;
+    final preferences = ref.read(getMyPreferencesUseCaseProvider);
+    final events = loadEvents();
+    final preferencesVersion = _preferencesVersion;
+    try {
+      final interests = await preferences();
+      if (ref.mounted && preferencesVersion == _preferencesVersion) {
+        state = state.copyWith(userInterests: interests);
+      }
+    } catch (_) {
+      // Un organizador puede consultar eventos sin preferencias de usuario regular.
+    }
+    await events;
+  }
+
   void selectCategory(String category) {
     state = state.copyWith(selectedCategory: category);
-    _applyFilter(category);
+    if (_feedStarted) {
+      loadEvents();
+    }
   }
 
-  void _applyFilter(String category) {
-    if (category == 'General') {
-      // Feed general: solo eventos de mis intereses (filtrado local QHP-78).
-      final filtered = kMockedEvents
-          .where((e) => state.userInterests.contains(e.category))
-          .toList();
+  Future<void> loadEvents() async {
+    _feedStarted = true;
+    final request = ++_request;
+    final category = state.selectedCategory;
+    state = state.copyWith(
+      status: DashboardStatus.loading,
+      visibleEvents: const [],
+    );
+    try {
+      final events = category == 'General'
+          ? await ref.read(getEventsFeedUseCaseProvider)()
+          : await ref.read(getEventsUseCaseProvider)(category: category);
+      if (!ref.mounted || request != _request) {
+        return;
+      }
       state = state.copyWith(
-        visibleEvents: filtered.isEmpty ? kMockedEvents : filtered,
+        status: DashboardStatus.success,
+        visibleEvents: events,
       );
+    } on Failure catch (error) {
+      _showError(request, error.message);
+    } catch (_) {
+      _showError(request, 'No pudimos cargar los eventos. Inténtalo de nuevo.');
+    }
+  }
+
+  void _showError(int request, String message) {
+    if (!ref.mounted || request != _request) {
       return;
     }
     state = state.copyWith(
-      visibleEvents: kMockedEvents
-          .where((e) => e.category == category)
-          .toList(),
+      status: DashboardStatus.error,
+      visibleEvents: const [],
+      errorMessage: message,
     );
   }
 }
 
-// Declaración moderna con NotifierProvider
 final dashboardControllerProvider =
-    NotifierProvider<DashboardController, DashboardState>(() {
-      return DashboardController();
-    });
+    NotifierProvider<DashboardController, DashboardState>(
+      DashboardController.new,
+    );

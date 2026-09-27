@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/app_error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/failtures.dart';
 import '../../../../core/security/session_events_provider.dart';
+import '../../../../core/security/security_providers.dart';
 import '../../../dashboard/controllers/dashboard_controller.dart';
 import '../../../preferences/presentation/controllers/preferences_providers.dart';
 import '../../domain/entities/auth_session.dart';
@@ -12,6 +14,7 @@ import '../../domain/usecases/restore_session_use_case.dart';
 import 'authentication_providers.dart';
 import 'authentication_state.dart';
 import 'register_providers.dart';
+import 'register_controller.dart';
 
 final authenticationControllerProvider =
     NotifierProvider<AuthenticationController, AuthenticationState>(
@@ -31,6 +34,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
 
     ref.listen<AsyncValue<void>>(sessionInvalidatedProvider, (_, next) {
       next.whenData((_) {
+        ref.invalidate(dashboardControllerProvider);
         state = const AuthenticationState(
           status: AuthenticationStatus.unauthenticated,
         );
@@ -51,6 +55,17 @@ class AuthenticationController extends Notifier<AuthenticationState> {
         return;
       }
 
+      if (await _registrationPending()) {
+        ref
+            .read(registerControllerProvider.notifier)
+            .startRegistration(session);
+        state = AuthenticationState(
+          status: AuthenticationStatus.registrationRequired,
+          session: session,
+        );
+        return;
+      }
+
       state = state.copyWith(
         status: AuthenticationStatus.authenticated,
         session: session,
@@ -61,6 +76,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
   }
 
   Future<void> login({String? loginHint}) async {
+    if (state.status == AuthenticationStatus.loading) return;
     state = state.copyWith(
       status: AuthenticationStatus.loading,
       errorMessage: null,
@@ -69,9 +85,20 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     try {
       final AuthSession session = await _loginUseCase(loginHint: loginHint);
 
+      if (await _registrationPending()) {
+        ref
+            .read(registerControllerProvider.notifier)
+            .startRegistration(session);
+        state = AuthenticationState(
+          status: AuthenticationStatus.registrationRequired,
+          session: session,
+        );
+        return;
+      }
+
       // Guía §10: tras el token, resolver el perfil de negocio (quién soy).
-      // Intenta regular y luego organizador; si no hay perfil (404),
-      // se mantiene autenticado y el sync se hará desde el registro/perfil.
+      // El estado remoto ya confirmó que el registro está completo.
+      // Esta consulta solo hidrata datos adicionales de la cuenta.
       await _resolveProfileBestEffort();
 
       state = state.copyWith(
@@ -80,14 +107,119 @@ class AuthenticationController extends Notifier<AuthenticationState> {
       );
     } on AuthenticationCancelledException {
       // El usuario cerró la pantalla de Keycloak (ej. botón atrás) antes de
-      // terminar. No es un error: solo lo devolvemos al login en silencio.
+      // terminar. No es un error: vuelve al vídeo en silencio.
       state = state.copyWith(status: AuthenticationStatus.unauthenticated);
     } catch (e) {
       state = state.copyWith(
         status: AuthenticationStatus.error,
-        errorMessage: AppErrorHandler.getFriendlyMessage(e),
+        errorMessage: e is Failure
+            ? e.message
+            : AppErrorHandler.getFriendlyMessage(e),
       );
     }
+  }
+
+  Future<void> register() async {
+    if (state.status == AuthenticationStatus.loading) return;
+    state = const AuthenticationState(status: AuthenticationStatus.loading);
+    try {
+      final session = await ref.read(registerWithKeycloakUseCaseProvider)();
+      final pending = await _registrationPending();
+      if (pending) {
+        ref
+            .read(registerControllerProvider.notifier)
+            .startRegistration(session);
+      }
+      state = AuthenticationState(
+        status: pending
+            ? AuthenticationStatus.registrationRequired
+            : AuthenticationStatus.authenticated,
+        session: session,
+      );
+    } on AuthenticationCancelledException {
+      state = const AuthenticationState(
+        status: AuthenticationStatus.unauthenticated,
+      );
+    } catch (e) {
+      state = AuthenticationState(
+        status: AuthenticationStatus.error,
+        errorMessage: e is Failure
+            ? e.message
+            : AppErrorHandler.getFriendlyMessage(e),
+      );
+    }
+  }
+
+  /// El perfil y sus preferencias ya se guardaron; habilita la navegación privada.
+  Future<void> finishRegistration() async {
+    if (state.status != AuthenticationStatus.registrationRequired) return;
+    try {
+      await ref.read(manageRegistrationUseCaseProvider).complete();
+    } on Failure catch (e) {
+      ref
+          .read(registerControllerProvider.notifier)
+          .reportCompletionError(e.message);
+      return;
+    } catch (_) {
+      ref.read(registerControllerProvider.notifier).reportCompletionError();
+      return;
+    }
+    var session = state.session;
+    try {
+      session = await ref.read(refreshSessionUseCaseProvider)();
+    } catch (_) {
+      // El interceptor podrá volver a intentar renovar la sesión.
+    }
+    try {
+      await ref.read(tokenManagerProvider).setRegistrationPending(false);
+    } catch (_) {
+      // Permite reintentar sin perder el perfil ya guardado.
+      ref.read(registerControllerProvider.notifier).reportCompletionError();
+      return;
+    }
+    if (state.status != AuthenticationStatus.registrationRequired) return;
+    state = AuthenticationState(
+      status: AuthenticationStatus.authenticated,
+      session: session,
+    );
+  }
+
+  Future<bool> _registrationPending() async {
+    final pending = await ref.read(manageRegistrationUseCaseProvider).begin();
+    await ref.read(tokenManagerProvider).setRegistrationPending(pending);
+    return pending;
+  }
+
+  /// Renueva los claims después de editar el perfil, sin abrir el navegador.
+  Future<bool> refreshProfileSession() async {
+    try {
+      final session = await ref.read(refreshSessionUseCaseProvider)();
+      state = state.copyWith(session: session);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> cancelRegistration() async {
+    final register = ref.read(registerControllerProvider.notifier);
+    register.startCancellation();
+    try {
+      await ref.read(manageRegistrationUseCaseProvider).cancel();
+    } on Failure catch (e) {
+      register.reportCompletionError(
+        'No se pudo cancelar el registro: ${e.message}',
+      );
+      return false;
+    } catch (_) {
+      register.reportCompletionError(
+        'No se pudo cancelar el registro. Vuelve a intentarlo.',
+      );
+      return false;
+    }
+    await logout();
+    ref.invalidate(registerControllerProvider);
+    return true;
   }
 
   Future<bool> logout() async {
@@ -104,12 +236,12 @@ class AuthenticationController extends Notifier<AuthenticationState> {
         errorMessage: AppErrorHandler.getFriendlyMessage(e),
       );
       return false;
+    } finally {
+      ref.invalidate(dashboardControllerProvider);
     }
   }
 
-  /// Best-effort: no debe tumbar el login si el perfil aún no existe.
-  /// Si es regular, hidrata el dashboard con GET /preferences/me para que
-  /// el feed local filtre por intereses reales (no solo defaults).
+  /// Hidrata preferencias tras verificar el estado completo en el backend.
   Future<void> _resolveProfileBestEffort() async {
     try {
       await ref.read(userRemoteDataSourceProvider).getProfile();
@@ -123,7 +255,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
           // Dashboard no montado aun: se hidrata al entrar.
         }
       } catch (_) {
-        // Sin preferencias guardadas: se mantiene el default local.
+        // El dashboard consultará su feed sin intereses precargados.
       }
       return;
     } catch (_) {
@@ -132,7 +264,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     try {
       await ref.read(organizerRemoteDataSourceProvider).getProfile();
     } catch (_) {
-      // Sin perfil en el monolito -> el flujo de sync lo creará.
+      // La carga adicional no cambia el estado confirmado por el backend.
     }
   }
 }

@@ -9,7 +9,7 @@ final preferencesControllerProvider =
       PreferencesController.new,
     );
 
-/// Controller del catalogo real (GET /interests) + mis preferencias.
+/// Controller del catálogo recibido de GET /interests.
 /// La Page muestra Loading/Success/Error segun Guia 14.
 class PreferencesController extends Notifier<PreferencesState> {
   @override
@@ -28,20 +28,11 @@ class PreferencesController extends Notifier<PreferencesState> {
         status: PreferencesStatus.error,
         errorMessage: e.message,
       );
-    } catch (e) {
+    } catch (_) {
       state = state.copyWith(
         status: PreferencesStatus.error,
-        errorMessage: 'No fue posible cargar intereses: $e',
+        errorMessage: 'No fue posible cargar intereses. Inténtalo de nuevo.',
       );
-    }
-  }
-
-  Future<void> loadMine() async {
-    try {
-      final mine = await ref.read(getMyPreferencesUseCaseProvider)();
-      state = state.copyWith(mine: mine);
-    } catch (_) {
-      // Best-effort: el dashboard sigue con mocks si falla.
     }
   }
 }

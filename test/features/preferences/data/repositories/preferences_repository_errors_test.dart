@@ -137,6 +137,11 @@ void main() {
   });
 
   group('getEvents', () {
+    test('sesión rechazada se convierte en UnauthorizedFailure', () {
+      when(() => remote.getEvents(category: any(named: 'category')))
+          .thenThrow(const UnauthorizedException('No autorizado'));
+      expect(repository.getEvents(), throwsA(isA<UnauthorizedFailure>()));
+    });
     test('éxito convierte modelos en entidades y pasa la categoría', () async {
       when(() => remote.getEvents(category: 'Cine')).thenAnswer(
         (_) async => [

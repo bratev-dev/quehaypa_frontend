@@ -81,8 +81,10 @@ class PreferencesRepositoryImpl implements PreferencesRepository {
       throw NetworkFailure(e.message);
     } on ServerException catch (e) {
       throw ServerFailure(e.message);
-    } catch (e) {
-      throw UnknownFailure('No fue posible cargar el feed: $e');
+    } catch (_) {
+      throw const UnknownFailure(
+        'No fue posible cargar el feed. Inténtalo de nuevo.',
+      );
     }
   }
 
@@ -91,12 +93,18 @@ class PreferencesRepositoryImpl implements PreferencesRepository {
     try {
       final models = await _remoteDataSource.getEvents(category: category);
       return models.map((m) => m.toEntity()).toList();
+    } on UnauthorizedException {
+      throw const UnauthorizedFailure(
+        'Sesión inválida. Inicia sesión de nuevo.',
+      );
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);
     } on ServerException catch (e) {
       throw ServerFailure(e.message);
-    } catch (e) {
-      throw UnknownFailure('No fue posible cargar eventos: $e');
+    } catch (_) {
+      throw const UnknownFailure(
+        'No fue posible cargar eventos. Inténtalo de nuevo.',
+      );
     }
   }
 }

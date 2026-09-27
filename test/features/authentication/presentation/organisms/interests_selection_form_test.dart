@@ -126,7 +126,7 @@ void main() {
     ]);
   });
 
-  testWidgets('sin catálogo usa la lista local y permite reintentar', (
+  testWidgets('sin catálogo no inventa intereses y permite reintentar', (
     tester,
   ) async {
     when(() => repository.getInterests())
@@ -134,16 +134,32 @@ void main() {
     await pumpForm(tester);
 
     expect(
-      find.text('Sin conexión al catálogo, usando lista local.'),
+      find.text('No pudimos cargar el catálogo de intereses. Reintenta.'),
       findsOneWidget,
     );
-    expect(find.text('Tecnología'), findsOneWidget);
+    expect(find.text('Tecnología'), findsNothing);
+    await finish(tester);
+    expect(register.completions, 0);
 
     when(() => repository.getInterests()).thenAnswer((_) async => _catalogo);
     await tester.tap(find.byIcon(Icons.refresh));
     await tester.pump();
 
     expect(find.text('Teatro'), findsOneWidget);
+  });
+
+  testWidgets('catálogo vacío no permite finalizar con intereses inventados', (
+    tester,
+  ) async {
+    when(() => repository.getInterests()).thenAnswer((_) async => []);
+    await pumpForm(tester);
+    expect(
+      find.text('No hay intereses disponibles por ahora.'),
+      findsOneWidget,
+    );
+    expect(find.text('Tecnología'), findsNothing);
+    await finish(tester);
+    expect(register.completions, 0);
   });
 
   testWidgets('mientras carga el catálogo muestra un indicador', (

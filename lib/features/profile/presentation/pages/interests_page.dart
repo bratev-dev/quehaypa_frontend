@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../dashboard/controllers/dashboard_controller.dart';
 import '../../../preferences/presentation/controllers/preferences_providers.dart';
-import '../../../preferences/presentation/interest_catalog_fallback.dart';
 import '../../../preferences/presentation/interests_colors.dart';
 import '../../../preferences/presentation/organisms/interest_options.dart';
 import '../../../preferences/presentation/templates/interests_template.dart';
@@ -16,7 +15,7 @@ class InterestsPage extends ConsumerStatefulWidget {
 }
 
 class _InterestsPageState extends ConsumerState<InterestsPage> {
-  List<String> catalog = fallbackInterests;
+  List<String> catalog = [];
   Set<String> selected = {};
   bool loading = true;
   bool saving = false;
@@ -57,7 +56,7 @@ class _InterestsPageState extends ConsumerState<InterestsPage> {
   }
 
   Future<void> _save() async {
-    if (saving || selected.length < 4) return;
+    if (saving || catalog.isEmpty || selected.length < 4) return;
     setState(() => saving = true);
     try {
       final saved = await ref.read(saveMyPreferencesUseCaseProvider)(
@@ -132,6 +131,12 @@ class _InterestsPageState extends ConsumerState<InterestsPage> {
                   ],
                 ),
               ),
+            )
+          else if (catalog.isEmpty)
+            const Text(
+              'No hay intereses disponibles por ahora.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: interestsBlue),
             )
           else
             InterestOptions(
