@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/authentication/domain/entities/user.dart';
+import 'package:frontend/features/authentication/presentation/controllers/authentication_controller.dart';
+import 'package:frontend/features/authentication/presentation/controllers/authentication_state.dart';
 import 'package:frontend/features/authentication/domain/repositories/user_repository.dart';
 import 'package:frontend/features/authentication/presentation/controllers/register_providers.dart';
 import 'package:frontend/features/profile/presentation/pages/edit_profile_page.dart';
@@ -13,6 +15,19 @@ import 'package:mocktail/mocktail.dart';
 import '../../../helpers/widget_finders.dart';
 
 class _MockUserRepository extends Mock implements UserRepository {}
+
+class _ProfileAuthController extends AuthenticationController {
+  bool refreshed = false;
+  bool refreshSucceeds = true;
+  @override
+  AuthenticationState build() =>
+      const AuthenticationState(status: AuthenticationStatus.authenticated);
+  @override
+  Future<bool> refreshProfileSession() async {
+    refreshed = true;
+    return refreshSucceeds;
+  }
+}
 
 void main() {
   const user = User(
@@ -25,6 +40,7 @@ void main() {
   );
 
   late _MockUserRepository repository;
+  late _ProfileAuthController authentication;
 
   Future<void> pumpPage(WidgetTester tester) async {
     useTallScreen(tester);
@@ -32,6 +48,7 @@ void main() {
       ProviderScope(
         overrides: [
           userRepositoryProvider.overrideWithValue(repository),
+          authenticationControllerProvider.overrideWith(() => authentication),
           myProfileProvider.overrideWith((ref) async => user),
         ],
         child: MaterialApp(
@@ -54,7 +71,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  setUp(() => repository = _MockUserRepository());
+  setUp(() {
+    repository = _MockUserRepository();
+    authentication = _ProfileAuthController();
+  });
 
   testWidgets('muestra los datos actuales y exige nombre y apellido', (
     tester,
@@ -115,6 +135,7 @@ void main() {
       ),
     ).called(1);
     expect(find.text('Abrir edición'), findsOneWidget);
+    expect(authentication.refreshed, isTrue);
   });
 
   testWidgets('impide repetir el guardado y muestra el error del servidor', (
@@ -148,6 +169,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Guardar cambios'), findsOneWidget);
+    expect(authentication.refreshed, isFalse);
     verify(
       () => repository.updateProfile(
         id: 7,
@@ -157,4 +179,27 @@ void main() {
       ),
     ).called(1);
   });
+
+  testWidgets(
+    'guardado confirmado informa si no se pudieron renovar los tokens',
+    (tester) async {
+      authentication.refreshSucceeds = false;
+      when(
+        () => repository.updateProfile(
+          id: 7,
+          firstName: 'Juan',
+          lastName: 'Chávez',
+          birthDate: null,
+        ),
+      ).thenAnswer((_) async => user);
+      await pumpPage(tester);
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      expect(find.text('Abrir edición'), findsOneWidget);
+      expect(
+        find.textContaining('Datos guardados. No se pudo renovar'),
+        findsOneWidget,
+      );
+    },
+  );
 }

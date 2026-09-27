@@ -23,7 +23,10 @@ const List<String> _wheel = [
 // Un punto dentro de la zona que responde al dedo (sobre el arco).
 const Offset _onArc = Offset(_screenWidth / 2, 240);
 
-Future<void> _pumpCarousel(WidgetTester tester) async {
+Future<void> _pumpCarousel(
+  WidgetTester tester, {
+  List<String>? interests,
+}) async {
   tester.view.physicalSize = const Size(1200, 2400);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -35,9 +38,16 @@ Future<void> _pumpCarousel(WidgetTester tester) async {
     thickness: 115,
   );
 
+  final container = ProviderContainer();
+  addTearDown(container.dispose);
+  container
+      .read(dashboardControllerProvider.notifier)
+      .setUserInterests(interests ?? _wheel.skip(1).toList());
+
   await tester.pumpWidget(
-    const ProviderScope(
-      child: MaterialApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(
         home: Scaffold(
           body: Stack(
             children: [
@@ -71,6 +81,22 @@ Future<void> _waitForSelection(WidgetTester tester) =>
     tester.pump(const Duration(milliseconds: 600));
 
 void main() {
+  testWidgets('sin intereses muestra General una sola vez y centrada', (
+    tester,
+  ) async {
+    await _pumpCarousel(tester, interests: []);
+    expect(find.text('General'), findsOneWidget);
+    await tester.dragFrom(_onArc, const Offset(-_spacing, 0));
+    await tester.pumpAndSettle();
+    await _waitForSelection(tester);
+    expect(find.text('General'), findsOneWidget);
+    expect(_selected(tester), 'General');
+    expect(
+      tester.getCenter(find.byType(CategoryCircleAtom)).dx,
+      closeTo(_screenWidth / 2, 0.5),
+    );
+  });
+
   testWidgets('empieza con General enfocada en el centro', (tester) async {
     await _pumpCarousel(tester);
 

@@ -49,6 +49,8 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
       );
 
       return model.toEntity();
+    } on AuthenticationCancelledException {
+      rethrow;
     } on AuthenticationException {
       rethrow;
     } catch (e) {

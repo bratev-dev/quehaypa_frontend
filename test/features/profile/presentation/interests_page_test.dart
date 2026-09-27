@@ -137,6 +137,24 @@ void main() {
     verify(() => repository.getMyPreferences()).called(2);
   });
 
+  testWidgets('catálogo vacío no muestra opciones locales ni permite guardar', (
+    tester,
+  ) async {
+    when(() => repository.getInterests()).thenAnswer((_) async => []);
+    when(() => repository.getMyPreferences()).thenAnswer((_) async => []);
+    await pumpPage(tester);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('No hay intereses disponibles por ahora.'),
+      findsOneWidget,
+    );
+    expect(find.byType(InterestChip), findsNothing);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+  });
+
   testWidgets('deshabilita guardar mientras espera y recupera tras error', (
     tester,
   ) async {

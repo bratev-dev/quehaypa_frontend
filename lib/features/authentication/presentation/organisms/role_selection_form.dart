@@ -18,6 +18,12 @@ class _RoleSelectionFormState extends ConsumerState<RoleSelectionForm> {
   UserRole? _tempSelectedRole;
 
   @override
+  void initState() {
+    super.initState();
+    _tempSelectedRole = ref.read(registerControllerProvider).selectedRole;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

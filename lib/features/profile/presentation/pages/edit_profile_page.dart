@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../authentication/domain/entities/user.dart';
+import '../../../authentication/presentation/controllers/authentication_controller.dart';
+import '../../../../core/errors/failtures.dart';
 import '../../../authentication/presentation/controllers/register_providers.dart';
 import '../profile_providers.dart';
 import '../profile_colors.dart';
@@ -47,13 +49,31 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         birthDate: birthDate,
       );
       ref.invalidate(myProfileProvider);
+      final refreshed = await ref
+          .read(authenticationControllerProvider.notifier)
+          .refreshProfileSession();
       if (mounted) {
+        if (!refreshed) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Datos guardados. No se pudo renovar la sesión; vuelve a iniciar sesión para actualizar sus datos.',
+              ),
+            ),
+          );
+        }
         Navigator.of(context).pop();
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudieron guardar los cambios: $error')),
+          SnackBar(
+            content: Text(
+              error is Failure
+                  ? 'No se pudieron guardar los cambios: ${error.message}'
+                  : 'No se pudieron guardar los cambios. Inténtalo de nuevo.',
+            ),
+          ),
         );
       }
     } finally {

@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/authentication/presentation/controllers/authentication_controller.dart';
 import '../../features/authentication/presentation/controllers/authentication_state.dart';
-import '../../features/authentication/presentation/pages/login_page.dart';
 import '../../features/authentication/presentation/pages/register_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
@@ -32,39 +31,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: routerRefreshNotifier,
 
     redirect: (context, state) {
-      final authenticationState = ref.read(authenticationControllerProvider);
-
-      final status = authenticationState.status;
-      final isAuthenticated = status == AuthenticationStatus.authenticated;
-
-      final matchedLocation = state.matchedLocation;
-
-      if (status == AuthenticationStatus.initial ||
-          status == AuthenticationStatus.loading) {
-        return null;
-      }
-
-      final isPublicRoute =
-          matchedLocation == RoutePaths.login ||
-          matchedLocation == RoutePaths.register ||
-          matchedLocation == RoutePaths.splash ||
-          matchedLocation == RoutePaths.home;
-
-      // Si ya está autenticado y se encuentra en pantallas públicas, mándalo al Dashboard
-      if (isAuthenticated && isPublicRoute) {
-        return RoutePaths.dashboard;
-      }
-
-      // Tras cerrar sesión, la navegación privada vuelve al menú del video.
-      if (!isAuthenticated && matchedLocation == RoutePaths.dashboard) {
-        return RoutePaths.home;
-      }
-
-      if (!isAuthenticated && matchedLocation == RoutePaths.myPlans) {
-        return RoutePaths.home;
-      }
-
-      return null;
+      return authenticationRedirect(
+        ref.read(authenticationControllerProvider).status,
+        state.matchedLocation,
+      );
     },
 
     routes: [
@@ -76,7 +46,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         name: RouteNames.login,
         path: RoutePaths.login,
-        builder: (context, state) => const LoginPage(),
+        redirect: (context, state) => RoutePaths.home,
       ),
       GoRoute(
         name: RouteNames.register,
@@ -101,3 +71,50 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// Decide el destino sin construir pantallas ni abrir el navegador.
+String? authenticationRedirect(
+  AuthenticationStatus authenticationStatus,
+  String matchedLocation,
+) {
+  final status = authenticationStatus;
+  final isAuthenticated = status == AuthenticationStatus.authenticated;
+
+  if (status == AuthenticationStatus.initial ||
+      status == AuthenticationStatus.loading) {
+    return null;
+  }
+
+  if (status == AuthenticationStatus.registrationRequired) {
+    return matchedLocation == RoutePaths.register ? null : RoutePaths.register;
+  }
+
+  // Las rutas antiguas ya no muestran formularios de credenciales.
+  if (!isAuthenticated &&
+      (matchedLocation == RoutePaths.login ||
+          matchedLocation == RoutePaths.register)) {
+    return RoutePaths.home;
+  }
+
+  final isPublicRoute =
+      matchedLocation == RoutePaths.login ||
+      matchedLocation == RoutePaths.register ||
+      matchedLocation == RoutePaths.splash ||
+      matchedLocation == RoutePaths.home;
+
+  // Si ya está autenticado y se encuentra en pantallas públicas, mándalo al Dashboard
+  if (isAuthenticated && isPublicRoute) {
+    return RoutePaths.dashboard;
+  }
+
+  // Tras cerrar sesión, la navegación privada vuelve al menú del video.
+  if (!isAuthenticated && matchedLocation == RoutePaths.dashboard) {
+    return RoutePaths.home;
+  }
+
+  if (!isAuthenticated && matchedLocation == RoutePaths.myPlans) {
+    return RoutePaths.home;
+  }
+
+  return null;
+}

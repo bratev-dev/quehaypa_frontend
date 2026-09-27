@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/authentication/presentation/atoms/interest_chip.dart';
-import 'package:frontend/features/preferences/presentation/interest_catalog_fallback.dart';
 import 'package:frontend/features/preferences/presentation/organisms/interest_options.dart';
 import 'package:frontend/features/preferences/presentation/templates/interests_template.dart';
+
+const _testCatalog = [
+  'Tecnología',
+  'Música',
+  'Deportes',
+  'Arte',
+  'Cine',
+  'Gastronomía',
+  'Lectura',
+  'Viajes',
+  'Fotografía',
+  'Emprendimiento',
+];
 
 void main() {
   for (final size in const [
@@ -34,7 +46,7 @@ void main() {
                   content: Column(
                     children: [
                       InterestOptions(
-                        catalog: fallbackInterests,
+                        catalog: _testCatalog,
                         selected: selected,
                         onToggle: (interest) => setState(() {
                           if (!selected.add(interest)) {
