@@ -4,6 +4,7 @@ class SecureStorage {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _idTokenKey = 'id_token';
+  static const _registrationPendingKey = 'registration_pending';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -39,5 +40,17 @@ class SecureStorage {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
     await _storage.delete(key: _idTokenKey);
+    await _storage.delete(key: _registrationPendingKey);
+  }
+
+  Future<void> setRegistrationPending(bool pending) async {
+    await _storage.write(
+      key: _registrationPendingKey,
+      value: pending.toString(),
+    );
+  }
+
+  Future<bool> isRegistrationPending() async {
+    return await _storage.read(key: _registrationPendingKey) == 'true';
   }
 }

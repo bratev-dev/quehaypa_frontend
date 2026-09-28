@@ -44,6 +44,27 @@ class UserRemoteDataSource {
     }
   }
 
+  Future<UserModel> updateProfile({
+    required int id,
+    required String firstName,
+    required String lastName,
+    DateTime? birthDate,
+  }) async {
+    try {
+      final response = await _dio.put<Map<String, dynamic>>(
+        '/api/v1/regular-users/$id',
+        data: {
+          'firstName': firstName,
+          'lastName': lastName,
+          if (birthDate != null) 'birthDate': _toIsoDate(birthDate),
+        },
+      );
+      return _parseEnvelope(response.data);
+    } on DioException catch (e) {
+      throw mapProfileDioError(e);
+    }
+  }
+
   UserModel _parseEnvelope(Map<String, dynamic>? envelope) {
     if (envelope == null || envelope['data'] is! Map<String, dynamic>) {
       throw const ServerException(

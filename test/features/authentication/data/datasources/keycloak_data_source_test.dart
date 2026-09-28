@@ -1,4 +1,5 @@
 import 'package:flutter_appauth/flutter_appauth.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/app/config/app_config.dart';
 import 'package:frontend/app/config/environment.dart';
@@ -96,4 +97,37 @@ void main() {
       expect(session.accessToken, 'access-123');
     });
   });
+
+  for (final registering in [false, true]) {
+    final label = registering ? 'registro' : 'login';
+    Future<Object> authorize() =>
+        registering ? dataSource.register() : dataSource.login();
+
+    test('$label: captura la cancelación tipada de AppAuth', () {
+      when(() => appAuth.authorizeAndExchangeCode(any())).thenThrow(
+        FlutterAppAuthUserCancelledException(
+          code: 'authorize_and_exchange_code_failed',
+          platformErrorDetails: FlutterAppAuthPlatformErrorDetails(),
+        ),
+      );
+      expect(authorize(), throwsA(isA<AuthenticationCancelledException>()));
+    });
+
+    test('$label: captura cancelación de plataforma anterior', () {
+      when(() => appAuth.authorizeAndExchangeCode(any())).thenThrow(
+        PlatformException(
+          code: 'authorize_and_exchange_code_failed',
+          message: 'User cancelled flow',
+        ),
+      );
+      expect(authorize(), throwsA(isA<AuthenticationCancelledException>()));
+    });
+
+    test('$label: un fallo de plataforma real sigue siendo error', () {
+      when(() => appAuth.authorizeAndExchangeCode(any())).thenThrow(
+        PlatformException(code: 'network_error', message: 'Connection refused'),
+      );
+      expect(authorize(), throwsA(isA<AuthenticationException>()));
+    });
+  }
 }

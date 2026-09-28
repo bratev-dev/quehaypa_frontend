@@ -57,6 +57,18 @@ void main() {
 
     setUp(() => manager = TokenManager(storage: SecureStorage()));
 
+    test('persiste registro pendiente y lo borra al cerrar sesión', () async {
+      expect(await manager.isRegistrationPending(), isFalse);
+      await manager.setRegistrationPending(true);
+      final reopened = TokenManager(storage: SecureStorage());
+      expect(await reopened.isRegistrationPending(), isTrue);
+      await reopened.setRegistrationPending(false);
+      expect(await manager.isRegistrationPending(), isFalse);
+      await manager.setRegistrationPending(true);
+      await manager.clearSession();
+      expect(await reopened.isRegistrationPending(), isFalse);
+    });
+
     test('saveTokenResponse guarda los tokens de Keycloak', () async {
       await manager.saveTokenResponse(
         TokenResponse('acc', 'ref', null, 'idt', 'Bearer', null, null),

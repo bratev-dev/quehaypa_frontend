@@ -33,6 +33,17 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
   @override
   void initState() {
     super.initState();
+    final registration = ref.read(registerControllerProvider);
+    _nameController.text = registration.name;
+    _lastNameController.text = registration.lastname;
+    _usernameController.text = registration.username;
+    _idController.text = registration.cc;
+    final date = registration.birthDate.split('/');
+    if (date.length == 3) {
+      _dayController.text = date[0];
+      _monthController.text = date[1];
+      _yearController.text = date[2];
+    }
     _dayFocusNode = FocusNode();
     _monthFocusNode = FocusNode();
     _yearFocusNode = FocusNode();
@@ -265,66 +276,68 @@ class _PersonalDetailsFormState extends ConsumerState<PersonalDetailsForm> {
           text: 'Continuar',
           backgroundColor: const Color(0xFF0038FF),
           textColor: Colors.white,
-          onPressed: () {
-            final name = _nameController.text.trim();
-            final lastName = _lastNameController.text.trim();
-            final username = _usernameController.text.trim();
-            final day = _dayController.text.trim();
-            final month = _monthController.text.trim();
-            final year = _yearController.text.trim();
-            final cc = isOrganizer ? _idController.text.trim() : null;
+          onPressed: registerState.status == RegisterStatus.loading
+              ? null
+              : () {
+                  final name = _nameController.text.trim();
+                  final lastName = _lastNameController.text.trim();
+                  final username = _usernameController.text.trim();
+                  final day = _dayController.text.trim();
+                  final month = _monthController.text.trim();
+                  final year = _yearController.text.trim();
+                  final cc = isOrganizer ? _idController.text.trim() : null;
 
-            // Validaciones con el AppSnackbar
-            if (name.isEmpty ||
-                lastName.isEmpty ||
-                username.isEmpty ||
-                day.isEmpty ||
-                month.isEmpty ||
-                year.isEmpty) {
-              AppSnackbar.show(
-                context,
-                message: 'Por favor completa todos los campos.',
-                type: SnackbarType.info,
-              );
-              return;
-            }
+                  // Validaciones con el AppSnackbar
+                  if (name.isEmpty ||
+                      lastName.isEmpty ||
+                      username.isEmpty ||
+                      day.isEmpty ||
+                      month.isEmpty ||
+                      year.isEmpty) {
+                    AppSnackbar.show(
+                      context,
+                      message: 'Por favor completa todos los campos.',
+                      type: SnackbarType.info,
+                    );
+                    return;
+                  }
 
-            if (isOrganizer && (cc == null || cc.isEmpty)) {
-              AppSnackbar.show(
-                context,
-                message: 'Por favor ingresa tu número de cédula.',
-                type: SnackbarType.info,
-              );
-              return;
-            }
+                  if (isOrganizer && (cc == null || cc.isEmpty)) {
+                    AppSnackbar.show(
+                      context,
+                      message: 'Por favor ingresa tu número de cédula.',
+                      type: SnackbarType.info,
+                    );
+                    return;
+                  }
 
-            final birthDateError = _birthDateError(
-              day: day,
-              month: month,
-              year: year,
-            );
+                  final birthDateError = _birthDateError(
+                    day: day,
+                    month: month,
+                    year: year,
+                  );
 
-            if (birthDateError != null) {
-              AppSnackbar.show(
-                context,
-                message: birthDateError,
-                type: SnackbarType.info,
-              );
-              return;
-            }
+                  if (birthDateError != null) {
+                    AppSnackbar.show(
+                      context,
+                      message: birthDateError,
+                      type: SnackbarType.info,
+                    );
+                    return;
+                  }
 
-            final birthDate = '$day/$month/$year';
+                  final birthDate = '$day/$month/$year';
 
-            ref
-                .read(registerControllerProvider.notifier)
-                .savePersonalDetails(
-                  name: name,
-                  lastname: lastName,
-                  username: username,
-                  birthDate: birthDate,
-                  cc: cc,
-                );
-          },
+                  ref
+                      .read(registerControllerProvider.notifier)
+                      .savePersonalDetails(
+                        name: name,
+                        lastname: lastName,
+                        username: username,
+                        birthDate: birthDate,
+                        cc: cc,
+                      );
+                },
         ),
       ],
     );

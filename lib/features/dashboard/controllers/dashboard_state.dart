@@ -1,25 +1,37 @@
-import '../data/mocked_events.dart';
+import '../../preferences/domain/entities/event_seed.dart';
+
+enum DashboardStatus { initial, loading, success, error }
 
 class DashboardState {
   final List<String> userInterests;
   final String selectedCategory;
-  final List<MockedEvent> visibleEvents;
+  final List<EventSeed> visibleEvents;
+  final DashboardStatus status;
+  final String? errorMessage;
 
   const DashboardState({
-    required this.userInterests,
+    this.userInterests = const [],
     this.selectedCategory = 'General',
-    this.visibleEvents = kMockedEvents,
+    this.visibleEvents = const [],
+    this.status = DashboardStatus.initial,
+    this.errorMessage,
   });
 
   DashboardState copyWith({
     List<String>? userInterests,
     String? selectedCategory,
-    List<MockedEvent>? visibleEvents,
-  }) {
-    return DashboardState(
-      userInterests: userInterests ?? this.userInterests,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      visibleEvents: visibleEvents ?? this.visibleEvents,
-    );
-  }
+    List<EventSeed>? visibleEvents,
+    DashboardStatus? status,
+    String? errorMessage,
+  }) => DashboardState(
+    userInterests: userInterests ?? this.userInterests,
+    selectedCategory: selectedCategory ?? this.selectedCategory,
+    visibleEvents: visibleEvents ?? this.visibleEvents,
+    status: status ?? this.status,
+    errorMessage:
+        errorMessage ??
+        (status == DashboardStatus.loading || status == DashboardStatus.success
+            ? null
+            : this.errorMessage),
+  );
 }

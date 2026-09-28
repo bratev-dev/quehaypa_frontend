@@ -42,6 +42,8 @@ class KeycloakDataSource {
       );
     } on AuthenticationException {
       rethrow;
+    } on FlutterAppAuthUserCancelledException {
+      throw const AuthenticationCancelledException();
     } on PlatformException catch (e) {
       if (_isUserCancellation(e)) {
         throw const AuthenticationCancelledException();
@@ -91,6 +93,15 @@ class KeycloakDataSource {
       );
     } on AuthenticationException {
       rethrow;
+    } on FlutterAppAuthUserCancelledException {
+      throw const AuthenticationCancelledException();
+    } on PlatformException catch (e) {
+      if (_isUserCancellation(e)) {
+        throw const AuthenticationCancelledException();
+      }
+      throw AuthenticationException(
+        'No fue posible registrarse en Keycloak: $e',
+      );
     } catch (e) {
       throw AuthenticationException(
         'No fue posible registrarse en Keycloak: $e',

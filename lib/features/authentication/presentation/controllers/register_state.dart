@@ -1,4 +1,4 @@
-enum RegisterStep { credentials, roleSelection, personalDetails, interests }
+enum RegisterStep { roleSelection, personalDetails, interests }
 
 enum UserRole { user, organizer }
 
@@ -9,7 +9,6 @@ class RegisterState {
   final RegisterStatus status;
   final UserRole? selectedRole;
   final String email;
-  final String password;
   final String name;
   final String lastname;
   final String username;
@@ -19,11 +18,10 @@ class RegisterState {
   final String? errorMessage;
 
   const RegisterState({
-    this.currentStep = RegisterStep.credentials,
+    this.currentStep = RegisterStep.roleSelection,
     this.status = RegisterStatus.initial,
     this.selectedRole,
     this.email = '',
-    this.password = '',
     this.name = '',
     this.lastname = '',
     this.username = '',
@@ -38,7 +36,6 @@ class RegisterState {
     RegisterStatus? status,
     UserRole? selectedRole,
     String? email,
-    String? password,
     String? name,
     String? lastname,
     String? username,
@@ -52,7 +49,6 @@ class RegisterState {
       status: status ?? this.status,
       selectedRole: selectedRole ?? this.selectedRole,
       email: email ?? this.email,
-      password: password ?? this.password,
       name: name ?? this.name,
       lastname: lastname ?? this.lastname,
       username: username ?? this.username,

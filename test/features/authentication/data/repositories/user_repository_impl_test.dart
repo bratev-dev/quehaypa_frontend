@@ -83,4 +83,36 @@ void main() {
 
     expect(repository.syncProfile(params), throwsA(isA<NetworkFailure>()));
   });
+
+  test('updateProfile devuelve el usuario actualizado', () async {
+    when(() => remote.updateProfile(id: 1, firstName: 'Ana', lastName: 'Ruiz'))
+        .thenAnswer((_) async => model());
+
+    final user = await repository.updateProfile(
+      id: 1,
+      firstName: 'Ana',
+      lastName: 'Ruiz',
+    );
+
+    expect(user.id, 1);
+    verify(
+      () => remote.updateProfile(id: 1, firstName: 'Ana', lastName: 'Ruiz'),
+    ).called(1);
+  });
+
+  test('updateProfile convierte 400 en ValidationFailure', () {
+    when(() => remote.updateProfile(id: 1, firstName: '', lastName: 'Ruiz'))
+        .thenThrow(const ValidationException('Nombre inválido'));
+
+    expect(
+      repository.updateProfile(id: 1, firstName: '', lastName: 'Ruiz'),
+      throwsA(
+        isA<ValidationFailure>().having(
+          (failure) => failure.message,
+          'message',
+          'Nombre inválido',
+        ),
+      ),
+    );
+  });
 }

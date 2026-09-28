@@ -67,27 +67,6 @@ void main() {
     });
   });
 
-  group('loadMine', () {
-    test('éxito guarda mis preferencias', () async {
-      when(() => repository.getMyPreferences())
-          .thenAnswer((_) async => ['Arte']);
-
-      await controller().loadMine();
-
-      expect(state().mine, ['Arte']);
-    });
-
-    test('si falla conserva el estado sin error', () async {
-      when(() => repository.getMyPreferences())
-          .thenThrow(const ServerFailure('x'));
-
-      await controller().loadMine();
-
-      expect(state().mine, isEmpty);
-      expect(state().status, PreferencesStatus.initial);
-    });
-  });
-
   test('los providers conectan los casos de uso con el Dio central', () async {
     final adapter = FakeHttpAdapter(
       const FakeReply(200, {

@@ -1,18 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/core/errors/exceptions.dart';
 import 'package:frontend/core/errors/failtures.dart';
 import 'package:frontend/features/authentication/domain/entities/auth_session.dart';
 import 'package:frontend/features/authentication/domain/entities/organizer.dart';
 import 'package:frontend/features/authentication/domain/entities/user.dart';
-import 'package:frontend/features/authentication/domain/repositories/authentication_repository.dart';
 import 'package:frontend/features/authentication/domain/repositories/organizer_repository.dart';
 import 'package:frontend/features/authentication/domain/repositories/user_repository.dart';
 import 'package:frontend/features/authentication/domain/usecases/sync_organizer_use_case.dart';
 import 'package:frontend/features/authentication/domain/usecases/sync_profile_use_case.dart';
-import 'package:frontend/features/authentication/domain/usecases/register_with_keycloak_use_case.dart';
 import 'package:frontend/features/preferences/domain/usecases/save_preferences_use_case.dart';
-import 'package:frontend/features/authentication/presentation/controllers/authentication_providers.dart';
 import 'package:frontend/features/authentication/presentation/controllers/register_controller.dart';
 import 'package:frontend/features/authentication/presentation/controllers/register_providers.dart';
 import 'package:frontend/features/authentication/presentation/controllers/register_state.dart';
@@ -20,36 +18,6 @@ import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:frontend/features/preferences/domain/entities/interest.dart';
 import 'package:frontend/features/preferences/domain/repositories/preferences_repository.dart';
 import 'package:frontend/features/preferences/presentation/controllers/preferences_providers.dart';
-
-class FakeAuthRepository implements AuthenticationRepository {
-  bool registerCalled = false;
-  bool failRegister = false;
-
-  @override
-  Future<AuthSession> register() async {
-    registerCalled = true;
-    if (failRegister) {
-      throw const AuthenticationException('Registro cancelado');
-    }
-    return const AuthSession(
-      accessToken: 'access',
-      refreshToken: 'refresh',
-      idToken: 'id',
-    );
-  }
-
-  @override
-  Future<AuthSession> login({String? loginHint}) => throw UnimplementedError();
-
-  @override
-  Future<void> logout() => throw UnimplementedError();
-
-  @override
-  Future<AuthSession> refreshSession() => throw UnimplementedError();
-
-  @override
-  Future<AuthSession?> restoreSession() => throw UnimplementedError();
-}
 
 class FakeUserRepository implements UserRepository {
   SyncProfileParams? lastParams;
@@ -74,6 +42,14 @@ class FakeUserRepository implements UserRepository {
 
   @override
   Future<User> getProfile() => throw UnimplementedError();
+
+  @override
+  Future<User> updateProfile({
+    required int id,
+    required String firstName,
+    required String lastName,
+    DateTime? birthDate,
+  }) => throw UnimplementedError();
 }
 
 class FakeOrganizerRepository implements OrganizerRepository {
@@ -122,23 +98,32 @@ class FakePreferencesRepository implements PreferencesRepository {
       throw UnimplementedError();
 }
 
+AuthSession identity(String email) {
+  final payload = base64Url.encode(
+    utf8.encode(
+      jsonEncode({
+        'email': email,
+        'preferred_username': 'identidad.keycloak',
+        'given_name': 'Nombre de Keycloak',
+        'family_name': 'Apellido de Keycloak',
+      }),
+    ),
+  );
+  return AuthSession(accessToken: 'header.$payload.signature');
+}
+
 void main() {
-  late FakeAuthRepository authRepo;
   late FakeUserRepository userRepo;
   late FakeOrganizerRepository organizerRepo;
   late FakePreferencesRepository preferencesRepo;
   late ProviderContainer container;
 
   setUp(() {
-    authRepo = FakeAuthRepository();
     userRepo = FakeUserRepository();
     organizerRepo = FakeOrganizerRepository();
     preferencesRepo = FakePreferencesRepository();
     container = ProviderContainer(
       overrides: [
-        registerWithKeycloakUseCaseProvider.overrideWithValue(
-          RegisterWithKeycloakUseCase(authRepo),
-        ),
         syncProfileUseCaseProvider.overrideWithValue(
           SyncProfileUseCase(userRepo),
         ),
@@ -157,10 +142,7 @@ void main() {
       container.read(registerControllerProvider.notifier);
 
   void fillUserBasics() {
-    controller().saveCredentials(
-      email: 'user@test.com',
-      password: 'Secreta123',
-    );
+    controller().startRegistration(identity('user@test.com'));
     controller().selectRole(UserRole.user);
     controller().savePersonalDetails(
       name: 'User',
@@ -171,20 +153,32 @@ void main() {
   }
 
   group('ramificación por rol', () {
+    test(
+      'iniciar el registro toma la identidad y descarta datos anteriores',
+      () {
+        fillUserBasics();
+        controller().toggleInterest('Cine');
+        controller().startRegistration(identity('nuevo@test.com'));
+        final state = container.read(registerControllerProvider);
+        expect(state.email, 'nuevo@test.com');
+        expect(state.username, 'identidad.keycloak');
+        expect(state.name, 'Nombre de Keycloak');
+        expect(state.lastname, 'Apellido de Keycloak');
+        expect(state.currentStep, RegisterStep.roleSelection);
+        expect(state.selectedRole, isNull);
+        expect(state.selectedInterests, isEmpty);
+      },
+    );
     test('usuario avanza a intereses sin disparar registro', () {
       fillUserBasics();
 
       final state = container.read(registerControllerProvider);
       expect(state.currentStep, RegisterStep.interests);
       expect(state.status, RegisterStatus.initial);
-      expect(authRepo.registerCalled, isFalse);
     });
 
     test('organizador dispara el registro automático', () async {
-      controller().saveCredentials(
-        email: 'org@test.com',
-        password: 'Secreta123',
-      );
+      controller().startRegistration(identity('org@test.com'));
       controller().selectRole(UserRole.organizer);
       controller().savePersonalDetails(
         name: 'Org',
@@ -198,32 +192,33 @@ void main() {
 
       final state = container.read(registerControllerProvider);
       expect(state.status, RegisterStatus.success);
-      expect(authRepo.registerCalled, isTrue);
       expect(organizerRepo.lastParams?.identificationDocument, 'CC-123');
     });
   });
 
   group('completeRegistration', () {
-    test('usuario: Keycloak primero y sync con fecha ISO', () async {
+    test(
+      'reintentar el cierre no vuelve a sincronizar un perfil guardado',
+      () async {
+        fillUserBasics();
+        await controller().completeRegistration();
+        controller().reportCompletionError();
+        userRepo.failSync = true;
+        await controller().completeRegistration();
+        expect(
+          container.read(registerControllerProvider).status,
+          RegisterStatus.success,
+        );
+      },
+    );
+    test('usuario: sincroniza la identidad ya creada con fecha ISO', () async {
       fillUserBasics();
       await controller().completeRegistration();
 
       final state = container.read(registerControllerProvider);
       expect(state.status, RegisterStatus.success);
-      expect(authRepo.registerCalled, isTrue);
       expect(userRepo.lastParams?.birthDate, DateTime(2000, 5, 20));
       expect(userRepo.lastParams?.email, 'user@test.com');
-    });
-
-    test('si Keycloak falla no se intenta el sync', () async {
-      authRepo.failRegister = true;
-      fillUserBasics();
-      await controller().completeRegistration();
-
-      final state = container.read(registerControllerProvider);
-      expect(state.status, RegisterStatus.error);
-      expect(state.errorMessage, contains('Keycloak'));
-      expect(userRepo.lastParams, isNull);
     });
 
     test('si el sync falla indica el paso de perfil', () async {

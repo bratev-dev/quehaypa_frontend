@@ -101,6 +101,21 @@ void main() {
   });
 
   group('register', () {
+    test('propaga cancelación sin guardar tokens', () {
+      when(() => keycloak.register())
+          .thenThrow(const AuthenticationCancelledException());
+      expect(
+        repository.register(),
+        throwsA(isA<AuthenticationCancelledException>()),
+      );
+      verifyNever(
+        () => tokens.saveTokens(
+          accessToken: any(named: 'accessToken'),
+          refreshToken: any(named: 'refreshToken'),
+          idToken: any(named: 'idToken'),
+        ),
+      );
+    });
     test('guarda los tokens y devuelve la sesión', () async {
       when(() => keycloak.register()).thenAnswer((_) async => session);
       tokensSaved();

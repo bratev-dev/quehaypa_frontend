@@ -5,6 +5,7 @@ import '../../data/datasources/preferences_remote_data_source.dart';
 import '../../data/repositories/preferences_repository_impl.dart';
 import '../../domain/repositories/preferences_repository.dart';
 import '../../domain/usecases/get_events_feed_use_case.dart';
+import '../../domain/usecases/get_events_use_case.dart';
 import '../../domain/usecases/get_interests_use_case.dart';
 import '../../domain/usecases/get_my_preferences_use_case.dart';
 import '../../domain/usecases/save_preferences_use_case.dart';
@@ -34,4 +35,8 @@ final getMyPreferencesUseCaseProvider = Provider<GetMyPreferences>((ref) {
 
 final getEventsFeedUseCaseProvider = Provider<GetEventsFeed>((ref) {
   return GetEventsFeed(ref.read(preferencesRepositoryProvider));
+});
+
+final getEventsUseCaseProvider = Provider<GetEvents>((ref) {
+  return GetEvents(ref.read(preferencesRepositoryProvider));
 });

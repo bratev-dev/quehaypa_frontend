@@ -215,11 +215,12 @@ class _RotatingCategoriesCarouselState
     double bandTop,
   ) {
     final geometry = widget.geometry;
-    final rotation = _controller.value;
+    final rotation = items.length == 1 ? 0.0 : _controller.value;
     final base = rotation.round();
+    final span = items.length == 1 ? 0 : _visibleSpan;
 
     return [
-      for (var k = -_visibleSpan; k <= _visibleSpan; k++)
+      for (var k = -span; k <= span; k++)
         _buildItem(
           index: base + k,
           isFocused: k == 0,

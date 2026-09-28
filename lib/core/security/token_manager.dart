@@ -93,4 +93,9 @@ class TokenManager {
   Future<void> clearSession() async {
     await _storage.clearTokens();
   }
+
+  Future<void> setRegistrationPending(bool pending) =>
+      _storage.setRegistrationPending(pending);
+
+  Future<bool> isRegistrationPending() => _storage.isRegistrationPending();
 }
