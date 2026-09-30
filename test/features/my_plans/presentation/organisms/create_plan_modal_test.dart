@@ -54,19 +54,19 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('nombre y descripción son obligatorios', (tester) async {
+  testWidgets('el nombre es obligatorio', (tester) async {
     await openModal(tester);
 
     await save(tester);
 
-    expect(find.text('Campo obligatorio'), findsNWidgets(2));
+    expect(find.text('Campo obligatorio'), findsOneWidget);
     verifyNever(() => repository.createPlan(any()));
   });
 
   testWidgets('un nombre de solo espacios cuenta como vacío', (tester) async {
     await openModal(tester);
     await tester.enterText(field('Nombre del plan'), '   ');
-    await tester.enterText(field('Descripción'), 'Algo');
+    await tester.enterText(field('Descripción (opcional)'), 'Algo');
 
     await save(tester);
 
@@ -89,6 +89,26 @@ void main() {
     expect(text.controller!.text, hasLength(255));
   });
 
+  testWidgets('acepta descripción y fecha vacías, y cierra sin excepción', (
+    tester,
+  ) async {
+    await openModal(tester);
+    when(() => repository.createPlan(any()))
+        .thenAnswer((_) async => const Plan(id: 1, title: 'Asado'));
+    await tester.enterText(field('Nombre del plan'), '  Asado  ');
+
+    await save(tester);
+
+    final params =
+        verify(() => repository.createPlan(captureAny())).captured.single
+            as CreatePlanParams;
+    expect(params.title, 'Asado');
+    expect(params.description, isEmpty);
+    expect(params.meetingDate, isNull);
+    expect(find.text('Crear Nuevo Plan'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('con datos válidos crea el plan con fecha a las 18:00 y cierra', (
     tester,
   ) async {
@@ -96,8 +116,17 @@ void main() {
     when(() => repository.createPlan(any()))
         .thenAnswer((_) async => const Plan(id: 1, title: 'Asado'));
     await tester.enterText(field('Nombre del plan'), '  Asado  ');
-    await tester.enterText(field('Descripción'), 'En casa');
+    await tester.enterText(field('Descripción (opcional)'), 'En casa');
     await tester.tap(field('Día de comienzo (Opcional)'));
+    await tester.pumpAndSettle();
+    final tomorrow = DateUtils.dateOnly(
+      DateTime.now().add(const Duration(days: 1)),
+    );
+    if (tomorrow.month != DateTime.now().month) {
+      await tester.tap(find.byIcon(Icons.chevron_right));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('${tomorrow.day}').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
@@ -107,11 +136,14 @@ void main() {
     final params =
         verify(() => repository.createPlan(captureAny())).captured.single
             as CreatePlanParams;
-    final hoy = DateTime.now();
     expect(params.title, 'Asado');
     expect(params.description, 'En casa');
-    expect(params.meetingDate, DateTime(hoy.year, hoy.month, hoy.day, 18));
+    expect(
+      params.meetingDate,
+      DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 18),
+    );
     expect(find.text('Crear Nuevo Plan'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('si el backend rechaza el plan muestra el error y no cierra', (
@@ -121,7 +153,7 @@ void main() {
     when(() => repository.createPlan(any()))
         .thenThrow(const ServerFailure('El título ya existe'));
     await tester.enterText(field('Nombre del plan'), 'Asado');
-    await tester.enterText(field('Descripción'), 'En casa');
+    await tester.enterText(field('Descripción (opcional)'), 'En casa');
 
     await save(tester);
 

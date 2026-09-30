@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../saved_to_plans/presentation/modals/save_to_plans_bottom_sheet.dart';
 
 class EventCard extends StatelessWidget {
+  final int eventId;
   final String title;
   final String category;
   final String date;
 
   const EventCard({
     super.key,
+    required this.eventId,
     required this.title,
     required this.category,
     required this.date,
@@ -93,7 +95,11 @@ class EventCard extends StatelessWidget {
                   icon: Icons.bookmark_border,
                   onPressed: () {
                     // Despliega el bottom sheet estilo Spotify para guardar en planes
-                    showSaveToPlansBottomSheet(context);
+                    showSaveToPlansBottomSheet(
+                      context,
+                      eventId: eventId,
+                      eventTitle: title,
+                    );
                   },
                 ),
               ],

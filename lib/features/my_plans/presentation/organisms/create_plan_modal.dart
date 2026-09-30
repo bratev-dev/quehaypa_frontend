@@ -5,7 +5,7 @@ import '../../../plans/presentation/controllers/plans_controller.dart';
 
 /// Modal de creación con la UX original intacta, pero persistiendo
 /// en el backend: Page -> Controller -> UseCase -> Repository -> DataSource.
-/// El back espera title (<=255), description y meetingDate sin zona.
+/// El back espera title (<=255), description opcional y meetingDate sin zona.
 void showCreatePlanModal(BuildContext context) {
   final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
@@ -13,7 +13,7 @@ void showCreatePlanModal(BuildContext context) {
   final dateController = TextEditingController();
   DateTime? pickedMeetingDate;
 
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
@@ -67,19 +67,16 @@ void showCreatePlanModal(BuildContext context) {
                 ),
                 const SizedBox(height: 14),
 
-                // Campo Descripción
+                // Campo Descripción opcional
                 TextFormField(
                   controller: descriptionController,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    labelText: 'Descripción',
+                    labelText: 'Descripción (opcional)',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Campo obligatorio'
-                      : null,
                 ),
                 const SizedBox(height: 14),
 
@@ -95,21 +92,32 @@ void showCreatePlanModal(BuildContext context) {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  validator: (_) {
+                    if (pickedMeetingDate != null &&
+                        DateUtils.dateOnly(pickedMeetingDate!)
+                            .isBefore(DateUtils.dateOnly(DateTime.now()))) {
+                      return 'La fecha no puede ser anterior a hoy';
+                    }
+                    return null;
+                  },
                   onTap: () async {
                     final now = DateTime.now();
                     final pickedDate = await showDatePicker(
                       context: sheetContext,
-                      initialDate: now,
-                      firstDate: DateTime(2025),
-                      lastDate: DateTime(2030),
+                      initialDate: DateUtils.dateOnly(now),
+                      firstDate: DateUtils.dateOnly(now),
+                      lastDate: DateTime(now.year + 5, now.month, now.day),
                     );
-                    if (pickedDate != null) {
-                      pickedMeetingDate = DateTime(
+                    if (pickedDate != null && sheetContext.mounted) {
+                      final defaultTime = DateTime(
                         pickedDate.year,
                         pickedDate.month,
                         pickedDate.day,
                         18,
                       );
+                      pickedMeetingDate = defaultTime.isBefore(now)
+                          ? now
+                          : defaultTime;
                       dateController.text =
                           '${pickedDate.year.toString().padLeft(4, '0')}-'
                           '${pickedDate.month.toString().padLeft(2, '0')}-'

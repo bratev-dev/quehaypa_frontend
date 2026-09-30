@@ -65,6 +65,14 @@ void main() {
           (e) => when(() => remote.deletePlan(any())).thenThrow(e),
           () => repository.deletePlan(7),
         ),
+        'addEvent': (
+          (e) => when(() => remote.addEvent(7, 3)).thenThrow(e),
+          () => repository.addEvent(7, 3),
+        ),
+        'getPlanEvents': (
+          (e) => when(() => remote.getPlanEvents(7)).thenThrow(e),
+          () => repository.getPlanEvents(7),
+        ),
       };
 
   final casos = <String, (Object, Matcher)>{
@@ -110,7 +118,13 @@ void main() {
   });
 
   // deletePlan no distingue conflictos: un 409 termina como error desconocido.
-  for (final operacion in ['getMyPlans', 'createPlan', 'updatePlan']) {
+  for (final operacion in [
+    'getMyPlans',
+    'createPlan',
+    'updatePlan',
+    'addEvent',
+    'getPlanEvents',
+  ]) {
     test('$operacion: ConflictException -> ConflictFailure', () {
       final op = operaciones[operacion]!;
       op.$1(const ConflictException('duplicado'));

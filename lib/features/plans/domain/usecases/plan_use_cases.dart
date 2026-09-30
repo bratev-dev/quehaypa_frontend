@@ -1,6 +1,7 @@
 import '../entities/plan.dart';
 import '../repositories/plan_params.dart';
 import '../repositories/plan_repository.dart';
+import '../../../preferences/domain/entities/event_seed.dart';
 
 class GetMyPlans {
   final PlanRepository repository;
@@ -32,4 +33,17 @@ class DeletePlan {
   const DeletePlan(this.repository);
 
   Future<void> call(int planId) => repository.deletePlan(planId);
+}
+
+class AddPlanEvent {
+  final PlanRepository repository;
+  const AddPlanEvent(this.repository);
+  Future<EventSeed> call(int planId, int eventId) =>
+      repository.addEvent(planId, eventId);
+}
+
+class GetPlanEvents {
+  final PlanRepository repository;
+  const GetPlanEvents(this.repository);
+  Future<List<EventSeed>> call(int planId) => repository.getPlanEvents(planId);
 }

@@ -236,4 +236,62 @@ void main() {
       },
     );
   });
+
+  group('plan events', () {
+    const event = {
+      'id': 7,
+      'title': 'Concierto',
+      'category': 'Música',
+      'eventText': 'Viernes 20:00',
+      'description': 'En vivo',
+    };
+
+    test('addEvent envía el id y parsea el evento guardado', () async {
+      adapter.reply = const FakeReply(201, {'data': event});
+
+      final saved = await dataSource.addEvent(3, 7);
+
+      expect(adapter.last.method, 'POST');
+      expect(adapter.last.path, '/api/v1/plans/3/items');
+      expect(adapter.last.data, {'eventId': 7});
+      expect(saved.id, 7);
+      expect(saved.title, 'Concierto');
+    });
+
+    test('getPlanEvents devuelve la lista del plan', () async {
+      adapter.reply = const FakeReply(200, {
+        'data': [event],
+      });
+
+      final events = await dataSource.getPlanEvents(3);
+
+      expect(adapter.last.method, 'GET');
+      expect(adapter.last.path, '/api/v1/plans/3/items');
+      expect(events.single.id, 7);
+    });
+
+    test('addEvent convierte una respuesta inválida en ServerException', () {
+      adapter.reply = const FakeReply(201, {'data': []});
+
+      expect(dataSource.addEvent(3, 7), throwsA(isA<ServerException>()));
+    });
+
+    test('getPlanEvents rechaza una lista con evento inválido', () {
+      adapter.reply = const FakeReply(200, {
+        'data': [
+          {'title': 'Sin id'},
+        ],
+      });
+
+      expect(dataSource.getPlanEvents(3), throwsA(isA<ServerException>()));
+    });
+
+    test('addEvent convierte duplicados en ConflictException', () {
+      adapter.reply = const FakeReply(409, {
+        'message': 'Este evento ya está guardado en el plan',
+      });
+
+      expect(dataSource.addEvent(3, 7), throwsA(isA<ConflictException>()));
+    });
+  });
 }
