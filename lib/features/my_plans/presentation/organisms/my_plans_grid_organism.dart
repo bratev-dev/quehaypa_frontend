@@ -60,29 +60,25 @@ class _MyPlansGridOrganismState extends ConsumerState<MyPlansGridOrganism> {
 
     final plans = state.plans;
     if (plans.isEmpty) {
-      return Align(
+      return const Align(
         // Compensa el encabezado para centrar el mensaje en la pantalla.
-        alignment: const Alignment(0, -0.22),
+        alignment: Alignment(0, -0.22),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.folder_open_rounded,
-              size: 56,
-              color: Colors.black87,
-            ),
-            const SizedBox(height: 12),
-            const Text(
+            Icon(Icons.folder_open_rounded, size: 56, color: Colors.black87),
+            SizedBox(height: 12),
+            Text(
               'Aún no tienes planes',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Crea uno y guarda los eventos que quieras vivir.',
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            const Text('Toca el botón + para empezar.'),
+            SizedBox(height: 8),
+            Text('Toca el botón + para empezar.'),
           ],
         ),
       );
