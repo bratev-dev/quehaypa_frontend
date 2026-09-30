@@ -211,5 +211,7 @@ void main() {
     expect(wired.read(createPlanUseCaseProvider), isNotNull);
     expect(wired.read(updatePlanUseCaseProvider), isNotNull);
     expect(wired.read(deletePlanUseCaseProvider), isNotNull);
+    expect(wired.read(addPlanEventUseCaseProvider), isNotNull);
+    expect(wired.read(getPlanEventsUseCaseProvider), isNotNull);
   });
 }

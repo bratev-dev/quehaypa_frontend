@@ -3,6 +3,7 @@ import 'package:frontend/features/plans/domain/entities/plan.dart';
 import 'package:frontend/features/plans/domain/repositories/plan_params.dart';
 import 'package:frontend/features/plans/domain/repositories/plan_repository.dart';
 import 'package:frontend/features/plans/domain/usecases/plan_use_cases.dart';
+import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockPlanRepository extends Mock implements PlanRepository {}
@@ -58,5 +59,29 @@ void main() {
     await DeletePlan(repository)(1);
 
     verify(() => repository.deletePlan(1)).called(1);
+  });
+
+  test('AddPlanEvent delega al repositorio', () async {
+    const event = EventSeed(
+      id: 7,
+      title: 'Concierto',
+      category: 'Música',
+      eventText: 'Viernes',
+    );
+    when(() => repository.addEvent(1, 7)).thenAnswer((_) async => event);
+
+    final saved = await AddPlanEvent(repository)(1, 7);
+
+    expect(saved.id, 7);
+    verify(() => repository.addEvent(1, 7)).called(1);
+  });
+
+  test('GetPlanEvents delega al repositorio', () async {
+    when(() => repository.getPlanEvents(1)).thenAnswer((_) async => []);
+
+    final events = await GetPlanEvents(repository)(1);
+
+    expect(events, isEmpty);
+    verify(() => repository.getPlanEvents(1)).called(1);
   });
 }

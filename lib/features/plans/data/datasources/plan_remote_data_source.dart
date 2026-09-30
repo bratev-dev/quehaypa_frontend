@@ -3,17 +3,18 @@ import 'package:dio/dio.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../domain/repositories/plan_params.dart';
 import '../models/plan_model.dart';
+import '../../../preferences/data/models/event_seed_model.dart';
 
 /// Única clase que habla con el monolito para planes.
 /// El Bearer lo pone AuthInterceptor. Parsea el envelope ApiResponse{data}.
 class PlanRemoteDataSource {
-  final Dio _dio;
+  final Dio dio;
 
-  const PlanRemoteDataSource({required this._dio});
+  const PlanRemoteDataSource({required this.dio});
 
   Future<List<PlanModel>> getMyPlans() async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await dio.get<Map<String, dynamic>>(
         '/api/v1/plans/my-plans',
       );
       final data = response.data?['data'];
@@ -39,7 +40,7 @@ class PlanRemoteDataSource {
 
   Future<PlanModel> createPlan(CreatePlanParams params) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await dio.post<Map<String, dynamic>>(
         '/api/v1/plans',
         data: {
           'title': params.title,
@@ -56,7 +57,7 @@ class PlanRemoteDataSource {
 
   Future<PlanModel> updatePlan(UpdatePlanParams params) async {
     try {
-      final response = await _dio.put<Map<String, dynamic>>(
+      final response = await dio.put<Map<String, dynamic>>(
         '/api/v1/plans/${params.planId}/edit',
         data: {
           'title': params.title,
@@ -73,9 +74,47 @@ class PlanRemoteDataSource {
 
   Future<void> deletePlan(int planId) async {
     try {
-      await _dio.delete<Map<String, dynamic>>('/api/v1/plans/$planId/delete');
+      await dio.delete<Map<String, dynamic>>('/api/v1/plans/$planId/delete');
     } on DioException catch (e) {
       throw _mapDioError(e);
+    }
+  }
+
+  Future<EventSeedModel> addEvent(int planId, int eventId) async {
+    try {
+      final response = await dio.post<Map<String, dynamic>>(
+        '/api/v1/plans/$planId/items',
+        data: {'eventId': eventId},
+      );
+      final data = response.data?['data'];
+      if (data is! Map<String, dynamic>) {
+        throw const ServerException('El servidor devolvió un evento inválido.');
+      }
+      return EventSeedModel.fromJson(data);
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    } on FormatException {
+      throw const ServerException('El servidor devolvió un evento inválido.');
+    }
+  }
+
+  Future<List<EventSeedModel>> getPlanEvents(int planId) async {
+    try {
+      final response = await dio.get<Map<String, dynamic>>(
+        '/api/v1/plans/$planId/items',
+      );
+      final data = response.data?['data'];
+      if (data is! List) {
+        throw const ServerException('El servidor devolvió eventos inválidos.');
+      }
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(EventSeedModel.fromJson)
+          .toList();
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    } on FormatException {
+      throw const ServerException('El servidor devolvió eventos inválidos.');
     }
   }
 

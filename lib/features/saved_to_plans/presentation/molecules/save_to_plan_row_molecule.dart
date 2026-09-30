@@ -7,6 +7,7 @@ class SaveToPlanRowMolecule extends StatelessWidget {
   final String details;
   final bool isSelected;
   final VoidCallback onToggle;
+  final bool isSaving;
 
   const SaveToPlanRowMolecule({
     super.key,
@@ -14,6 +15,7 @@ class SaveToPlanRowMolecule extends StatelessWidget {
     required this.details,
     required this.isSelected,
     required this.onToggle,
+    this.isSaving = false,
   });
 
   @override
@@ -63,7 +65,11 @@ class SaveToPlanRowMolecule extends StatelessWidget {
             ),
           ),
           // Botón selector derecho
-          PlanSelectorIconAtom(isSelected: isSelected, onTap: onToggle),
+          PlanSelectorIconAtom(
+            isSelected: isSelected,
+            onTap: onToggle,
+            isLoading: isSaving,
+          ),
         ],
       ),
     );

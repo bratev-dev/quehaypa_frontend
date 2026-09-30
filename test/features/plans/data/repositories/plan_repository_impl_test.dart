@@ -5,6 +5,7 @@ import 'package:frontend/features/plans/data/datasources/plan_remote_data_source
 import 'package:frontend/features/plans/data/models/plan_model.dart';
 import 'package:frontend/features/plans/data/repositories/plan_repository_impl.dart';
 import 'package:frontend/features/plans/domain/repositories/plan_params.dart';
+import 'package:frontend/features/preferences/data/models/event_seed_model.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockPlanRemoteDataSource extends Mock implements PlanRemoteDataSource {}
@@ -71,5 +72,40 @@ void main() {
     await repository.deletePlan(1);
 
     verify(() => remote.deletePlan(1)).called(1);
+  });
+
+  test('addEvent devuelve la entidad del evento guardado', () async {
+    when(() => remote.addEvent(1, 7)).thenAnswer(
+      (_) async => const EventSeedModel(
+        id: 7,
+        title: 'Concierto',
+        category: 'Música',
+        eventText: 'Viernes',
+      ),
+    );
+
+    final event = await repository.addEvent(1, 7);
+
+    expect(event.id, 7);
+    expect(event.title, 'Concierto');
+    verify(() => remote.addEvent(1, 7)).called(1);
+  });
+
+  test('getPlanEvents devuelve las entidades del plan', () async {
+    when(() => remote.getPlanEvents(1)).thenAnswer(
+      (_) async => const [
+        EventSeedModel(
+          id: 7,
+          title: 'Concierto',
+          category: 'Música',
+          eventText: 'Viernes',
+        ),
+      ],
+    );
+
+    final events = await repository.getPlanEvents(1);
+
+    expect(events.single.id, 7);
+    verify(() => remote.getPlanEvents(1)).called(1);
   });
 }

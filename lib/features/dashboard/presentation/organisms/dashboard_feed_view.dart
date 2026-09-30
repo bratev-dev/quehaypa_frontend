@@ -90,6 +90,7 @@ class _DashboardFeedViewState extends ConsumerState<DashboardFeedView> {
       delegate: SliverChildBuilderDelegate((context, index) {
         final event = state.visibleEvents[index];
         return EventCard(
+          eventId: event.id,
           title: event.title,
           category: event.category,
           date: event.eventText,
