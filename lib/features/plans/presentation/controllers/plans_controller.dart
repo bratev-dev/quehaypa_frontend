@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/failtures.dart';
 import '../../domain/repositories/plan_params.dart';
+import '../../../preferences/domain/entities/event_seed.dart';
 import 'plans_providers.dart';
 import 'plans_state.dart';
 
@@ -69,9 +70,9 @@ class PlansController extends Notifier<PlansState> {
     String description = '',
     DateTime? meetingDate,
   }) async {
-    state = state.copyWith(status: PlansStatus.loading, errorMessage: null);
+    state = PlansState(status: PlansStatus.loading, plans: state.plans);
     try {
-      await ref.read(updatePlanUseCaseProvider)(
+      final updated = await ref.read(updatePlanUseCaseProvider)(
         UpdatePlanParams(
           planId: planId,
           title: title,
@@ -79,7 +80,13 @@ class PlansController extends Notifier<PlansState> {
           meetingDate: meetingDate,
         ),
       );
-      await loadMyPlans();
+      state = PlansState(
+        status: PlansStatus.success,
+        plans: [
+          for (final plan in state.plans)
+            if (plan.id == updated.id) updated else plan,
+        ],
+      );
       return true;
     } on Failure catch (e) {
       state = state.copyWith(
@@ -121,4 +128,10 @@ class PlansController extends Notifier<PlansState> {
       return false;
     }
   }
+
+  Future<List<EventSeed>> loadPlanEvents(int planId) =>
+      ref.read(getPlanEventsUseCaseProvider)(planId);
+
+  Future<void> removePlanEvent(int planId, int eventId) =>
+      ref.read(removePlanEventUseCaseProvider)(planId, eventId);
 }

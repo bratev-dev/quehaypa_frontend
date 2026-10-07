@@ -157,15 +157,27 @@ void main() {
             const UpdatePlanParams(planId: 3, title: 'x', description: 'y'),
           ),
           throwsA(
-            isA<UnauthorizedException>().having(
-              (e) => e.message,
-              'message',
-              'No tienes permisos para esta operación.',
-            ),
+            isA<UnauthorizedException>()
+                .having((e) => e.statusCode, 'statusCode', 403)
+                .having(
+                  (e) => e.message,
+                  'message',
+                  'No tienes permisos para esta operación.',
+                ),
           ),
         );
       },
     );
+
+    test('envía meetingDate nulo para quitar una fecha existente', () async {
+      adapter.reply = const FakeReply(200, {'data': _plan});
+
+      await dataSource.updatePlan(
+        const UpdatePlanParams(planId: 3, title: 'Sin fecha'),
+      );
+
+      expect(adapter.last.data, containsPair('meetingDate', null));
+    });
   });
 
   group('deletePlan', () {
@@ -292,6 +304,25 @@ void main() {
       });
 
       expect(dataSource.addEvent(3, 7), throwsA(isA<ConflictException>()));
+    });
+
+    test('removeEvent borra solo la asociación del evento indicado', () async {
+      adapter.reply = const FakeReply(200, {
+        'message': 'Evento quitado del plan',
+      });
+
+      await dataSource.removeEvent(3, 7);
+
+      expect(adapter.last.method, 'DELETE');
+      expect(adapter.last.path, '/api/v1/plans/3/items/7');
+    });
+
+    test('removeEvent no considera éxito un evento ausente', () {
+      adapter.reply = const FakeReply(404, {
+        'message': 'El evento no está guardado en este plan',
+      });
+
+      expect(dataSource.removeEvent(3, 7), throwsA(isA<ServerException>()));
     });
   });
 }

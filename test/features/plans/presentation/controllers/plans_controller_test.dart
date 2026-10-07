@@ -8,6 +8,7 @@ import 'package:frontend/features/plans/domain/repositories/plan_repository.dart
 import 'package:frontend/features/plans/presentation/controllers/plans_controller.dart';
 import 'package:frontend/features/plans/presentation/controllers/plans_providers.dart';
 import 'package:frontend/features/plans/presentation/controllers/plans_state.dart';
+import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/fake_http_adapter.dart';
@@ -120,21 +121,30 @@ void main() {
   });
 
   group('updatePlan', () {
-    test('éxito actualiza el plan indicado y recarga la lista', () async {
-      when(() => repository.updatePlan(any())).thenAnswer((_) async => _asado);
-      when(() => repository.getMyPlans()).thenAnswer((_) async => [_asado]);
+    test(
+      'éxito reemplaza el plan en la lista sin ocultar el detalle',
+      () async {
+        when(() => repository.getMyPlans()).thenAnswer((_) async => [_asado]);
+        await controller().loadMyPlans();
+        const updated = Plan(id: 1, title: 'Asado 2', userRole: 'CREATOR');
+        when(() => repository.updatePlan(any()))
+            .thenAnswer((_) async => updated);
 
-      expect(
-        await controller().updatePlan(planId: 1, title: 'Asado 2'),
-        isTrue,
-      );
+        expect(
+          await controller().updatePlan(planId: 1, title: 'Asado 2'),
+          isTrue,
+        );
 
-      final params =
-          verify(() => repository.updatePlan(captureAny())).captured.single
-              as UpdatePlanParams;
-      expect((params.planId, params.title), (1, 'Asado 2'));
-      expect(state().status, PlansStatus.success);
-    });
+        final params =
+            verify(() => repository.updatePlan(captureAny())).captured.single
+                as UpdatePlanParams;
+        expect((params.planId, params.title), (1, 'Asado 2'));
+        expect(state().status, PlansStatus.success);
+        expect(state().plans.single.title, 'Asado 2');
+        expect(state().errorMessage, isNull);
+        verify(() => repository.getMyPlans()).called(1);
+      },
+    );
 
     test('un Failure devuelve false con su mensaje', () async {
       when(() => repository.updatePlan(any()))
@@ -191,6 +201,23 @@ void main() {
     });
   });
 
+  test('loadPlanEvents y removePlanEvent delegan al repositorio', () async {
+    const event = EventSeed(
+      id: 7,
+      title: 'Concierto',
+      category: 'Música',
+      eventText: 'Viernes',
+    );
+    when(() => repository.getPlanEvents(1)).thenAnswer((_) async => [event]);
+    when(() => repository.removeEvent(1, 7)).thenAnswer((_) async {});
+
+    final events = await controller().loadPlanEvents(1);
+    await controller().removePlanEvent(1, 7);
+
+    expect(events.single.id, 7);
+    verify(() => repository.removeEvent(1, 7)).called(1);
+  });
+
   test('los providers conectan el caso de uso con el Dio central', () async {
     final adapter = FakeHttpAdapter(
       const FakeReply(200, {
@@ -213,5 +240,6 @@ void main() {
     expect(wired.read(deletePlanUseCaseProvider), isNotNull);
     expect(wired.read(addPlanEventUseCaseProvider), isNotNull);
     expect(wired.read(getPlanEventsUseCaseProvider), isNotNull);
+    expect(wired.read(removePlanEventUseCaseProvider), isNotNull);
   });
 }

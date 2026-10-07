@@ -62,8 +62,9 @@ class PlanRemoteDataSource {
         data: {
           'title': params.title,
           'description': params.description,
-          if (params.meetingDate != null)
-            'meetingDate': _toBackendDate(params.meetingDate!),
+          'meetingDate': params.meetingDate == null
+              ? null
+              : _toBackendDate(params.meetingDate!),
         },
       );
       return _parseSingleEnvelope(response.data);
@@ -118,6 +119,16 @@ class PlanRemoteDataSource {
     }
   }
 
+  Future<void> removeEvent(int planId, int eventId) async {
+    try {
+      await dio.delete<Map<String, dynamic>>(
+        '/api/v1/plans/$planId/items/$eventId',
+      );
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
   PlanModel _parseSingleEnvelope(Map<String, dynamic>? envelope) {
     if (envelope == null || envelope['data'] is! Map<String, dynamic>) {
       throw const ServerException(
@@ -144,6 +155,7 @@ class PlanRemoteDataSource {
     if (statusCode == 403) {
       return const UnauthorizedException(
         'No tienes permisos para esta operación.',
+        statusCode: 403,
       );
     }
     if (statusCode == 404) {

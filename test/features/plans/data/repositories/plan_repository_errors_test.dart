@@ -38,6 +38,23 @@ void main() {
     expect((await repository.updatePlan(update)).id, 7);
   });
 
+  test('updatePlan conserva el mensaje de permisos ante 403', () {
+    when(() => remote.updatePlan(any())).thenThrow(
+      const UnauthorizedException('Solo el creador', statusCode: 403),
+    );
+
+    expect(
+      repository.updatePlan(update),
+      throwsA(
+        isA<UnauthorizedFailure>().having(
+          (failure) => failure.message,
+          'message',
+          'Solo el creador',
+        ),
+      ),
+    );
+  });
+
   test('deletePlan delega en el datasource', () async {
     when(() => remote.deletePlan(7)).thenAnswer((_) async {});
 

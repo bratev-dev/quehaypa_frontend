@@ -84,4 +84,12 @@ void main() {
     expect(events, isEmpty);
     verify(() => repository.getPlanEvents(1)).called(1);
   });
+
+  test('RemovePlanEvent delega los dos identificadores', () async {
+    when(() => repository.removeEvent(1, 7)).thenAnswer((_) async {});
+
+    await RemovePlanEvent(repository)(1, 7);
+
+    verify(() => repository.removeEvent(1, 7)).called(1);
+  });
 }

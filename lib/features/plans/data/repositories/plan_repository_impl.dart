@@ -61,9 +61,11 @@ class PlanRepositoryImpl implements PlanRepository {
     try {
       final model = await remoteDataSource.updatePlan(params);
       return model.toEntity();
-    } on UnauthorizedException {
-      throw const UnauthorizedFailure(
-        'Sesión inválida. Inicia sesión de nuevo.',
+    } on UnauthorizedException catch (e) {
+      throw UnauthorizedFailure(
+        e.statusCode == 403
+            ? e.message
+            : 'Sesión inválida. Inicia sesión de nuevo.',
       );
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);
@@ -109,12 +111,18 @@ class PlanRepositoryImpl implements PlanRepository {
         .then((events) => events.map((event) => event.toEntity()).toList()),
   );
 
+  @override
+  Future<void> removeEvent(int planId, int eventId) =>
+      _eventOperation(() => remoteDataSource.removeEvent(planId, eventId));
+
   Future<T> _eventOperation<T>(Future<T> Function() operation) async {
     try {
       return await operation();
-    } on UnauthorizedException {
-      throw const UnauthorizedFailure(
-        'Sesión inválida. Inicia sesión de nuevo.',
+    } on UnauthorizedException catch (e) {
+      throw UnauthorizedFailure(
+        e.statusCode == 403
+            ? e.message
+            : 'Sesión inválida. Inicia sesión de nuevo.',
       );
     } on NetworkException catch (e) {
       throw NetworkFailure(e.message);
