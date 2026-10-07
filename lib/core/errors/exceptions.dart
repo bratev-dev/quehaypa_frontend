@@ -18,8 +18,9 @@ class NetworkException implements Exception {
 
 class UnauthorizedException implements Exception {
   final String message;
+  final int statusCode;
 
-  const UnauthorizedException(this.message);
+  const UnauthorizedException(this.message, {this.statusCode = 401});
 
   @override
   String toString() => 'UnauthorizedException: $message';

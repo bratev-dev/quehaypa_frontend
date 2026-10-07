@@ -47,3 +47,10 @@ class GetPlanEvents {
   const GetPlanEvents(this.repository);
   Future<List<EventSeed>> call(int planId) => repository.getPlanEvents(planId);
 }
+
+class RemovePlanEvent {
+  final PlanRepository repository;
+  const RemovePlanEvent(this.repository);
+  Future<void> call(int planId, int eventId) =>
+      repository.removeEvent(planId, eventId);
+}

@@ -10,4 +10,5 @@ abstract class PlanRepository {
   Future<void> deletePlan(int planId);
   Future<EventSeed> addEvent(int planId, int eventId);
   Future<List<EventSeed>> getPlanEvents(int planId);
+  Future<void> removeEvent(int planId, int eventId);
 }

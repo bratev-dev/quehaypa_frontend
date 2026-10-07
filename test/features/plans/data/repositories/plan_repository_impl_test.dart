@@ -108,4 +108,29 @@ void main() {
     expect(events.single.id, 7);
     verify(() => remote.getPlanEvents(1)).called(1);
   });
+
+  test('removeEvent confirma el borrado de la asociación', () async {
+    when(() => remote.removeEvent(1, 7)).thenAnswer((_) async {});
+
+    await repository.removeEvent(1, 7);
+
+    verify(() => remote.removeEvent(1, 7)).called(1);
+  });
+
+  test('removeEvent conserva el mensaje de permiso denegado', () {
+    when(() => remote.removeEvent(1, 7)).thenThrow(
+      const UnauthorizedException('No tienes permisos.', statusCode: 403),
+    );
+
+    expect(
+      repository.removeEvent(1, 7),
+      throwsA(
+        isA<UnauthorizedFailure>().having(
+          (failure) => failure.message,
+          'message',
+          'No tienes permisos.',
+        ),
+      ),
+    );
+  });
 }

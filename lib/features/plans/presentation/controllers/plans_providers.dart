@@ -39,3 +39,7 @@ final addPlanEventUseCaseProvider = Provider<AddPlanEvent>((ref) {
 final getPlanEventsUseCaseProvider = Provider<GetPlanEvents>((ref) {
   return GetPlanEvents(ref.read(planRepositoryProvider));
 });
+
+final removePlanEventUseCaseProvider = Provider<RemovePlanEvent>((ref) {
+  return RemovePlanEvent(ref.read(planRepositoryProvider));
+});

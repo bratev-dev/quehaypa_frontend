@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/failtures.dart';
+import '../../../../core/widgets/top_status_snackbar.dart';
 import '../../../plans/domain/entities/plan.dart';
-import '../../../plans/presentation/controllers/plans_providers.dart';
+import '../../../plans/presentation/controllers/plans_controller.dart';
 import '../../../preferences/domain/entities/event_seed.dart';
+import '../molecules/saved_plan_event_card_molecule.dart';
+import '../organisms/edit_plan_modal.dart';
 
 /// Vista de consulta de los eventos guardados en un plan.
 class PlanDetailsPage extends ConsumerStatefulWidget {
@@ -19,6 +23,7 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage>
     with SingleTickerProviderStateMixin {
   List<EventSeed>? _events;
   String? _error;
+  int? _removingEventId;
   late final AnimationController _pulse;
 
   @override
@@ -44,9 +49,9 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage>
       _error = null;
     });
     try {
-      final events = await ref.read(getPlanEventsUseCaseProvider)(
-        widget.plan.id,
-      );
+      final events = await ref
+          .read(plansControllerProvider.notifier)
+          .loadPlanEvents(widget.plan.id);
       if (mounted) setState(() => _events = events);
     } catch (_) {
       if (mounted) {
@@ -55,15 +60,79 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage>
     }
   }
 
+  Future<void> _removeEvent(EventSeed event) async {
+    if (_removingEventId != null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('¿Quitar evento?'),
+        content: Text(
+          '¿Deseas quitar "${event.title}" de este plan? El evento seguirá disponible para volver a guardarlo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFD32F2F),
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Quitar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _removingEventId = event.id);
+    try {
+      await ref
+          .read(plansControllerProvider.notifier)
+          .removePlanEvent(widget.plan.id, event.id);
+      if (!mounted) return;
+      setState(() {
+        _events = _events?.where((item) => item.id != event.id).toList();
+      });
+      _showMessage('Evento quitado del plan.', success: true);
+    } on Failure catch (error) {
+      if (mounted) _showMessage(error.message);
+    } catch (_) {
+      if (mounted) _showMessage('No fue posible quitar el evento.');
+    } finally {
+      if (mounted) setState(() => _removingEventId = null);
+    }
+  }
+
+  void _showMessage(String message, {bool success = false}) {
+    TopStatusSnackbar.show(context, message: message, success: success);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final plan = widget.plan;
+    final plans = ref.watch(plansControllerProvider).plans;
+    final plan =
+        plans.where((item) => item.id == widget.plan.id).firstOrNull ??
+        widget.plan;
     return Scaffold(
       backgroundColor: const Color(0xFFFFD600),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFD600),
         foregroundColor: Colors.black,
         title: const Text('Mi plan'),
+        actions: [
+          if (plan.isCreator)
+            TextButton.icon(
+              onPressed: () async {
+                final saved = await showEditPlanModal(context, plan);
+                if (saved == true && mounted) {
+                  _showMessage('Plan actualizado.', success: true);
+                }
+              },
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Editar'),
+            ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -80,6 +149,13 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage>
             if (plan.description.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(plan.description, style: const TextStyle(fontSize: 15)),
+            ],
+            if (plan.meetingDate != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Fecha: ${MaterialLocalizations.of(context).formatMediumDate(plan.meetingDate!)}',
+                style: const TextStyle(fontSize: 15),
+              ),
             ],
             const SizedBox(height: 28),
             const Text(
@@ -122,40 +198,11 @@ class _PlanDetailsPageState extends ConsumerState<PlanDetailsPage>
               )
             else
               ..._events!.map(
-                (event) => Card(
-                  color: Colors.white,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          event.category.toUpperCase(),
-                          style: const TextStyle(
-                            color: Color(0xFFE91E63),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          event.title,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (event.eventText.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(event.eventText),
-                        ],
-                      ],
-                    ),
-                  ),
+                (event) => SavedPlanEventCardMolecule(
+                  event: event,
+                  canRemove: plan.isCreator,
+                  isRemoving: _removingEventId == event.id,
+                  onRemove: () => _removeEvent(event),
                 ),
               ),
           ],
