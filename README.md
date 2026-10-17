@@ -5,9 +5,9 @@
 ![Dart](https://img.shields.io/badge/Dart-3.13-0175C2?logo=dart&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
 
-Aplicación móvil de **Qué Hay Pa'?**, construida en Flutter. Consume la [API del backend](https://github.com/bratev-dev/quehaypa-backend) por REST y delega la autenticación en Keycloak (OAuth2 / OpenID Connect con PKCE).
+Aplicación móvil de **Qué Hay Pa'?**, construida en Flutter. Consume el [API Gateway del backend de microservicios](https://github.com/123camilopal/quehaypa-microservices) por REST y delega la autenticación en Keycloak (OAuth2 / OpenID Connect con PKCE).
 
-Este repositorio contiene solo el cliente móvil. El backend (Spring Boot) y Keycloak viven en el [repositorio del backend](https://github.com/bratev-dev/quehaypa-backend) y se despliegan en Railway.
+Este repositorio contiene solo el cliente móvil. El backend se organiza en `api-gateway`, `microAuthorization` y `microSocial`; sus instrucciones de ejecución están en el [repositorio de microservicios](https://github.com/123camilopal/quehaypa-microservices/blob/main/docs/README.md).
 
 **APK de pruebas más reciente:** [pre-release `develop-latest`](https://github.com/bratev-dev/quehaypa_frontend/releases/tag/develop-latest). Se regenera con cada cambio en `develop`.
 
@@ -48,7 +48,7 @@ feature/
 
 - Las dependencias fluyen en una sola dirección: `presentation → domain → data`. `domain` no importa Flutter, Dio ni JSON.
 - Los datasources traducen los errores HTTP a excepciones (`core/errors/exceptions.dart`), y los repositorios los convierten en *failures* del dominio (`core/errors/failtures.dart`), que la UI muestra.
-- Toda feature usa el `Dio` central (`dioProvider`). Su `AuthInterceptor` agrega el `Bearer` y, ante un 401, renueva el token una sola vez y reintenta. Si la renovación falla, cierra la sesión.
+- Toda feature usa el `Dio` central (`dioProvider`) con `API_BASE_URL` apuntando al gateway. Su `AuthInterceptor` agrega el `Bearer` y, ante un 401, renueva el token una sola vez y reintenta. Si la renovación falla, cierra la sesión.
 
 ## Stack tecnológico
 
@@ -116,8 +116,8 @@ cp .env.example .env
 
 | Variable | Descripción |
 | --- | --- |
-| `API_BASE_URL` | URL base del backend, sin `/api/v1`. Ej.: `http://192.168.1.19:5001` |
-| `KEYCLOAK_ISSUER_URL` | Emisor del realm: `http(s)://<host>/realms/que-hay-pa-dev` |
+| `API_BASE_URL` | URL pública del gateway, sin `/api/v1`. En local: `http://<IP-LAN>:8080` |
+| `KEYCLOAK_ISSUER_URL` | Emisor del realm. En local: `http://<IP-LAN>:8090/realms/que-hay-pa-dev` |
 
 Otros valores fijos del cliente OIDC, que viven en `lib/app/config/app_config.dart`:
 
@@ -126,9 +126,10 @@ Otros valores fijos del cliente OIDC, que viven en `lib/app/config/app_config.da
 
 **Reglas importantes:**
 
-- **`KEYCLOAK_ISSUER_URL` debe ser idéntico a `JWT_ISSUER_URI` del backend.** El claim `iss` del token toma la URL por la que la app llegó a Keycloak. Si no coincide con la que valida el backend, todas las peticiones responden 401.
+- **`KEYCLOAK_ISSUER_URL` debe ser idéntico a `JWT_ISSUER_URI` del gateway.** El claim `iss` del token toma la URL por la que la app llegó a Keycloak. Si no coincide con la que valida el gateway, las peticiones protegidas responden 401.
 - En un **teléfono físico**, `localhost` es el propio teléfono. Usa la IP LAN de tu PC en ambas variables y en el backend.
-- Para usar los servicios de Railway, pide las URLs vigentes a quien administra los despliegues. En el CI se inyectan desde las *Variables* del repositorio (`API_BASE_URL` y `KEYCLOAK_ISSUER_URL`), no desde el código.
+- En el **emulador Android**, usa `http://10.0.2.2:8080` para el gateway y `http://10.0.2.2:8090/realms/que-hay-pa-dev` para Keycloak; configura el `JWT_ISSUER_URI` del gateway con el mismo issuer que emite Keycloak.
+- Para usar Railway, configura `API_BASE_URL` con el dominio público del **gateway** y conserva el issuer público vigente de Keycloak. En el CI ambos valores se inyectan desde las *Variables* del repositorio (`API_BASE_URL` y `KEYCLOAK_ISSUER_URL`), no desde el código.
 
 ## Puesta en marcha
 

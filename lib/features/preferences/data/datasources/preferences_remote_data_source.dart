@@ -4,7 +4,7 @@ import '../../../../core/errors/exceptions.dart';
 import '../models/event_seed_model.dart';
 import '../models/interest_model.dart';
 
-/// Habla con el monolito para intereses/eventos.
+/// Consulta intereses, preferencias y eventos a través del API Gateway.
 /// El Bearer lo pone AuthInterceptor. Parsea el envelope ApiResponse{data}.
 class PreferencesRemoteDataSource {
   final Dio _dio;
