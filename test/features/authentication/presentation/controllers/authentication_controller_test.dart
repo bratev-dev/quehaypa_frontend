@@ -43,6 +43,16 @@ const _user = {
   'isActive': true,
 };
 
+const _organizer = {
+  'id': 9,
+  'username': 'org.cauca',
+  'firstName': 'Org',
+  'lastName': 'Cauca',
+  'email': 'org@test.com',
+  'identificationDocument': '1061000000',
+  'isActive': true,
+};
+
 void main() {
   late _MockAuthRepository repository;
   late _MockTokenManager tokens;
@@ -80,6 +90,19 @@ void main() {
 
   test('estado inicial', () {
     expect(state().status, AuthenticationStatus.initial);
+    expect(state().isOrganizer, isFalse);
+  });
+
+  test('copyWith conserva o actualiza el rol de organizador', () {
+    const initial = AuthenticationState(
+      status: AuthenticationStatus.authenticated,
+      isOrganizer: true,
+    );
+    expect(
+      initial.copyWith(status: AuthenticationStatus.loading).isOrganizer,
+      isTrue,
+    );
+    expect(initial.copyWith(isOrganizer: false).isOrganizer, isFalse);
   });
 
   group('restoreSession', () {
@@ -101,6 +124,24 @@ void main() {
 
       expect(state().status, AuthenticationStatus.authenticated);
       expect(state().session?.accessToken, 'acc');
+      expect(state().isOrganizer, isFalse);
+    });
+
+    test('sesión guardada de organizador recupera su dashboard', () async {
+      when(() => repository.restoreSession()).thenAnswer((_) async => _session);
+      adapter.queue.addAll([
+        const FakeReply(404, {'message': 'No es regular'}),
+        const FakeReply(200, {'data': _organizer}),
+      ]);
+
+      await controller().restoreSession();
+
+      expect(state().status, AuthenticationStatus.authenticated);
+      expect(state().isOrganizer, isTrue);
+      expect(adapter.requests.map((request) => request.path), [
+        '/api/v1/regular-users/me',
+        '/api/v1/organizers/me',
+      ]);
     });
 
     test(
@@ -112,6 +153,7 @@ void main() {
             .thenAnswer((_) async => true);
         await controller().restoreSession();
         expect(state().status, AuthenticationStatus.authenticated);
+        expect(state().isOrganizer, isFalse);
         verify(() => tokens.setRegistrationPending(false)).called(1);
       },
     );
@@ -187,7 +229,26 @@ void main() {
 
       expect(state().status, AuthenticationStatus.authenticated);
       expect(adapter.last.path, '/api/v1/organizers/me');
+      expect(state().isOrganizer, isFalse);
     });
+
+    test(
+      'perfil de organizador habilita su dashboard al iniciar sesión',
+      () async {
+        when(() => repository.login(loginHint: any(named: 'loginHint')))
+            .thenAnswer((_) async => _session);
+        adapter.queue.addAll([
+          const FakeReply(404, {'message': 'No es regular'}),
+          const FakeReply(200, {'data': _organizer}),
+        ]);
+
+        await controller().login();
+
+        expect(state().status, AuthenticationStatus.authenticated);
+        expect(state().isOrganizer, isTrue);
+        expect(adapter.last.path, '/api/v1/organizers/me');
+      },
+    );
 
     test('cancelar en Keycloak vuelve a no autenticado sin error', () async {
       when(() => repository.login(loginHint: any(named: 'loginHint')))
@@ -244,6 +305,20 @@ void main() {
       expect(adapter.requests, isEmpty);
     });
 
+    test('registro ya completo resuelve el perfil de organizador', () async {
+      when(() => registrations.begin()).thenAnswer((_) async => false);
+      when(() => repository.register()).thenAnswer((_) async => _session);
+      adapter.queue.addAll([
+        const FakeReply(404, {'message': 'No es regular'}),
+        const FakeReply(200, {'data': _organizer}),
+      ]);
+
+      await controller().register();
+
+      expect(state().status, AuthenticationStatus.authenticated);
+      expect(state().isOrganizer, isTrue);
+    });
+
     test('un fallo real conserva un mensaje amigable', () async {
       when(() => repository.register())
           .thenThrow(const AuthenticationException('SocketException'));
@@ -266,6 +341,20 @@ void main() {
         verify(() => tokens.setRegistrationPending(false)).called(1);
       },
     );
+
+    test('finalizar el registro de organizador conserva su rol', () async {
+      when(() => repository.register()).thenAnswer((_) async => _session);
+      when(() => repository.refreshSession()).thenAnswer((_) async => _session);
+      await controller().register();
+      container
+          .read(registerControllerProvider.notifier)
+          .selectRole(UserRole.organizer);
+
+      await controller().finishRegistration();
+
+      expect(state().status, AuthenticationStatus.authenticated);
+      expect(state().isOrganizer, isTrue);
+    });
 
     test('un fallo de refresh no repite el registro', () async {
       when(() => repository.register()).thenAnswer((_) async => _session);
