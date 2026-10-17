@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../authentication/presentation/controllers/authentication_controller.dart';
 import '../../../authentication/presentation/controllers/authentication_state.dart';
+import '../../../navigation/providers/navigation_provider.dart';
+import '../../../organizer_dashboard/presentation/pages/organizer_dashboard_page.dart';
 
 class HomeAuthActions extends ConsumerWidget {
   const HomeAuthActions({super.key});
@@ -49,6 +52,26 @@ class HomeAuthActions extends ConsumerWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
+        if (kDebugMode) ...[
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: () {
+              ref.read(navigationIndexProvider.notifier).setIndex(0);
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const OrganizerDashboardPage(preview: true),
+                ),
+              );
+            },
+            icon: const Icon(Icons.visibility_outlined),
+            label: const Text('Vista previa: organizador'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white70),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ],
       ],
     );
   }
