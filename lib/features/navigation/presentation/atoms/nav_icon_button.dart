@@ -4,12 +4,14 @@ class NavIconButton extends StatelessWidget {
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool compact;
 
   const NavIconButton({
     super.key,
     required this.icon,
     required this.isSelected,
     required this.onTap,
+    this.compact = false,
   });
 
   @override
@@ -18,15 +20,15 @@ class NavIconButton extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 60,
+        width: compact ? 50 : 60,
         height: 78,
         child: Center(
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeOutBack,
 
-            width: isSelected ? 64 : 48,
-            height: isSelected ? 64 : 48,
+            width: isSelected ? (compact ? 54 : 64) : (compact ? 42 : 48),
+            height: isSelected ? (compact ? 54 : 64) : (compact ? 42 : 48),
 
             decoration: BoxDecoration(
               color: isSelected
