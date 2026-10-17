@@ -5,8 +5,7 @@ import '../../domain/repositories/plan_params.dart';
 import '../models/plan_model.dart';
 import '../../../preferences/data/models/event_seed_model.dart';
 
-/// Única clase que habla con el monolito para planes.
-/// El Bearer lo pone AuthInterceptor. Parsea el envelope ApiResponse{data}.
+/// Consulta planes a través del API Gateway. El interceptor añade el Bearer.
 class PlanRemoteDataSource {
   final Dio dio;
 
