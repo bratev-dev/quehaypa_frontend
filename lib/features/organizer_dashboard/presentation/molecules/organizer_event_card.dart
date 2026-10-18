@@ -58,18 +58,26 @@ class OrganizerEventCard extends StatelessWidget {
         const Spacer(),
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF49BC7).withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${event.startHour}:00 - ${event.startHour + event.durationHours}:00',
-                style: const TextStyle(color: Color(0xFFEB4A9A), fontSize: 9),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF49BC7).withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${event.startHour}:00 - ${event.startHour + event.durationHours}:00',
+                    style: const TextStyle(
+                      color: Color(0xFFEB4A9A),
+                      fontSize: 9,
+                    ),
+                  ),
+                ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 4),
             SizedBox(
               width: 41,
               height: 21,
