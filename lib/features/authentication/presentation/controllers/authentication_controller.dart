@@ -15,6 +15,7 @@ import 'authentication_providers.dart';
 import 'authentication_state.dart';
 import 'register_providers.dart';
 import 'register_controller.dart';
+import 'register_state.dart';
 
 final authenticationControllerProvider =
     NotifierProvider<AuthenticationController, AuthenticationState>(
@@ -69,6 +70,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
       state = state.copyWith(
         status: AuthenticationStatus.authenticated,
         session: session,
+        isOrganizer: await _resolveProfileBestEffort(),
       );
     } catch (e) {
       state = state.copyWith(status: AuthenticationStatus.unauthenticated);
@@ -99,11 +101,12 @@ class AuthenticationController extends Notifier<AuthenticationState> {
       // Guía §10: tras el token, resolver el perfil de negocio (quién soy).
       // El estado remoto ya confirmó que el registro está completo.
       // Esta consulta solo hidrata datos adicionales de la cuenta.
-      await _resolveProfileBestEffort();
+      final isOrganizer = await _resolveProfileBestEffort();
 
       state = state.copyWith(
         status: AuthenticationStatus.authenticated,
         session: session,
+        isOrganizer: isOrganizer,
       );
     } on AuthenticationCancelledException {
       // El usuario cerró la pantalla de Keycloak (ej. botón atrás) antes de
@@ -135,6 +138,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
             ? AuthenticationStatus.registrationRequired
             : AuthenticationStatus.authenticated,
         session: session,
+        isOrganizer: !pending && await _resolveProfileBestEffort(),
       );
     } on AuthenticationCancelledException {
       state = const AuthenticationState(
@@ -181,6 +185,9 @@ class AuthenticationController extends Notifier<AuthenticationState> {
     state = AuthenticationState(
       status: AuthenticationStatus.authenticated,
       session: session,
+      isOrganizer:
+          ref.read(registerControllerProvider).selectedRole ==
+          UserRole.organizer,
     );
   }
 
@@ -242,7 +249,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
   }
 
   /// Hidrata preferencias tras verificar el estado completo en el backend.
-  Future<void> _resolveProfileBestEffort() async {
+  Future<bool> _resolveProfileBestEffort() async {
     try {
       await ref.read(userRemoteDataSourceProvider).getProfile();
       try {
@@ -257,14 +264,16 @@ class AuthenticationController extends Notifier<AuthenticationState> {
       } catch (_) {
         // El dashboard consultará su feed sin intereses precargados.
       }
-      return;
+      return false;
     } catch (_) {
       // No es regular (404/403) -> probar organizador.
     }
     try {
       await ref.read(organizerRemoteDataSourceProvider).getProfile();
+      return true;
     } catch (_) {
       // La carga adicional no cambia el estado confirmado por el backend.
+      return false;
     }
   }
 }
