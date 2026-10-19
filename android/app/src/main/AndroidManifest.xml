@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ubicación para recomendar planes cercanos (QHP-106). Se declaran las dos:
+         desde Android 12 el usuario puede elegir "aproximada" aunque se pida la precisa. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <application
         android:label="Qué Hay Pa'?"
         android:name="${applicationName}"
