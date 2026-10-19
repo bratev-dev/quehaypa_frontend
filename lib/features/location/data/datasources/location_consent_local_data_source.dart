@@ -1,5 +1,7 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../../core/errors/exceptions.dart';
 import '../../domain/entities/location_consent.dart';
 
 /// Guarda la respuesta al aviso de ubicación por cuenta (`sub` del token).
@@ -13,10 +15,23 @@ class LocationConsentLocalDataSource {
   const LocationConsentLocalDataSource({required this.storage});
 
   Future<LocationConsent?> read(String accountId) async {
-    final value = await storage.read(key: '$_keyPrefix$accountId');
-    return LocationConsent.values.asNameMap()[value];
+    try {
+      final value = await storage.read(key: '$_keyPrefix$accountId');
+      return LocationConsent.values.asNameMap()[value];
+    } on PlatformException {
+      throw const StorageException(
+        'No fue posible leer tu preferencia de ubicación.',
+      );
+    }
   }
 
-  Future<void> write(String accountId, LocationConsent consent) =>
-      storage.write(key: '$_keyPrefix$accountId', value: consent.name);
+  Future<void> write(String accountId, LocationConsent consent) async {
+    try {
+      await storage.write(key: '$_keyPrefix$accountId', value: consent.name);
+    } on PlatformException {
+      throw const StorageException(
+        'No fue posible guardar tu preferencia de ubicación.',
+      );
+    }
+  }
 }

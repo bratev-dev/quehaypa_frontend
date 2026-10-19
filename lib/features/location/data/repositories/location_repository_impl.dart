@@ -1,5 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 
+import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/failtures.dart';
 import '../../domain/entities/location_consent.dart';
 import '../../domain/entities/location_permission_status.dart';
 import '../../domain/entities/user_location.dart';
@@ -8,7 +10,8 @@ import '../datasources/device_location_data_source.dart';
 import '../datasources/location_consent_local_data_source.dart';
 
 /// Implementa el contrato del dominio. Traduce los tipos de geolocator a los
-/// del dominio para que ninguna otra capa dependa del paquete.
+/// del dominio para que ninguna otra capa dependa del paquete, y
+/// StorageException -> StorageFailure.
 class LocationRepositoryImpl implements LocationRepository {
   final DeviceLocationDataSource deviceDataSource;
   final LocationConsentLocalDataSource consentDataSource;
@@ -19,12 +22,22 @@ class LocationRepositoryImpl implements LocationRepository {
   });
 
   @override
-  Future<LocationConsent?> getConsent(String accountId) =>
-      consentDataSource.read(accountId);
+  Future<LocationConsent?> getConsent(String accountId) async {
+    try {
+      return await consentDataSource.read(accountId);
+    } on StorageException catch (e) {
+      throw StorageFailure(e.message);
+    }
+  }
 
   @override
-  Future<void> saveConsent(String accountId, LocationConsent consent) =>
-      consentDataSource.write(accountId, consent);
+  Future<void> saveConsent(String accountId, LocationConsent consent) async {
+    try {
+      await consentDataSource.write(accountId, consent);
+    } on StorageException catch (e) {
+      throw StorageFailure(e.message);
+    }
+  }
 
   @override
   Future<LocationPermissionStatus> checkPermission() async =>

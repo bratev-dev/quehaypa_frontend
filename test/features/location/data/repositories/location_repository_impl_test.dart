@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/errors/exceptions.dart';
+import 'package:frontend/core/errors/failtures.dart';
 import 'package:frontend/features/location/data/datasources/device_location_data_source.dart';
 import 'package:frontend/features/location/data/datasources/location_consent_local_data_source.dart';
 import 'package:frontend/features/location/data/repositories/location_repository_impl.dart';
@@ -112,5 +114,18 @@ void main() {
     await repository.saveConsent('sub-1', LocationConsent.granted);
     verify(() => consent.write('sub-1', LocationConsent.granted)).called(1);
     expect(await repository.openAppSettings(), isFalse);
+  });
+
+  test('StorageException se traduce a StorageFailure', () {
+    when(() => consent.read(any()))
+        .thenThrow(const StorageException('No se pudo leer'));
+    when(() => consent.write(any(), any()))
+        .thenThrow(const StorageException('No se pudo guardar'));
+
+    expect(repository.getConsent('sub-1'), throwsA(isA<StorageFailure>()));
+    expect(
+      repository.saveConsent('sub-1', LocationConsent.declined),
+      throwsA(isA<StorageFailure>()),
+    );
   });
 }

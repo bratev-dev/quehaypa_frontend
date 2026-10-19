@@ -1,7 +1,10 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/errors/exceptions.dart';
 import 'package:frontend/features/location/data/datasources/location_consent_local_data_source.dart';
 import 'package:frontend/features/location/domain/entities/location_consent.dart';
+import 'package:mocktail/mocktail.dart';
 
 void main() {
   const dataSource = LocationConsentLocalDataSource(
@@ -38,4 +41,33 @@ void main() {
 
     expect(await dataSource.read('sub-1'), isNull);
   });
+
+  group('un fallo del almacenamiento se traduce a StorageException', () {
+    final storage = _MockFlutterSecureStorage();
+    final failing = LocationConsentLocalDataSource(storage: storage);
+
+    setUp(() {
+      when(() => storage.read(key: any(named: 'key')))
+          .thenThrow(PlatformException(code: 'BadPaddingException'));
+      when(
+        () => storage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenThrow(PlatformException(code: 'BadPaddingException'));
+    });
+
+    test('al leer', () {
+      expect(failing.read('sub-1'), throwsA(isA<StorageException>()));
+    });
+
+    test('al guardar', () {
+      expect(
+        failing.write('sub-1', LocationConsent.granted),
+        throwsA(isA<StorageException>()),
+      );
+    });
+  });
 }
+
+class _MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
