@@ -10,31 +10,59 @@ class OrganizerCalendarHeader extends ConsumerWidget {
   const OrganizerCalendarHeader({
     super.key,
     required this.dateScrollController,
+    this.onCreateEvent,
   });
 
   final ScrollController dateScrollController;
+  final ValueChanged<Rect>? onCreateEvent;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(organizerCalendarProvider);
+    final createEventKey = GlobalKey();
     return Column(
       children: [
         Column(
           children: [
             Align(
               alignment: Alignment.centerRight,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEB4A9A),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Crear Evento',
-                  style: TextStyle(color: Colors.white, fontSize: 11),
+              child: InkWell(
+                onTap: onCreateEvent == null
+                    ? null
+                    : () {
+                        final renderObject = createEventKey.currentContext
+                            ?.findRenderObject();
+                        if (renderObject is! RenderBox ||
+                            !renderObject.hasSize) {
+                          return;
+                        }
+                        final globalOrigin = renderObject.localToGlobal(
+                          Offset.zero,
+                        );
+                        final overlayObject = Navigator.of(context)
+                            .overlay
+                            ?.context
+                            .findRenderObject();
+                        final localOrigin = overlayObject is RenderBox
+                            ? overlayObject.globalToLocal(globalOrigin)
+                            : globalOrigin;
+                        onCreateEvent!(localOrigin & renderObject.size);
+                      },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  key: createEventKey,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEB4A9A),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Crear Evento',
+                    style: TextStyle(color: Colors.white, fontSize: 11),
+                  ),
                 ),
               ),
             ),
