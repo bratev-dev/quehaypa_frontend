@@ -84,7 +84,10 @@ void main() {
     expect(container.read(organizerCalendarProvider).selectedDate.day, 2);
     await tester.pump(const Duration(milliseconds: 450));
 
-    await tester.drag(find.byType(ListView), const Offset(-180, 0));
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(-180, 0),
+    );
     await tester.pumpAndSettle();
     expect(scrollController.offset, greaterThan(0));
 
