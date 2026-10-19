@@ -4,11 +4,18 @@ enum CalendarPeriod { day, month, year }
 
 class OrganizerCalendarState {
   const OrganizerCalendarState({
-    required this.selectedDate,
-    this.period = CalendarPeriod.day,
-    this.isLoading = false,
+    required DateTime selectedDate,
+    CalendarPeriod period = CalendarPeriod.day,
+    bool isLoading = false,
     List<CreatedEventPreview>? createdEvents,
-  }) : _createdEvents = createdEvents;
+  }) : this._(selectedDate, period, isLoading, createdEvents);
+
+  const OrganizerCalendarState._(
+    this.selectedDate,
+    this.period,
+    this.isLoading,
+    this._createdEvents,
+  );
 
   final DateTime selectedDate;
   final CalendarPeriod period;
