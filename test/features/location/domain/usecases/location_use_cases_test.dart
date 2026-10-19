@@ -136,11 +136,30 @@ void main() {
   });
 
   group('ResolveUserLocation', () {
+    setUp(() {
+      when(() => repository.getConsent('sub-1'))
+          .thenAnswer((_) async => LocationConsent.granted);
+    });
+
+    for (final consent in [LocationConsent.declined, null]) {
+      test('si la cuenta respondió $consent usa Popayán aunque el sistema '
+          'tenga permiso de otra cuenta', () async {
+        when(() => repository.getConsent('sub-2'))
+            .thenAnswer((_) async => consent);
+
+        final result = await ResolveUserLocation(repository)('sub-2');
+
+        expect(result.location.isDefaultCity, isTrue);
+        expect(result.deviceUnavailable, isFalse);
+        verifyNever(() => repository.checkPermission());
+      });
+    }
+
     test('sin permiso del sistema usa Popayán sin consultar el GPS', () async {
       when(() => repository.checkPermission())
           .thenAnswer((_) async => LocationPermissionStatus.denied);
 
-      final result = await ResolveUserLocation(repository)();
+      final result = await ResolveUserLocation(repository)('sub-1');
 
       expect(result.location.isDefaultCity, isTrue);
       expect(result.deviceUnavailable, isFalse);
@@ -157,7 +176,7 @@ void main() {
         () => repository.getCurrentLocation(timeLimit: any(named: 'timeLimit')),
       ).thenAnswer((_) async => device);
 
-      final result = await ResolveUserLocation(repository)();
+      final result = await ResolveUserLocation(repository)('sub-1');
 
       expect(result.location, same(device));
       expect(result.deviceUnavailable, isFalse);
@@ -177,7 +196,7 @@ void main() {
       when(() => repository.getLastKnownLocation())
           .thenAnswer((_) async => lastKnown);
 
-      final result = await ResolveUserLocation(repository)();
+      final result = await ResolveUserLocation(repository)('sub-1');
 
       expect(result.location, same(lastKnown));
       expect(result.deviceUnavailable, isTrue);
@@ -192,7 +211,7 @@ void main() {
       when(() => repository.getLastKnownLocation())
           .thenAnswer((_) async => null);
 
-      final result = await ResolveUserLocation(repository)();
+      final result = await ResolveUserLocation(repository)('sub-1');
 
       expect(result.location.isDefaultCity, isTrue);
       expect(result.deviceUnavailable, isTrue);

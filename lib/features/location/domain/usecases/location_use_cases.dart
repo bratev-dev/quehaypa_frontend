@@ -56,9 +56,11 @@ class RequestLocationAccess {
   }
 }
 
-/// Regla de HU-5.1. Sin permiso del sistema: Popayán. Con permiso: la posición
-/// actual (máximo [timeLimit]); si el GPS no responde, la última conocida; si
-/// tampoco hay, Popayán. Nunca vuelve a pedir el permiso por su cuenta.
+/// Regla de HU-5.1. Si la cuenta no aceptó o el sistema no da permiso:
+/// Popayán. Si no, la posición actual (máximo [timeLimit]); si el GPS no
+/// responde, la última conocida; si tampoco hay, Popayán. Nunca vuelve a pedir
+/// el permiso por su cuenta. Se consulta la cuenta porque el permiso del
+/// sistema es del teléfono: otra cuenta pudo haberlo concedido.
 class ResolveUserLocation {
   static const timeLimit = Duration(seconds: 10);
 
@@ -66,7 +68,12 @@ class ResolveUserLocation {
 
   const ResolveUserLocation(this.repository);
 
-  Future<LocationResolution> call() async {
+  Future<LocationResolution> call(String accountId) async {
+    final consent = await repository.getConsent(accountId);
+    if (consent != LocationConsent.granted) {
+      return const LocationResolution(UserLocation.defaultCity);
+    }
+
     final status = await repository.checkPermission();
     if (status != LocationPermissionStatus.granted) {
       return const LocationResolution(UserLocation.defaultCity);
