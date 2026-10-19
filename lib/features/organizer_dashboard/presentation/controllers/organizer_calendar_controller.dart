@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../event_creation/domain/created_event_preview.dart';
 import 'organizer_calendar_state.dart';
 
 final organizerCalendarProvider =
@@ -14,6 +15,22 @@ class OrganizerCalendarController extends Notifier<OrganizerCalendarState> {
 
   void selectPeriod(CalendarPeriod period) {
     state = state.copyWith(period: period);
+  }
+
+  void showCreatedEvent(CreatedEventPreview event) {
+    state = state.copyWith(
+      selectedDate: DateTime(
+        event.startsAt.year,
+        event.startsAt.month,
+        event.startsAt.day,
+      ),
+      period: CalendarPeriod.day,
+      isLoading: false,
+      createdEvents: List<CreatedEventPreview>.unmodifiable([
+        ...state.createdEvents,
+        event,
+      ]),
+    );
   }
 
   Future<void> selectDate(DateTime date) async {

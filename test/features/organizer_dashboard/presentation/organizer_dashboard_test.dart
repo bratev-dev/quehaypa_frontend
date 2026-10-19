@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/features/event_creation/domain/created_event_preview.dart';
 import 'package:frontend/features/navigation/presentation/atoms/nav_icon_button.dart';
 import 'package:frontend/features/organizer_dashboard/presentation/controllers/organizer_calendar_controller.dart';
 import 'package:frontend/features/organizer_dashboard/presentation/controllers/organizer_calendar_state.dart';
@@ -49,6 +50,47 @@ void main() {
     expect(find.byType(OrganizerEventSkeleton), findsNothing);
     expect(find.byType(OrganizerEventCard), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('un evento temporal se muestra en su fecha y horario', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(402, 822);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: OrganizerCalendarMap())),
+      ),
+    );
+
+    container
+        .read(organizerCalendarProvider.notifier)
+        .showCreatedEvent(
+          CreatedEventPreview(
+            title: 'Concierto nocturno',
+            startsAt: DateTime(2026, 6, 2, 22, 30),
+            endsAt: DateTime(2026, 6, 3, 4),
+          ),
+        );
+    await tester.pump();
+    await tester.pump();
+    expect(
+      container.read(organizerCalendarProvider).selectedDate,
+      DateTime(2026, 6, 2),
+    );
+    expect(find.text('Concierto nocturno'), findsOneWidget);
+    expect(find.text('22:30 - 04:00 (+1 día)'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Concierto nocturno')).dx,
+      inInclusiveRange(0, 402),
+    );
   });
 
   testWidgets('el selector cambia fecha y período y reinicia su scroll', (

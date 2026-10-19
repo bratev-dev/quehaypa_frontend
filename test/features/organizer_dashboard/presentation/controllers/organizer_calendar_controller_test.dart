@@ -12,6 +12,7 @@ void main() {
     expect(state.selectedDate, DateTime(2026, 6, 1));
     expect(state.period, CalendarPeriod.day);
     expect(state.isLoading, isFalse);
+    expect(state.createdEvents, isEmpty);
   });
 
   test('cambia el período sin perder la fecha seleccionada', () {
@@ -61,5 +62,15 @@ void main() {
     expect(loading.selectedDate, DateTime(2027, 1, 1));
     expect(loading.period, CalendarPeriod.year);
     expect(loading.isLoading, isTrue);
+    expect(loading.createdEvents, isEmpty);
+  });
+
+  test('tolera una lista de eventos ausente en un estado previo', () {
+    final state = OrganizerCalendarState(
+      selectedDate: DateTime(2026, 6, 1),
+      createdEvents: null,
+    );
+    expect(state.createdEvents, isEmpty);
+    expect(state.copyWith(period: CalendarPeriod.month).createdEvents, isEmpty);
   });
 }

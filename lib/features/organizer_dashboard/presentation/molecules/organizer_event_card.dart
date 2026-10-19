@@ -68,7 +68,8 @@ class OrganizerEventCard extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    '${event.startHour}:00 - ${event.startHour + event.durationHours}:00',
+                    event.timeLabel ??
+                        '${event.startHour}:00 - ${event.startHour + event.durationHours}:00',
                     style: const TextStyle(
                       color: Color(0xFFEB4A9A),
                       fontSize: 9,
@@ -77,28 +78,30 @@ class OrganizerEventCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 4),
-            SizedBox(
-              width: 41,
-              height: 21,
-              child: Stack(
-                children: [
-                  for (var index = 0; index < 3; index++)
-                    Positioned(
-                      left: index * 10,
-                      child: SvgPicture.asset(
-                        'assets/images/organizer_avatar_${index + 1}.svg',
-                        width: 20.465,
-                        height: 20.465,
+            if (event.attendees > 0) ...[
+              const SizedBox(width: 4),
+              SizedBox(
+                width: 41,
+                height: 21,
+                child: Stack(
+                  children: [
+                    for (var index = 0; index < 3; index++)
+                      Positioned(
+                        left: index * 10,
+                        child: SvgPicture.asset(
+                          'assets/images/organizer_avatar_${index + 1}.svg',
+                          width: 20.465,
+                          height: 20.465,
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Text(
-              '+${event.attendees}',
-              style: const TextStyle(color: Colors.black54, fontSize: 9),
-            ),
+              Text(
+                '+${event.attendees}',
+                style: const TextStyle(color: Colors.black54, fontSize: 9),
+              ),
+            ],
           ],
         ),
       ],
