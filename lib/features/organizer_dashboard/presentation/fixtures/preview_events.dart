@@ -5,6 +5,7 @@ class PreviewCalendarEvent {
     required this.durationHours,
     required this.row,
     required this.attendees,
+    this.timeLabel,
   });
 
   final String title;
@@ -12,6 +13,7 @@ class PreviewCalendarEvent {
   final int durationHours;
   final int row;
   final int attendees;
+  final String? timeLabel;
 }
 
 const previewEvents = <PreviewCalendarEvent>[
