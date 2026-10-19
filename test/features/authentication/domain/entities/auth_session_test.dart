@@ -50,6 +50,19 @@ void main() {
     expect(session.username, isEmpty);
   });
 
+  test('obtiene el identificador de la cuenta (sub)', () {
+    final session = AuthSession(
+      accessToken: token({'sub': 'access-sub'}),
+      idToken: token({'sub': 'f3a1c2d4-uuid'}),
+    );
+    expect(session.subject, 'f3a1c2d4-uuid');
+  });
+
+  test('sin sub el identificador queda vacío', () {
+    final session = AuthSession(accessToken: token({'email': 'ana@test.com'}));
+    expect(session.subject, isEmpty);
+  });
+
   test('tokens inválidos no generan excepciones en el formulario', () {
     const session = AuthSession(accessToken: 'header.@@@.signature');
     expect(session.email, isEmpty);

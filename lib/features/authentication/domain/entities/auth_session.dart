@@ -17,6 +17,9 @@ class AuthSession {
   String get firstName => _claim('given_name');
   String get lastName => _claim('family_name');
 
+  /// Identificador estable de la cuenta en Keycloak: no cambia ni se reutiliza.
+  String get subject => _claim('sub');
+
   String _claim(String name) {
     for (final token in [idToken, accessToken]) {
       if (token == null) continue;
