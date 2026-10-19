@@ -9,6 +9,7 @@ import '../../../profile/presentation/pages/profile_page.dart';
 import '../atoms/calendar_selection_notch.dart';
 import '../controllers/organizer_calendar_controller.dart';
 import '../controllers/organizer_calendar_state.dart';
+import '../molecules/calendar_date_strip.dart';
 import '../organisms/organizer_calendar_header.dart';
 import '../organisms/organizer_calendar_map.dart';
 
@@ -63,11 +64,7 @@ class _OrganizerCalendarHomeState
     super.dispose();
   }
 
-  double _selectedDateCenter(OrganizerCalendarState state, double width) {
-    final index = switch (state.period) {
-      CalendarPeriod.day => state.selectedDate.weekday - 1,
-      CalendarPeriod.month || CalendarPeriod.year => 2,
-    };
+  double _selectedDateCenter(double index, double width) {
     final scrollOffset = _dateScrollController.hasClients
         ? _dateScrollController.offset
         : 0.0;
@@ -82,6 +79,10 @@ class _OrganizerCalendarHomeState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(organizerCalendarProvider);
+    final selectedIndex = switch (state.period) {
+      CalendarPeriod.day => state.selectedDate.weekday - 1,
+      CalendarPeriod.month || CalendarPeriod.year => 2,
+    };
     return SafeArea(
       bottom: false,
       child: Column(
@@ -95,20 +96,27 @@ class _OrganizerCalendarHomeState
           SizedBox(
             height: CalendarSelectionNotch.height,
             child: LayoutBuilder(
-              builder: (context, constraints) => AnimatedBuilder(
-                animation: _dateScrollController,
-                builder: (context, child) => Stack(
-                  children: [
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 320),
-                      curve: Curves.easeInOutCubic,
-                      left:
-                          _selectedDateCenter(state, constraints.maxWidth) -
-                          CalendarSelectionNotch.width / 2,
-                      top: 0,
-                      child: child!,
-                    ),
-                  ],
+              builder: (context, constraints) => TweenAnimationBuilder<double>(
+                tween: Tween<double>(end: selectedIndex.toDouble()),
+                duration: CalendarDateStrip.selectionDuration,
+                curve: CalendarDateStrip.selectionCurve,
+                builder: (context, animatedIndex, child) => AnimatedBuilder(
+                  animation: _dateScrollController,
+                  builder: (context, child) => Stack(
+                    children: [
+                      Positioned(
+                        left:
+                            _selectedDateCenter(
+                              animatedIndex,
+                              constraints.maxWidth,
+                            ) -
+                            CalendarSelectionNotch.width / 2,
+                        top: 0,
+                        child: child!,
+                      ),
+                    ],
+                  ),
+                  child: child,
                 ),
                 child: const CalendarSelectionNotch(),
               ),

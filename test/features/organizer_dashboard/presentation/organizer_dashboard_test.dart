@@ -25,11 +25,16 @@ void main() {
 
     expect(find.byType(OrganizerEventCard), findsNWidgets(3));
     expect(find.text('Congreso Gastronómico'), findsOneWidget);
-    final viewer = tester.widget<InteractiveViewer>(
-      find.byType(InteractiveViewer),
-    );
-    expect(viewer.panEnabled, isTrue);
-    expect(viewer.scaleEnabled, isFalse);
+    final scrollViews = find.byType(SingleChildScrollView);
+    expect(scrollViews, findsNWidgets(2));
+    final hourTop = tester.getTopLeft(find.text('07:00')).dy;
+    final hourLeft = tester.getTopLeft(find.text('07:00')).dx;
+    await tester.drag(scrollViews.last, const Offset(0, -250));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('07:00')).dy, hourTop);
+    await tester.drag(scrollViews.first, const Offset(-200, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('07:00')).dx, lessThan(hourLeft));
 
     final selection = container
         .read(organizerCalendarProvider.notifier)

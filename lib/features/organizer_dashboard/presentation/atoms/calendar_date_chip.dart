@@ -22,13 +22,9 @@ class CalendarDateChip extends StatelessWidget {
     child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(40),
-      child: Container(
+      child: SizedBox(
         width: 46,
         height: 64,
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF002AFF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(40),
-        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
