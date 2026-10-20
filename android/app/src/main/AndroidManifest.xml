@@ -3,9 +3,12 @@
          desde Android 12 el usuario puede elegir "aproximada" aunque se pida la precisa. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Sin copia de seguridad de Android: flutter_secure_storage no puede descifrar
+         datos restaurados y la respuesta de ubicación debe olvidarse al desinstalar (QHP-106). -->
     <application
         android:label="Qué Hay Pa'?"
         android:name="${applicationName}"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
         <activity
