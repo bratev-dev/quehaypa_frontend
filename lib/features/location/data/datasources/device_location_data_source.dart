@@ -15,7 +15,10 @@ class DeviceLocationDataSource {
   Future<LocationPermission> requestPermission() =>
       geolocator.requestPermission();
 
+  /// Con el GPS apagado no se busca: en Android, geolocator mostraría el
+  /// diálogo de Google para activarlo mientras corre [timeLimit].
   Future<Position?> getCurrentPosition({required Duration timeLimit}) async {
+    if (!await geolocator.isLocationServiceEnabled()) return null;
     try {
       return await geolocator.getCurrentPosition(
         locationSettings: LocationSettings(

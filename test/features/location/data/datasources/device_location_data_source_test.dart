@@ -29,6 +29,8 @@ void main() {
   setUp(() {
     geolocator = MockGeolocatorPlatform();
     dataSource = DeviceLocationDataSource(geolocator: geolocator);
+    when(() => geolocator.isLocationServiceEnabled())
+        .thenAnswer((_) async => true);
   });
 
   void stubCurrentPosition(Future<Position> Function() answer) {
@@ -68,7 +70,25 @@ void main() {
       );
     });
 
-    test('devuelve null si el GPS está apagado', () async {
+    test(
+      'con el GPS apagado no busca ni muestra el diálogo de Google',
+      () async {
+        when(() => geolocator.isLocationServiceEnabled())
+            .thenAnswer((_) async => false);
+
+        expect(
+          await dataSource.getCurrentPosition(timeLimit: Duration.zero),
+          isNull,
+        );
+        verifyNever(
+          () => geolocator.getCurrentPosition(
+            locationSettings: any(named: 'locationSettings'),
+          ),
+        );
+      },
+    );
+
+    test('devuelve null si el GPS se apaga mientras busca', () async {
       stubCurrentPosition(
         () async => throw const LocationServiceDisabledException(),
       );
