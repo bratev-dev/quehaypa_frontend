@@ -21,6 +21,7 @@ class EventCreationTemplate extends StatelessWidget {
     required this.onClose,
     required this.onDraft,
     required this.onPublish,
+    this.onOpenAttachment,
   });
 
   final EventCreationController controller;
@@ -30,6 +31,7 @@ class EventCreationTemplate extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onDraft;
   final VoidCallback onPublish;
+  final ValueChanged<EventAttachment>? onOpenAttachment;
 
   static const categories = [
     'Arte',
@@ -407,7 +409,7 @@ class EventCreationTemplate extends StatelessWidget {
         child: ListView(
           shrinkWrap: true,
           children: [
-            for (final category in categories)
+            for (final category in controller.categories)
               ListTile(
                 title: Text(category),
                 onTap: () => Navigator.of(sheetContext).pop(category),
@@ -501,6 +503,9 @@ class EventCreationTemplate extends StatelessWidget {
               )
                 InputChip(
                   label: Text(controller.attachments[index].name),
+                  onPressed: onOpenAttachment == null
+                      ? null
+                      : () => onOpenAttachment!(controller.attachments[index]),
                   onDeleted: () => controller.removeAttachment(index),
                 ),
             ],

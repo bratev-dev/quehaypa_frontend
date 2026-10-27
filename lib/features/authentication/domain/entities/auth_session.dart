@@ -20,6 +20,15 @@ class AuthSession {
   /// Identificador estable de la cuenta en Keycloak: no cambia ni se reutiliza.
   String get subject => _claim('sub');
 
+  /// Solo orienta la navegación; el backend valida los permisos del JWT.
+  bool get isOrganizer {
+    try {
+      final claims = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(accessToken.split('.')[1]))));
+      final roles = claims['realm_access']?['roles'];
+      return roles is List && roles.contains('ROLE_ORGANIZER');
+    } catch (_) { return false; }
+  }
+
   String _claim(String name) {
     for (final token in [idToken, accessToken]) {
       if (token == null) continue;

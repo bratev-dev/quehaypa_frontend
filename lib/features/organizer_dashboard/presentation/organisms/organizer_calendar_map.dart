@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../event_creation/domain/created_event_preview.dart';
+import '../../../events/data/event_api.dart';
 import '../atoms/timeline_hour_label.dart';
 import '../controllers/organizer_calendar_controller.dart';
 import '../fixtures/preview_events.dart';
@@ -39,11 +40,37 @@ class _OrganizerCalendarMapState extends ConsumerState<OrganizerCalendarMap> {
   Widget build(BuildContext context) {
     final state = ref.watch(organizerCalendarProvider);
     final selectedDate = state.selectedDate;
-    final hasFixtureEvents =
-        selectedDate.year == 2026 &&
-        selectedDate.month == 6 &&
-        selectedDate.day == 1;
-    final createdEvents = state.createdEvents
+    final remote = ref.watch(organizerEventsProvider);
+    if (remote.hasError) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              eventError(remote.error!),
+              style: const TextStyle(color: Colors.white),
+            ),
+            TextButton(
+              onPressed: () => ref.invalidate(organizerEventsProvider),
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+    final allEvents = (remote.asData?.value ?? [])
+        .where((e) => e.startsAt != null)
+        .map(
+          (e) => CreatedEventPreview(
+            id: e.id,
+            title: e.title,
+            imageUrl: e.imageUrl,
+            startsAt: DateTime.parse(e.startsAt!),
+            endsAt: DateTime.parse(e.endsAt ?? e.startsAt!),
+          ),
+        )
+        .toList();
+    final createdEvents = allEvents
         .where((event) {
           final date = event.startsAt;
           return date.year == selectedDate.year &&
@@ -64,7 +91,7 @@ class _OrganizerCalendarMapState extends ConsumerState<OrganizerCalendarMap> {
     final canvasWidth = createdEvents.isEmpty
         ? baseCanvasWidth
         : math.max(baseCanvasWidth, hourCount * hourWidth + 240);
-    final totalRows = createdEvents.length + (hasFixtureEvents ? 2 : 0);
+    final totalRows = createdEvents.length;
     final canvasHeight = math
         .max(baseCanvasHeight, hourHeaderHeight + 44 + totalRows * 202)
         .toDouble();
@@ -99,8 +126,7 @@ class _OrganizerCalendarMapState extends ConsumerState<OrganizerCalendarMap> {
       child: ColoredBox(
         color: const Color(0xFFFCD413),
         child: _calendarCanvas(
-          isLoading: state.isLoading,
-          hasFixtureEvents: hasFixtureEvents,
+          isLoading: state.isLoading || remote.isLoading,
           createdEvents: createdEvents,
           firstHour: firstHour,
           hourCount: hourCount,
@@ -113,7 +139,6 @@ class _OrganizerCalendarMapState extends ConsumerState<OrganizerCalendarMap> {
 
   Widget _calendarCanvas({
     required bool isLoading,
-    required bool hasFixtureEvents,
     required List<CreatedEventPreview> createdEvents,
     required int firstHour,
     required int hourCount,
@@ -198,6 +223,8 @@ class _OrganizerCalendarMapState extends ConsumerState<OrganizerCalendarMap> {
                             child: OrganizerEventCard(
                               event: PreviewCalendarEvent(
                                 title: createdEvents[index].title,
+                                id: createdEvents[index].id,
+                                imageUrl: createdEvents[index].imageUrl,
                                 startHour: createdEvents[index].startsAt.hour,
                                 durationHours: 1,
                                 row: index,
@@ -206,16 +233,7 @@ class _OrganizerCalendarMapState extends ConsumerState<OrganizerCalendarMap> {
                               ),
                             ),
                           ),
-                        if (hasFixtureEvents)
-                          for (final event in previewEvents)
-                            Positioned(
-                              left:
-                                  39 +
-                                  (event.startHour - firstHour) * hourWidth,
-                              top:
-                                  44 + (event.row + createdEvents.length) * 202,
-                              child: OrganizerEventCard(event: event),
-                            ),
+
                       ],
                     ],
                   ),

@@ -19,7 +19,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     previous,
     next,
   ) {
-    if (previous?.status != next.status) {
+    if (previous?.status != next.status ||
+        previous?.isOrganizer != next.isOrganizer) {
       routerRefreshNotifier.refresh();
     }
   });
@@ -34,6 +35,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return authenticationRedirect(
         ref.read(authenticationControllerProvider).status,
         state.matchedLocation,
+        isOrganizer: ref.read(authenticationControllerProvider).isOrganizer,
       );
     },
 
@@ -75,8 +77,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 /// Decide el destino sin construir pantallas ni abrir el navegador.
 String? authenticationRedirect(
   AuthenticationStatus authenticationStatus,
-  String matchedLocation,
-) {
+  String matchedLocation, {
+  bool isOrganizer = false,
+}) {
+  if (authenticationStatus == AuthenticationStatus.authenticated &&
+      isOrganizer &&
+      matchedLocation == RoutePaths.myPlans) {
+    return RoutePaths.dashboard;
+  }
   final status = authenticationStatus;
   final isAuthenticated = status == AuthenticationStatus.authenticated;
 

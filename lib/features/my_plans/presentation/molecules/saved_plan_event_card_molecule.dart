@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../preferences/domain/entities/event_seed.dart';
+import '../../../events/presentation/event_image.dart';
+import '../../../events/presentation/event_detail_page.dart';
 
 class SavedPlanEventCardMolecule extends StatelessWidget {
   final EventSeed event;
@@ -30,6 +32,15 @@ class SavedPlanEventCardMolecule extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                EventImage(url: event.imageUrl, height: 100),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => EventDetailPage(eventId: event.id),
+                    ),
+                  ),
+                  child: const Text('Ver evento'),
+                ),
                 Text(
                   event.category.toUpperCase(),
                   style: const TextStyle(

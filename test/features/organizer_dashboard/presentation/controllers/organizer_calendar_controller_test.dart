@@ -1,15 +1,19 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/organizer_dashboard/presentation/controllers/organizer_calendar_controller.dart';
 import 'package:frontend/features/organizer_dashboard/presentation/controllers/organizer_calendar_state.dart';
 
 void main() {
-  test('inicia el calendario en el primer día de la vista previa', () {
+  test('inicia el calendario en el día actual', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
     final state = container.read(organizerCalendarProvider);
-    expect(state.selectedDate, DateTime(2026, 6, 1));
+    expect(
+      DateUtils.dateOnly(state.selectedDate),
+      DateUtils.dateOnly(DateTime.now()),
+    );
     expect(state.period, CalendarPeriod.day);
     expect(state.isLoading, isFalse);
     expect(state.createdEvents, isEmpty);
@@ -24,7 +28,10 @@ void main() {
         .selectPeriod(CalendarPeriod.month);
     final state = container.read(organizerCalendarProvider);
     expect(state.period, CalendarPeriod.month);
-    expect(state.selectedDate, DateTime(2026, 6, 1));
+    expect(
+      DateUtils.dateOnly(state.selectedDate),
+      DateUtils.dateOnly(DateTime.now()),
+    );
     expect(state.isLoading, isFalse);
   });
 

@@ -6,6 +6,8 @@ import '../../../../core/errors/failtures.dart';
 import '../../../../core/security/session_events_provider.dart';
 import '../../../../core/security/security_providers.dart';
 import '../../../dashboard/controllers/dashboard_controller.dart';
+import '../../../navigation/providers/navigation_provider.dart';
+import '../../../plans/presentation/controllers/plans_controller.dart';
 import '../../../preferences/presentation/controllers/preferences_providers.dart';
 import '../../domain/entities/auth_session.dart';
 import '../../domain/usecases/login_use_case.dart';
@@ -70,7 +72,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
       state = state.copyWith(
         status: AuthenticationStatus.authenticated,
         session: session,
-        isOrganizer: await _resolveProfileBestEffort(),
+        isOrganizer: await _resolveProfileBestEffort(session),
       );
     } catch (e) {
       state = state.copyWith(status: AuthenticationStatus.unauthenticated);
@@ -101,7 +103,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
       // Guía §10: tras el token, resolver el perfil de negocio (quién soy).
       // El estado remoto ya confirmó que el registro está completo.
       // Esta consulta solo hidrata datos adicionales de la cuenta.
-      final isOrganizer = await _resolveProfileBestEffort();
+      final isOrganizer = await _resolveProfileBestEffort(session);
 
       state = state.copyWith(
         status: AuthenticationStatus.authenticated,
@@ -138,7 +140,7 @@ class AuthenticationController extends Notifier<AuthenticationState> {
             ? AuthenticationStatus.registrationRequired
             : AuthenticationStatus.authenticated,
         session: session,
-        isOrganizer: !pending && await _resolveProfileBestEffort(),
+        isOrganizer: !pending && await _resolveProfileBestEffort(session),
       );
     } on AuthenticationCancelledException {
       state = const AuthenticationState(
@@ -245,11 +247,14 @@ class AuthenticationController extends Notifier<AuthenticationState> {
       return false;
     } finally {
       ref.invalidate(dashboardControllerProvider);
+      ref.invalidate(plansControllerProvider);
+      ref.invalidate(navigationIndexProvider);
     }
   }
 
   /// Hidrata preferencias tras verificar el estado completo en el backend.
-  Future<bool> _resolveProfileBestEffort() async {
+  Future<bool> _resolveProfileBestEffort(AuthSession session) async {
+    if (session.isOrganizer) return true;
     try {
       await ref.read(userRemoteDataSourceProvider).getProfile();
       try {
