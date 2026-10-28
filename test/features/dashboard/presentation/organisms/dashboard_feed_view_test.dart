@@ -134,7 +134,11 @@ void main() {
     connected.read(dashboardControllerProvider.notifier).selectCategory('Cine');
     await tester.pumpAndSettle();
     expect(adapter.last.path, '/api/v1/events');
-    expect(adapter.last.queryParameters, {'category': 'Cine'});
+    expect(adapter.last.queryParameters, {
+      'category': 'Cine',
+      'page': 0,
+      'size': 50,
+    });
     expect(
       connected.read(dashboardControllerProvider).status,
       DashboardStatus.success,

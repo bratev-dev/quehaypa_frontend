@@ -6,9 +6,13 @@ class PreviewCalendarEvent {
     required this.row,
     required this.attendees,
     this.timeLabel,
+    this.id,
+    this.imageUrl,
   });
 
   final String title;
+  final int? id;
+  final String? imageUrl;
   final int startHour;
   final int durationHours;
   final int row;

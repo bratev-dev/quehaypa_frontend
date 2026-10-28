@@ -141,6 +141,44 @@ void main() {
     expect(invalidator.calls, 1);
   });
 
+  test('reenvía multipart después de renovar el token', () async {
+    build(token: 'viejo', refresh: () => 'nuevo');
+    adapter.queue.addAll([
+      const FakeReply(401),
+      const FakeReply(201, {'ok': true}),
+    ]);
+    final form = FormData.fromMap({
+      'image': MultipartFile.fromBytes([1, 2, 3], filename: 'cover.png'),
+    });
+    final response = await dio.post<dynamic>('/api/v1/events', data: form);
+    expect(response.statusCode, 201);
+    expect(adapter.requests, hasLength(2));
+    expect(identical(adapter.requests.first.data, adapter.last.data), isFalse);
+    expect(invalidator.calls, 0);
+  });
+
+  test(
+    'un 503 después de renovar conserva la sesión y el error real',
+    () async {
+      build(token: 'viejo', refresh: () => 'nuevo');
+      adapter.queue.addAll([
+        const FakeReply(401),
+        const FakeReply(503, {'message': 'Discovery no disponible'}),
+      ]);
+      await expectLater(
+        dio.post<dynamic>('/api/v1/events'),
+        throwsA(
+          isA<DioException>().having(
+            (e) => e.response?.statusCode,
+            'status',
+            503,
+          ),
+        ),
+      );
+      expect(invalidator.calls, 0);
+    },
+  );
+
   test('errores distintos de 401 pasan sin refrescar', () async {
     build(token: 'abc', refresh: () => 'nuevo');
     adapter.reply = const FakeReply(500, {'message': 'error'});

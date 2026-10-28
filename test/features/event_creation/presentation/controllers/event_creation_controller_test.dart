@@ -19,6 +19,7 @@ void main() {
     controller.updateMonth('06');
     controller.updateYear('2026');
     controller.updateAddress('Calle 1 #2-3');
+    controller.updateCity('Bogotá');
   }
 
   group('Datos del evento', () {
@@ -131,7 +132,7 @@ void main() {
       );
       expect(
         controller.addAttachment(
-          const EventAttachment(name: 'video.mp4', sizeBytes: max + 1),
+          const EventAttachment(name: 'grande.png', sizeBytes: max + 1),
         ),
         contains('50 MB'),
       );

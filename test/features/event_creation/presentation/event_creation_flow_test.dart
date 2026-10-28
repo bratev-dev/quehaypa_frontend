@@ -1,239 +1,279 @@
 import 'package:flutter/material.dart';
+
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/app/router/animations/button_reveal_page_route.dart';
-import 'package:frontend/features/event_creation/domain/created_event_preview.dart';
-import 'package:frontend/features/event_creation/presentation/atoms/event_creation_notch.dart';
+import 'package:frontend/features/events/data/event_api.dart';
+import 'package:frontend/features/events/presentation/controllers/event_providers.dart';
 import 'package:frontend/features/event_creation/presentation/controllers/event_creation_controller.dart';
-import 'package:frontend/features/event_creation/presentation/event_creation_colors.dart';
-import 'package:frontend/features/event_creation/presentation/molecules/event_link_preview.dart';
 import 'package:frontend/features/event_creation/presentation/pages/event_creation_page.dart';
-import 'package:frontend/features/event_creation/presentation/templates/event_creation_template.dart';
-import 'package:frontend/features/organizer_dashboard/presentation/pages/organizer_dashboard_page.dart';
+
+import '../../../helpers/fake_http_adapter.dart';
 
 void main() {
-  setUp(() {
-    TestWidgetsFlutterBinding.ensureInitialized();
-  });
+  EventCreationController ready() {
+    final date = DateTime.now().add(const Duration(days: 1));
+    final controller = EventCreationController()
+      ..updateName('Concierto')
+      ..updateCategory('Música')
+      ..updateCity('Bogotá')
+      ..updateAddress('Calle 1')
+      ..updateDay('${date.day}')
+      ..updateMonth('${date.month}')
+      ..updateYear('${date.year}')
+      ..updateStartTime(const TimeOfDay(hour: 18, minute: 0))
+      ..updateEndTime(const TimeOfDay(hour: 20, minute: 0));
+    controller.next();
+    controller.next();
+    return controller;
+  }
 
-  testWidgets('el botón del dashboard abre y cierra Crear Evento', (
-    tester,
+  Future<void> mount(
+    WidgetTester tester,
+    EventCreationController controller,
+    FakeHttpAdapter adapter,
   ) async {
-    tester.view.physicalSize = const Size(402, 822);
+    tester.view.physicalSize = const Size(402, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
-    });
-
-    await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: OrganizerDashboardPage(preview: true)),
-      ),
-    );
-    await tester.tap(find.text('Crear Evento'));
-    await tester.pumpAndSettle();
-    final eventRoute = ModalRoute.of(
-      tester.element(find.byType(EventCreationPage)),
-    );
-    expect(eventRoute, isA<ButtonRevealPageRoute<CreatedEventPreview>>());
-    expect(find.byType(EventCreationPage), findsOneWidget);
-    expect(find.byType(EventCreationNotch), findsOneWidget);
-    expect(find.text('¡Empecemos!'), findsOneWidget);
-
-    await tester.tap(find.byTooltip('Cerrar crear evento'));
-    await tester.pumpAndSettle();
-    expect(find.byType(EventCreationPage), findsNothing);
-    expect(find.byType(OrganizerDashboardPage), findsOneWidget);
-  });
-
-  testWidgets('el Stepper conserva datos, acepta archivos y muestra enlaces', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(402, 822);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    const business = EventBusiness(id: 'business-1', name: 'Mi negocio');
-    final controller = EventCreationController(
-      now: () => DateTime(2026, 6, 1),
-      businesses: const [business],
-    );
-    final linkController = TextEditingController();
-    addTearDown(() {
       controller.dispose();
-      linkController.dispose();
     });
-    controller.updateName('Concierto');
-    controller.updateCategory('Música');
-    controller.updateStartTime(const TimeOfDay(hour: 22, minute: 0));
-    controller.updateEndTime(const TimeOfDay(hour: 4, minute: 0));
-    controller.updateDay('02');
-    controller.updateMonth('06');
-    controller.updateYear('2026');
-    controller.updateAddress('Calle 1');
-    var draftTapped = false;
-    var publishTapped = false;
-    var closeTapped = false;
-
     await tester.pumpWidget(
-      MaterialApp(
-        home: EventCreationTemplate(
-          controller: controller,
-          linkController: linkController,
-          onPickAttachments: () => controller.addAttachment(
-            const EventAttachment(name: 'afiche.png', sizeBytes: 1024),
-          ),
-          onAddLink: () {
-            controller.addLink(linkController.text);
-            linkController.clear();
-          },
-          onClose: () => closeTapped = true,
-          onDraft: () => draftTapped = true,
-          onPublish: () => publishTapped = true,
+      ProviderScope(
+        overrides: [
+          eventApiProvider.overrideWithValue(EventApi(dioWith(adapter))),
+        ],
+        child: MaterialApp(
+          home: EventCreationPage(initialController: controller),
         ),
       ),
     );
+    await tester.pumpAndSettle();
+  }
 
-    expect(find.text('¡Empecemos!'), findsOneWidget);
-    expect(find.text('Finaliza al día siguiente'), findsOneWidget);
-    await tester.tap(find.byType(TextFormField).first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Mi negocio'));
-    await tester.pumpAndSettle();
-    expect(controller.selectedBusiness?.id, 'business-1');
-    await tester.tap(find.text('Siguiente'));
-    await tester.pumpAndSettle();
-    expect(find.text('¡Dale vida!'), findsOneWidget);
-    expect(find.byTooltip('Volver al paso anterior'), findsOneWidget);
-    await tester.tap(find.text('Subir archivos'));
-    await tester.pumpAndSettle();
-    expect(find.text('afiche.png'), findsOneWidget);
-    await tester.enterText(find.byType(TextFormField), 'Descripción de prueba');
-    await tester.tap(find.byType(Switch));
-    await tester.pump();
-    expect(controller.isPaid, isTrue);
-    final paidSwitch = tester.widget<Switch>(find.byType(Switch));
-    expect(paidSwitch.activeThumbColor, EventCreationColors.blue);
-    expect(paidSwitch.activeTrackColor, EventCreationColors.activeSwitchTrack);
-
-    await tester.tap(find.text('Siguiente'));
-    await tester.pumpAndSettle();
-    expect(find.text('¡Ya casi!'), findsOneWidget);
-    await tester.tap(find.byType(Switch));
-    await tester.pump();
-    expect(controller.adultsOnly, isTrue);
-    await tester.enterText(
-      find.byType(TextFormField),
-      'https://instagram.com/evento',
-    );
-    await tester.tap(find.byTooltip('Añadir enlace'));
-    await tester.pump();
-    expect(find.text('Instagram'), findsOneWidget);
-    expect(find.byType(EventLinkPreview), findsOneWidget);
-    await tester.enterText(
-      find.byType(TextFormField),
-      'https://www.youtube.com/watch?v=abc',
-    );
-    await tester.tap(find.byTooltip('Añadir enlace'));
-    await tester.pump();
-    expect(find.text('Instagram +1'), findsOneWidget);
-    await tester.tap(find.text('Instagram +1'));
-    await tester.pumpAndSettle();
-    expect(find.text('YouTube'), findsOneWidget);
-    await tester.tap(find.byTooltip('Quitar enlace de Instagram'));
-    await tester.pumpAndSettle();
-    expect(controller.links, hasLength(1));
-    Navigator.of(tester.element(find.text('Enlaces del evento'))).pop();
-    await tester.pumpAndSettle();
-    expect(find.text('YouTube'), findsOneWidget);
-
-    await tester.tap(find.text('Guardar Borrador'));
-    await tester.tap(find.text('Publicar evento'));
-    expect(draftTapped, isTrue);
-    expect(publishTapped, isTrue);
-
-    await tester.tap(find.byTooltip('Volver al paso anterior'));
-    await tester.pumpAndSettle();
-    expect(find.text('¡Dale vida!'), findsOneWidget);
-    expect(find.text('Descripción de prueba'), findsOneWidget);
-    expect(controller.attachments.single.name, 'afiche.png');
-    await tester.tap(find.byTooltip('Volver al paso anterior'));
-    await tester.pumpAndSettle();
-    expect(find.text('¡Empecemos!'), findsOneWidget);
-    await tester.tap(find.byTooltip('Cerrar crear evento'));
-    expect(closeTapped, isTrue);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('borrador muestra aviso y publicar regresa con el evento', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(402, 822);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    final controller = EventCreationController(now: () => DateTime(2026, 6, 1));
-    addTearDown(controller.dispose);
-    controller.updateName('Concierto nocturno');
-    controller.updateCategory('Música');
-    controller.updateStartTime(const TimeOfDay(hour: 22, minute: 30));
-    controller.updateEndTime(const TimeOfDay(hour: 4, minute: 0));
-    controller.updateDay('02');
-    controller.updateMonth('06');
-    controller.updateYear('2026');
-    controller.updateAddress('Calle 1');
-    expect(controller.next(), isTrue);
-    expect(controller.next(), isTrue);
-    CreatedEventPreview? result;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                result = await Navigator.of(context).push<CreatedEventPreview>(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        EventCreationPage(initialController: controller),
-                  ),
-                );
-              },
-              child: const Text('Abrir creación'),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.text('Abrir creación'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Guardar Borrador'));
-    await tester.pump();
-    expect(
-      find.text('Borrador guardado temporalmente en esta pantalla.'),
-      findsOneWidget,
-    );
-    expect(find.byType(EventCreationPage), findsOneWidget);
-
+  testWidgets('solo confirma publicación después del servidor', (tester) async {
+    final adapter = FakeHttpAdapter();
+    adapter.queue.addAll([
+      const FakeReply(200, {
+        'data': [
+          {'name': 'Música'},
+        ],
+      }),
+      const FakeReply(200, {
+        'data': [
+          {'id': 1, 'name': 'Negocio demo'},
+        ],
+      }),
+      const FakeReply(200, {'data': null}),
+      const FakeReply(200, {
+        'data': {'id': 'draft-1'},
+      }),
+      const FakeReply(201, {
+        'data': {'id': 91, 'title': 'Concierto'},
+      }),
+    ]);
+    await mount(tester, ready(), adapter);
     await tester.tap(find.text('Publicar evento'));
     await tester.pumpAndSettle();
     expect(find.text('¡Evento creado con éxito!'), findsOneWidget);
-    expect(
-      find.text('Tu evento ha sido registrado correctamente.'),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Continuar'));
-    await tester.pumpAndSettle();
-    expect(find.byType(EventCreationPage), findsNothing);
-    expect(result?.title, 'Concierto nocturno');
-    expect(result?.startsAt, DateTime(2026, 6, 2, 22, 30));
-    expect(result?.endsAt, DateTime(2026, 6, 3, 4));
+    expect(adapter.requests.last.method, 'POST');
   });
+
+  testWidgets(
+    'sube archivos de uno en uno y retoma desde el archivo que falló',
+    (tester) async {
+      final adapter = FakeHttpAdapter();
+      adapter.queue.addAll([
+        const FakeReply(200, {
+          'data': [
+            {'name': 'Música'},
+          ],
+        }),
+        const FakeReply(200, {
+          'data': [
+            {'id': 1, 'name': 'Negocio demo'},
+          ],
+        }),
+        const FakeReply(200, {'data': null}),
+        const FakeReply(200, {
+          'data': {'id': 'draft-1'},
+        }),
+        const FakeReply(200, {
+          'data': {'id': 'file-1'},
+        }),
+        const FakeReply(503, {
+          'message': 'No se pudo guardar el segundo archivo',
+        }),
+        const FakeReply(200, {
+          'data': {'id': 'draft-1'},
+        }),
+        const FakeReply(200, {
+          'data': {'id': 'file-2'},
+        }),
+        const FakeReply(200, {
+          'data': {'id': 91, 'title': 'Concierto'},
+        }),
+      ]);
+      final controller = ready();
+      controller.addAttachment(
+        EventAttachment(
+          name: 'cover.png',
+          sizeBytes: 1,
+          bytes: Uint8List.fromList([1]),
+        ),
+      );
+      controller.addAttachment(
+        EventAttachment(
+          name: 'entrada.pdf',
+          sizeBytes: 1,
+          bytes: Uint8List.fromList([2]),
+        ),
+      );
+      await mount(tester, controller, adapter);
+      await tester.tap(find.text('Publicar evento'));
+      await tester.pumpAndSettle();
+      expect(controller.attachments.first.id, 'file-1');
+      expect(controller.attachments.last.id, isNull);
+      expect(find.text('¡Evento creado con éxito!'), findsNothing);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Publicar evento'));
+      await tester.pumpAndSettle();
+      expect(find.text('¡Evento creado con éxito!'), findsOneWidget);
+      final uploads = adapter.requests
+          .where((r) => r.path.endsWith('/attachments'))
+          .toList();
+      expect(uploads, hasLength(3));
+      expect(
+        uploads.map((r) => (r.data as FormData).files.single.value.filename),
+        ['cover.png', 'entrada.pdf', 'entrada.pdf'],
+      );
+      expect(
+        adapter.requests.where((r) => r.path.endsWith('/publish')),
+        hasLength(1),
+      );
+    },
+  );
+  testWidgets('un fallo mantiene el formulario y permite reintentar', (
+    tester,
+  ) async {
+    final adapter = FakeHttpAdapter();
+    adapter.queue.addAll([
+      const FakeReply(200, {
+        'data': [
+          {'name': 'Música'},
+        ],
+      }),
+      const FakeReply(200, {
+        'data': [
+          {'id': 1, 'name': 'Negocio demo'},
+        ],
+      }),
+      const FakeReply(200, {'data': null}),
+      const FakeReply(200, {
+        'data': {'id': 'draft-1'},
+      }),
+      const FakeReply(503, {'message': 'Servidor no disponible'}),
+    ]);
+    await mount(tester, ready(), adapter);
+    await tester.tap(find.text('Publicar evento'));
+    await tester.pumpAndSettle();
+    expect(find.text('¡Evento creado con éxito!'), findsNothing);
+    expect(find.text('Servidor no disponible'), findsOneWidget);
+    expect(find.text('Publicar evento'), findsOneWidget);
+  });
+
+  testWidgets(
+    'restaura borrador y conserva los controles de GitHub sin ciudad',
+    (tester) async {
+      final adapter = FakeHttpAdapter();
+      adapter.queue.addAll([
+        const FakeReply(200, {
+          'data': [
+            {'name': 'Música'},
+          ],
+        }),
+        const FakeReply(200, {
+          'data': [
+            {'id': 1, 'name': 'Negocio demo'},
+          ],
+        }),
+        const FakeReply(200, {
+          'data': {
+            'id': 'draft-1',
+            'fields': {
+              'event': {
+                'title': 'Mi borrador',
+                'category': 'Música',
+                'businessId': 1,
+                'isPaid': true,
+              },
+              'step': 0,
+            },
+            'attachments': [],
+          },
+        }),
+      ]);
+      final controller = EventCreationController();
+      await mount(tester, controller, adapter);
+      expect(find.text('Mi borrador'), findsOneWidget);
+      expect(find.text('Negocio demo'), findsOneWidget);
+      expect(find.text('Ciudad'), findsNothing);
+      expect(controller.isPaid, isTrue);
+      controller.step = EventCreationStep.details;
+      controller.updateDescription('Detalles');
+      await tester.pumpAndSettle();
+      expect(find.text('El evento es de pago'), findsOneWidget);
+      expect(find.text('JPG, PNG, PDF o MP4 · Máx. 50 MB'), findsOneWidget);
+      controller.next();
+      await tester.pumpAndSettle();
+      expect(find.text('Guardar Borrador'), findsOneWidget);
+      expect(find.text('Añadir enlaces de tu evento'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'reintenta una publicación sin duplicarla tras perder la respuesta',
+    (tester) async {
+      final adapter = FakeHttpAdapter();
+      adapter.queue.addAll([
+        const FakeReply(200, {
+          'data': [
+            {'name': 'Música'},
+          ],
+        }),
+        const FakeReply(200, {
+          'data': [
+            {'id': 1, 'name': 'Negocio demo'},
+          ],
+        }),
+        const FakeReply(200, {'data': null}),
+        const FakeReply(200, {
+          'data': {'id': 'draft-1'},
+        }),
+        const FakeReply.error(DioExceptionType.receiveTimeout),
+        const FakeReply(200, {
+          'data': {'id': 91, 'title': 'Concierto'},
+        }),
+      ]);
+      await mount(tester, ready(), adapter);
+      await tester.tap(find.text('Publicar evento'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Publicar evento'));
+      await tester.pumpAndSettle();
+      expect(find.text('¡Evento creado con éxito!'), findsOneWidget);
+      final publications = adapter.requests
+          .where((r) => r.path.endsWith('/publish'))
+          .toList();
+      expect(publications, hasLength(2));
+      expect(publications[0].data, publications[1].data);
+      expect(adapter.requests.where((r) => r.method == 'PUT'), hasLength(1));
+    },
+  );
 }

@@ -19,8 +19,14 @@ class AppConfig {
     required this.keycloakEndSessionUrl,
   });
 
-  static final String _api = dotenv.env['API_BASE_URL'] ?? '';
-  static final String _issuer = dotenv.env['KEYCLOAK_ISSUER_URL'] ?? '';
+  static const _buildApi = String.fromEnvironment('API_BASE_URL');
+  static const _buildIssuer = String.fromEnvironment('KEYCLOAK_ISSUER_URL');
+  static final String _api = _buildApi.isNotEmpty
+      ? _buildApi
+      : dotenv.env['API_BASE_URL'] ?? '';
+  static final String _issuer = _buildIssuer.isNotEmpty
+      ? _buildIssuer
+      : dotenv.env['KEYCLOAK_ISSUER_URL'] ?? '';
 
   static final development = AppConfig(
     environment: Environment.development,
@@ -32,6 +38,14 @@ class AppConfig {
   );
 
   static AppConfig fromEnvironment() {
-    return development;
+    if (_buildApi.isEmpty) return development;
+    return AppConfig(
+      environment: Environment.production,
+      apiBaseUrl: _api,
+      keycloakIssuer: _issuer,
+      keycloakClientId: development.keycloakClientId,
+      keycloakRedirectUrl: development.keycloakRedirectUrl,
+      keycloakEndSessionUrl: development.keycloakEndSessionUrl,
+    );
   }
 }

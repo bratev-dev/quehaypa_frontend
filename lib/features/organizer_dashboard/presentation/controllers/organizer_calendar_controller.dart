@@ -11,7 +11,7 @@ final organizerCalendarProvider =
 class OrganizerCalendarController extends Notifier<OrganizerCalendarState> {
   @override
   OrganizerCalendarState build() =>
-      OrganizerCalendarState(selectedDate: DateTime(2026, 6, 1));
+      OrganizerCalendarState(selectedDate: DateTime.now());
 
   void selectPeriod(CalendarPeriod period) {
     state = state.copyWith(period: period);

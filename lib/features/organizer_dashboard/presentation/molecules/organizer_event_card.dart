@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../fixtures/preview_events.dart';
+import '../../../events/presentation/event_image.dart';
 
 class OrganizerEventCard extends StatelessWidget {
   const OrganizerEventCard({super.key, required this.event});
@@ -24,10 +25,14 @@ class OrganizerEventCard extends StatelessWidget {
           children: [
             Container(
               height: 103,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: const Color(0xFFE9E6E6),
                 borderRadius: BorderRadius.circular(20),
               ),
+              child: event.imageUrl == null
+                  ? null
+                  : EventImage(url: event.imageUrl, height: 103),
             ),
             Positioned(
               right: -5,

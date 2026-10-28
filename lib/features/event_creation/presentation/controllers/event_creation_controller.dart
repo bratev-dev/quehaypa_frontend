@@ -1,30 +1,35 @@
+import '../../../events/domain/entities/event_draft.dart';
+export '../../../events/domain/entities/event_draft.dart'
+    show EventBusiness, EventAttachment;
+
 import 'package:flutter/material.dart';
 
 enum EventCreationStep { data, details, publish }
 
-class EventBusiness {
-  const EventBusiness({required this.id, required this.name});
-
-  final String id;
-  final String name;
-}
-
-class EventAttachment {
-  const EventAttachment({required this.name, required this.sizeBytes});
-
-  final String name;
-  final int sizeBytes;
-
-  String get extension => name.split('.').last.toLowerCase();
-}
-
-/// Estado local del prototipo. La API de creación se conectará después.
+/// Datos del formulario y del borrador persistido, sin cambiar su presentación.
 class EventCreationController extends ChangeNotifier {
   EventCreationController({
     DateTime Function()? now,
     List<EventBusiness> businesses = const [],
   }) : _businesses = List.unmodifiable(businesses),
-       _now = now ?? DateTime.now;
+       _now = now ?? _bogotaNow;
+
+  static DateTime _bogotaNow() {
+    final utc = DateTime.now().toUtc().subtract(const Duration(hours: 5));
+    return DateTime(
+      utc.year,
+      utc.month,
+      utc.day,
+      utc.hour,
+      utc.minute,
+      utc.second,
+    );
+  }
+
+  void reportError(String message) {
+    errorMessage = message;
+    notifyListeners();
+  }
 
   static const int maxFileBytes = 50 * 1024 * 1024;
   static const allowedExtensions = {'jpg', 'jpeg', 'png', 'pdf', 'mp4'};
@@ -44,6 +49,19 @@ class EventCreationController extends ChangeNotifier {
   String month = '';
   String year = '';
   String address = '';
+  String city = '';
+  List<String> categories = [];
+  String? draftId;
+  void updateCity(String value) {
+    city = value;
+    _changed();
+  }
+
+  void setCategories(List<String> values) {
+    categories = values;
+    _changed();
+  }
+
   String description = '';
   bool isPaid = false;
   bool adultsOnly = false;
@@ -185,6 +203,14 @@ class EventCreationController extends ChangeNotifier {
     if (date == null) return 'Ingresa una fecha válida.';
     final today = DateUtils.dateOnly(_now());
     if (date.isBefore(today)) return 'La fecha no puede ser anterior a hoy.';
+    final startsAt = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      startTime!.hour,
+      startTime!.minute,
+    );
+    if (!startsAt.isAfter(_now())) return 'La hora de inicio debe ser futura.';
     if (address.trim().isEmpty) return 'Escribe la dirección del evento.';
     return null;
   }
@@ -218,7 +244,7 @@ class EventCreationController extends ChangeNotifier {
     if (!allowedExtensions.contains(file.extension)) {
       return 'Formato no admitido. Usa JPG, PNG, PDF o MP4.';
     }
-    if (file.sizeBytes < 0 || file.sizeBytes > maxFileBytes) {
+    if (file.sizeBytes <= 0 || file.sizeBytes > maxFileBytes) {
       return 'Cada archivo debe tener como máximo 50 MB.';
     }
     _attachments.add(file);
@@ -232,11 +258,85 @@ class EventCreationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void markUploaded(int index, String id) {
+    final file = _attachments[index];
+    _attachments[index] = EventAttachment(
+      name: file.name,
+      sizeBytes: file.sizeBytes,
+      id: id,
+    );
+    notifyListeners();
+  }
+
+  EventDraft draft() {
+    final date = eventDate;
+    final start = startTime;
+    return EventDraft(
+      id: draftId,
+      name: name,
+      description: description,
+      category: category,
+      address: address,
+      day: day,
+      month: month,
+      year: year,
+      step: step.index,
+      startHour: start?.hour,
+      startMinute: start?.minute,
+      endHour: endTime?.hour,
+      endMinute: endTime?.minute,
+      businessId: int.tryParse(selectedBusiness?.id ?? ''),
+      isPaid: isPaid,
+      adultsOnly: adultsOnly,
+      links: _links.map((link) => link.toString()).toList(),
+      attachments: attachments,
+      startsAt: date == null || start == null
+          ? null
+          : DateTime(date.year, date.month, date.day, start.hour, start.minute),
+      endsAt: eventEndDateTime,
+    );
+  }
+
+  void restoreDraft(EventDraft draft) {
+    draftId = draft.id;
+    name = draft.name;
+    description = draft.description;
+    category = draft.category;
+    address = draft.address;
+    isPaid = draft.isPaid;
+    adultsOnly = draft.adultsOnly;
+    day = draft.day;
+    month = draft.month;
+    year = draft.year;
+    startTime = draft.startHour == null
+        ? null
+        : TimeOfDay(hour: draft.startHour!, minute: draft.startMinute ?? 0);
+    endTime = draft.endHour == null
+        ? null
+        : TimeOfDay(hour: draft.endHour!, minute: draft.endMinute ?? 0);
+    selectedBusiness = _businesses
+        .where((business) => business.id == draft.businessId?.toString())
+        .firstOrNull;
+    _links
+      ..clear()
+      ..addAll(draft.links.map(Uri.parse));
+    _attachments
+      ..clear()
+      ..addAll(draft.attachments);
+    step = EventCreationStep
+        .values[draft.step.clamp(0, EventCreationStep.values.length - 1)];
+    notifyListeners();
+  }
+
   String? addLink(String value) {
+    if (_links.length >= 50 || value.trim().length > 2000) {
+      return 'Puedes añadir hasta 50 enlaces de máximo 2000 caracteres.';
+    }
     final uri = Uri.tryParse(value.trim());
     if (uri == null ||
         (uri.scheme != 'http' && uri.scheme != 'https') ||
-        uri.host.isEmpty) {
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty) {
       return 'Escribe un enlace completo que comience por http:// o https://.';
     }
     if (_links.contains(uri)) return 'Ese enlace ya fue añadido.';

@@ -85,20 +85,34 @@ class PreferencesRemoteDataSource {
 
   Future<List<EventSeedModel>> getEvents({String? category}) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/v1/events',
-        queryParameters: {
-          if (category != null && category.isNotEmpty) 'category': category,
-        },
-      );
-      return _parseEventList(response.data);
+      final events = <EventSeedModel>[];
+      var page = 0;
+      while (true) {
+        final response = await _dio.get<Map<String, dynamic>>(
+          '/api/v1/events',
+          queryParameters: {
+            if (category != null && category.isNotEmpty) 'category': category,
+            'page': page,
+            'size': 50,
+          },
+        );
+        events.addAll(_parseEventList(response.data));
+        final data = response.data?['data'];
+        page++;
+        if (data is! Map ||
+            page >= ((data['totalPages'] as num?)?.toInt() ?? 1)) {
+          break;
+        }
+      }
+      return events;
     } on DioException catch (e) {
       throw _mapDioError(e);
     }
   }
 
   List<EventSeedModel> _parseEventList(Map<String, dynamic>? envelope) {
-    final data = envelope?['data'];
+    final payload = envelope?['data'];
+    final data = payload is Map ? payload['content'] : payload;
     if (data is! List) {
       throw const ServerException(
         'El servidor devolvió eventos con formato inesperado.',
