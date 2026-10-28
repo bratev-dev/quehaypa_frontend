@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../events/data/event_api.dart';
+import '../../../events/presentation/controllers/event_providers.dart';
 
 import '../../../events/presentation/event_image.dart';
-import '../../../events/presentation/event_detail_page.dart';
 
 import '../../../saved_to_plans/presentation/modals/save_to_plans_bottom_sheet.dart';
 
@@ -61,21 +60,19 @@ class EventCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(_imageRadius),
               ),
               clipBehavior: Clip.antiAlias,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => EventDetailPage(eventId: eventId),
+              child: EventImage(
+                url: imageUrl,
+                height: _imageHeight,
+                placeholder: Center(
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 48,
+                    color: Colors.grey[500],
                   ),
                 ),
-                child: EventImage(url: imageUrl, height: _imageHeight),
               ),
             ),
             const SizedBox(height: _contentPadding),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(date),
             Row(
               children: [
                 // Etiqueta de categoría
@@ -104,8 +101,8 @@ class EventCard extends StatelessWidget {
                   onPressed: () async {
                     try {
                       final api = ProviderScope.containerOf(context)
-                          .read(eventApiProvider);
-                      final text = await api.shareText(eventId);
+                          .read(eventUseCasesProvider);
+                      final text = await api.shareEvent(eventId);
                       if (!context.mounted) return;
                       final box = context.findRenderObject() as RenderBox?;
                       await SharePlus.instance.share(

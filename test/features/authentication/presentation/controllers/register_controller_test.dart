@@ -109,7 +109,13 @@ AuthSession identity(String email) {
       }),
     ),
   );
-  return AuthSession(accessToken: 'header.$payload.signature');
+  return AuthSession(
+    accessToken: 'header.$payload.signature',
+    email: email,
+    username: 'identidad.keycloak',
+    firstName: 'Nombre de Keycloak',
+    lastName: 'Apellido de Keycloak',
+  );
 }
 
 void main() {

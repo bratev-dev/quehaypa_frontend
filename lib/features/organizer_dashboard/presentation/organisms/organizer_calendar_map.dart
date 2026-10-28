@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../event_creation/domain/created_event_preview.dart';
-import '../../../events/data/event_api.dart';
+import '../../../events/presentation/controllers/event_providers.dart';
 import '../atoms/timeline_hour_label.dart';
 import '../controllers/organizer_calendar_controller.dart';
 import '../fixtures/preview_events.dart';
@@ -233,7 +233,6 @@ class _OrganizerCalendarMapState extends ConsumerState<OrganizerCalendarMap> {
                               ),
                             ),
                           ),
-
                       ],
                     ],
                   ),

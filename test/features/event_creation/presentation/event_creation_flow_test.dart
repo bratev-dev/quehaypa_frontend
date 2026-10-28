@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/events/data/event_api.dart';
+import 'package:frontend/features/events/presentation/controllers/event_providers.dart';
 import 'package:frontend/features/event_creation/presentation/controllers/event_creation_controller.dart';
 import 'package:frontend/features/event_creation/presentation/pages/event_creation_page.dart';
 

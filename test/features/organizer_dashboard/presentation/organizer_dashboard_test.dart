@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/features/events/data/event_api.dart';
+import 'package:frontend/features/events/presentation/controllers/event_providers.dart';
 import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:frontend/features/organizer_dashboard/presentation/organisms/organizer_calendar_map.dart';
 

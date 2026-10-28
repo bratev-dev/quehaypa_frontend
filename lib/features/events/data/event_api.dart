@@ -2,21 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/providers/network_providers.dart';
-import '../../authentication/presentation/controllers/authentication_controller.dart';
 import '../../preferences/data/models/event_seed_model.dart';
 import '../../preferences/domain/entities/event_seed.dart';
-import '../../event_creation/presentation/controllers/event_creation_controller.dart';
-
-final eventApiProvider = Provider((ref) => EventApi(ref.watch(dioProvider)));
-final organizerEventsProvider = FutureProvider.autoDispose<List<EventSeed>>((
-  ref,
-) {
-  ref.watch(authenticationControllerProvider.select((s) => s.session));
-  return ref.watch(eventApiProvider).mine();
-});
+import '../domain/entities/event_draft.dart';
 
 class EventApi {
   const EventApi(this.dio);
@@ -192,26 +181,4 @@ class EventApi {
       await dio.delete<dynamic>('/api/v1/events/$id/registration/me');
     }
   }
-}
-
-String eventError(Object error) {
-  if (error is StateError) return error.message;
-  if (error is DioException) {
-    final data = error.response?.data;
-    if (data is Map && data['message'] is String) {
-      return data['message'] as String;
-    }
-    final status = error.response?.statusCode;
-    if (status == 401) return 'Tu sesión expiró. Vuelve a iniciar sesión.';
-    if (status == 403) {
-      return 'Tu cuenta no tiene permiso para realizar esta acción.';
-    }
-    if (status == 404) return 'El evento ya no está disponible.';
-    if (status == 413) return 'Cada archivo debe tener como máximo 50 MB.';
-    if (status != null) {
-      return 'El servidor no pudo completar la operación (HTTP $status). Inténtalo de nuevo.';
-    }
-    return 'No pudimos conectar con el servidor. Revisa tu conexión a internet e inténtalo de nuevo.';
-  }
-  return 'No pudimos completar la operación. Inténtalo de nuevo.';
 }

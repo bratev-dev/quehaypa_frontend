@@ -7,7 +7,7 @@ import '../../../event_creation/presentation/pages/event_creation_page.dart';
 import '../../../navigation/presentation/organisms/custom_bottom_nav.dart';
 import '../../../navigation/presentation/organisms/sliding_navigation_stack.dart';
 import '../../../navigation/providers/navigation_provider.dart';
-import '../../../events/presentation/organizer_events_page.dart';
+import '../../../my_plans/presentation/pages/my_plans_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../atoms/calendar_selection_notch.dart';
 import '../controllers/organizer_calendar_controller.dart';
@@ -27,7 +27,11 @@ class OrganizerDashboardTemplate extends ConsumerWidget {
     final screens = <Widget>[
       const _OrganizerCalendarHome(),
       const _PrototypeSection(label: 'Mapa'),
-      const OrganizerEventsPage(),
+      const _PrototypeSection(label: 'Eventos'),
+      if (preview)
+        const _PrototypeSection(label: 'Planes')
+      else
+        const MyPlansPage(),
       if (preview)
         const _PrototypeSection(label: 'Perfil')
       else
@@ -37,7 +41,7 @@ class OrganizerDashboardTemplate extends ConsumerWidget {
       backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
-          SlidingNavigationStack(index: index.clamp(0, 3), children: screens),
+          SlidingNavigationStack(index: index.clamp(0, 4), children: screens),
           const CustomBottomNav(organizer: true),
         ],
       ),

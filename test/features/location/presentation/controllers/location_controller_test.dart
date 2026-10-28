@@ -32,7 +32,7 @@ AuthenticationState _signedIn(String sub, {bool isOrganizer = false}) {
   final claims = base64Url.encode(utf8.encode(jsonEncode({'sub': sub})));
   return AuthenticationState(
     status: AuthenticationStatus.authenticated,
-    session: AuthSession(accessToken: 'header.$claims.signature'),
+    session: AuthSession(accessToken: 'header.$claims.signature', subject: sub),
     isOrganizer: isOrganizer,
   );
 }

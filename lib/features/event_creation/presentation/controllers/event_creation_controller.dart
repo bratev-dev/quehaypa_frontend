@@ -1,33 +1,10 @@
-import 'dart:typed_data';
+import '../../../events/domain/entities/event_draft.dart';
+export '../../../events/domain/entities/event_draft.dart'
+    show EventBusiness, EventAttachment;
 
 import 'package:flutter/material.dart';
 
 enum EventCreationStep { data, details, publish }
-
-class EventBusiness {
-  const EventBusiness({required this.id, required this.name});
-
-  final String id;
-  final String name;
-}
-
-class EventAttachment {
-  const EventAttachment({
-    required this.name,
-    required this.sizeBytes,
-    this.bytes,
-    this.id,
-    this.path,
-  });
-
-  final String name;
-  final int sizeBytes;
-  final Uint8List? bytes;
-  final String? id;
-  final String? path;
-
-  String get extension => name.split('.').last.toLowerCase();
-}
 
 /// Datos del formulario y del borrador persistido, sin cambiar su presentación.
 class EventCreationController extends ChangeNotifier {
@@ -291,86 +268,63 @@ class EventCreationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Map<String, dynamic> draftFields() {
+  EventDraft draft() {
     final date = eventDate;
     final start = startTime;
-    return {
-      'day': day,
-      'month': month,
-      'year': year,
-      'step': step.index,
-      'startHour': start?.hour,
-      'startMinute': start?.minute,
-      'endHour': endTime?.hour,
-      'endMinute': endTime?.minute,
-      'event': {
-        'title': name.trim(),
-        'description': description.trim(),
-        'category': category,
-        'venue': address.trim(),
-        'businessId': int.tryParse(selectedBusiness?.id ?? ''),
-        'isPaid': isPaid,
-        'links': _links.map((e) => e.toString()).toList(),
-        'audience': adultsOnly ? 'ADULTS_ONLY' : 'ALL_AGES',
-        'startsAt': date == null || start == null
-            ? null
-            : DateTime(
-                date.year,
-                date.month,
-                date.day,
-                start.hour,
-                start.minute,
-              ).toIso8601String(),
-        'endsAt': eventEndDateTime?.toIso8601String(),
-      },
-    };
+    return EventDraft(
+      id: draftId,
+      name: name,
+      description: description,
+      category: category,
+      address: address,
+      day: day,
+      month: month,
+      year: year,
+      step: step.index,
+      startHour: start?.hour,
+      startMinute: start?.minute,
+      endHour: endTime?.hour,
+      endMinute: endTime?.minute,
+      businessId: int.tryParse(selectedBusiness?.id ?? ''),
+      isPaid: isPaid,
+      adultsOnly: adultsOnly,
+      links: _links.map((link) => link.toString()).toList(),
+      attachments: attachments,
+      startsAt: date == null || start == null
+          ? null
+          : DateTime(date.year, date.month, date.day, start.hour, start.minute),
+      endsAt: eventEndDateTime,
+    );
   }
 
-  void restoreDraft(Map<String, dynamic> draft) {
-    draftId = draft['id'] as String;
-    final fields = Map<String, dynamic>.from(draft['fields'] as Map);
-    final event = Map<String, dynamic>.from(fields['event'] as Map? ?? {});
-    name = event['title'] as String? ?? '';
-    description = event['description'] as String? ?? '';
-    category = event['category'] as String? ?? '';
-    address = event['venue'] as String? ?? '';
-    isPaid = event['isPaid'] == true;
-    adultsOnly = event['audience'] == 'ADULTS_ONLY';
-    day = fields['day'] as String? ?? '';
-    month = fields['month'] as String? ?? '';
-    year = fields['year'] as String? ?? '';
-    startTime = fields['startHour'] == null
+  void restoreDraft(EventDraft draft) {
+    draftId = draft.id;
+    name = draft.name;
+    description = draft.description;
+    category = draft.category;
+    address = draft.address;
+    isPaid = draft.isPaid;
+    adultsOnly = draft.adultsOnly;
+    day = draft.day;
+    month = draft.month;
+    year = draft.year;
+    startTime = draft.startHour == null
         ? null
-        : TimeOfDay(
-            hour: fields['startHour'] as int,
-            minute: fields['startMinute'] as int,
-          );
-    endTime = fields['endHour'] == null
+        : TimeOfDay(hour: draft.startHour!, minute: draft.startMinute ?? 0);
+    endTime = draft.endHour == null
         ? null
-        : TimeOfDay(
-            hour: fields['endHour'] as int,
-            minute: fields['endMinute'] as int,
-          );
+        : TimeOfDay(hour: draft.endHour!, minute: draft.endMinute ?? 0);
     selectedBusiness = _businesses
-        .where((b) => b.id == event['businessId']?.toString())
+        .where((business) => business.id == draft.businessId?.toString())
         .firstOrNull;
     _links
       ..clear()
-      ..addAll((event['links'] as List? ?? []).cast<String>().map(Uri.parse));
+      ..addAll(draft.links.map(Uri.parse));
     _attachments
       ..clear()
-      ..addAll(
-        (draft['attachments'] as List? ?? []).map(
-          (file) => EventAttachment(
-            id: file['id'] as String,
-            name: file['name'] as String,
-            sizeBytes: (file['sizeBytes'] as num).toInt(),
-          ),
-        ),
-      );
-    final savedStep = fields['step'] as int? ?? 0;
+      ..addAll(draft.attachments);
     step = EventCreationStep
-        .values[savedStep.clamp(0, EventCreationStep.values.length - 1)];
+        .values[draft.step.clamp(0, EventCreationStep.values.length - 1)];
     notifyListeners();
   }
 

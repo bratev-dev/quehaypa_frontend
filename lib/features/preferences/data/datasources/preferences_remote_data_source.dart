@@ -92,13 +92,17 @@ class PreferencesRemoteDataSource {
           '/api/v1/events',
           queryParameters: {
             if (category != null && category.isNotEmpty) 'category': category,
-            'page': page, 'size': 50,
+            'page': page,
+            'size': 50,
           },
         );
         events.addAll(_parseEventList(response.data));
         final data = response.data?['data'];
         page++;
-        if (data is! Map || page >= ((data['totalPages'] as num?)?.toInt() ?? 1)) break;
+        if (data is! Map ||
+            page >= ((data['totalPages'] as num?)?.toInt() ?? 1)) {
+          break;
+        }
       }
       return events;
     } on DioException catch (e) {
