@@ -75,10 +75,8 @@ class _MapPageState extends State<MapPage> {
             ),
             zoom: 13,
           ),
-          onMapCreated: (mapboxMap) => _positionAttribution(
-            mapboxMap,
-            bottomMargin,
-          ),
+          onMapCreated: (mapboxMap) =>
+              _positionAttribution(mapboxMap, bottomMargin),
           onMapLoadedListener: (_) {
             if (mounted) {
               setState(() {
@@ -105,7 +103,10 @@ class _MapPageState extends State<MapPage> {
                       'No pudimos cargar el mapa.',
                       style: TextStyle(color: Colors.white),
                     ),
-                    TextButton(onPressed: _retry, child: const Text('Reintentar')),
+                    TextButton(
+                      onPressed: _retry,
+                      child: const Text('Reintentar'),
+                    ),
                   ],
                 ),
               ),
