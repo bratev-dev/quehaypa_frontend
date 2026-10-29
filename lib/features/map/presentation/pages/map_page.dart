@@ -8,9 +8,13 @@ class MapPage extends StatefulWidget {
   const MapPage({
     super.key,
     this.accessToken = const String.fromEnvironment('ACCESS_TOKEN'),
+    this.mapBuilder,
   });
 
   final String accessToken;
+
+  /// Permite sustituir la vista nativa en las pruebas de widget.
+  final Widget Function(MapWidget map)? mapBuilder;
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -63,34 +67,7 @@ class _MapPageState extends State<MapPage> {
 
     return Stack(
       children: [
-        MapWidget(
-          key: ValueKey(_retryCount),
-          styleUri: MapboxStyles.STANDARD,
-          viewport: CameraViewportState(
-            center: Point(
-              coordinates: Position(
-                UserLocation.defaultCity.longitude,
-                UserLocation.defaultCity.latitude,
-              ),
-            ),
-            zoom: 13,
-          ),
-          onMapCreated: (mapboxMap) =>
-              _positionAttribution(mapboxMap, bottomMargin),
-          onMapLoadedListener: (_) {
-            if (mounted) {
-              setState(() {
-                _loaded = true;
-                _loadFailed = false;
-              });
-            }
-          },
-          onMapLoadErrorListener: (_) {
-            if (mounted && !_loaded) {
-              setState(() => _loadFailed = true);
-            }
-          },
-        ),
+        _buildMap(bottomMargin),
         if (_loadFailed)
           Positioned.fill(
             child: ColoredBox(
@@ -114,5 +91,37 @@ class _MapPageState extends State<MapPage> {
           ),
       ],
     );
+  }
+
+  Widget _buildMap(double bottomMargin) {
+    final map = MapWidget(
+      key: ValueKey(_retryCount),
+      styleUri: MapboxStyles.STANDARD,
+      viewport: CameraViewportState(
+        center: Point(
+          coordinates: Position(
+            UserLocation.defaultCity.longitude,
+            UserLocation.defaultCity.latitude,
+          ),
+        ),
+        zoom: 13,
+      ),
+      onMapCreated: (mapboxMap) =>
+          _positionAttribution(mapboxMap, bottomMargin),
+      onMapLoadedListener: (_) {
+        if (mounted) {
+          setState(() {
+            _loaded = true;
+            _loadFailed = false;
+          });
+        }
+      },
+      onMapLoadErrorListener: (_) {
+        if (mounted && !_loaded) {
+          setState(() => _loadFailed = true);
+        }
+      },
+    );
+    return widget.mapBuilder?.call(map) ?? map;
   }
 }
