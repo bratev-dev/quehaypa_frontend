@@ -119,6 +119,22 @@ cp .env.example .env
 | `API_BASE_URL` | URL pública del gateway, sin `/api/v1`. En local: `http://<IP-LAN>:8080` |
 | `KEYCLOAK_ISSUER_URL` | Emisor del realm. En local: `http://<IP-LAN>:8090/realms/que-hay-pa-dev` |
 
+El mapa usa un token **público** de Mapbox (`pk.`), que se pasa al compilar o
+ejecutar con `--dart-define`; no se escribe en `.env` ni en el repositorio.
+En PowerShell, antes de ejecutar la app:
+
+```powershell
+$env:MAPBOX_ACCESS_TOKEN = Read-Host "Token público de Mapbox"
+flutter run --dart-define="ACCESS_TOKEN=$env:MAPBOX_ACCESS_TOKEN"
+```
+
+El APK de pruebas publicado desde `develop` toma el valor del secreto de GitHub
+Actions `MAPBOX_ACCESS_TOKEN` (Settings → Secrets and variables → Actions).
+Configura allí un token público antes de fusionar cambios que incluyan el mapa.
+El token queda incorporado al APK, por lo que sus permisos deben limitarse a
+lectura. Para una futura compilación de producción se usa el mismo argumento
+`--dart-define=ACCESS_TOKEN=...` con su propio token público.
+
 Otros valores fijos del cliente OIDC, que viven en `lib/app/config/app_config.dart`:
 
 - client id: `que-hay-pa-mobile`
