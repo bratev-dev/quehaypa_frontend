@@ -9,6 +9,8 @@ class EventSeed {
   final String? imageUrl;
   final String? city;
   final String? venue;
+  final double? latitude;
+  final double? longitude;
   final String? startsAt;
   final String? endsAt;
   final String? audience;
@@ -26,6 +28,8 @@ class EventSeed {
     this.imageUrl,
     this.city,
     this.venue,
+    this.latitude,
+    this.longitude,
     this.startsAt,
     this.endsAt,
     this.audience,
