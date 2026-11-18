@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/router/animations/button_reveal_page_route.dart';
 import '../../../event_creation/domain/created_event_preview.dart';
 import '../../../event_creation/presentation/pages/event_creation_page.dart';
+import '../../../map/presentation/pages/map_page.dart';
 import '../../../navigation/presentation/organisms/custom_bottom_nav.dart';
 import '../../../navigation/presentation/organisms/sliding_navigation_stack.dart';
 import '../../../navigation/providers/navigation_provider.dart';
@@ -26,7 +27,7 @@ class OrganizerDashboardTemplate extends ConsumerWidget {
     final index = ref.watch(navigationIndexProvider);
     final screens = <Widget>[
       const _OrganizerCalendarHome(),
-      const _PrototypeSection(label: 'Mapa'),
+      const MapPage(),
       const _PrototypeSection(label: 'Eventos'),
       if (preview)
         const _PrototypeSection(label: 'Planes')

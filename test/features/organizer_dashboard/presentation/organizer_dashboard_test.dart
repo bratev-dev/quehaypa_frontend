@@ -4,8 +4,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/events/presentation/controllers/event_providers.dart';
 import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:frontend/features/organizer_dashboard/presentation/organisms/organizer_calendar_map.dart';
+import 'package:frontend/features/organizer_dashboard/presentation/pages/organizer_dashboard_page.dart';
 
 void main() {
+  testWidgets('la navegación del organizador abre el mapa real', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [organizerEventsProvider.overrideWith((ref) async => [])],
+        child: const MaterialApp(home: OrganizerDashboardPage(preview: true)),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.map_rounded));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Falta configurar el token público de Mapbox para mostrar el mapa.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('el calendario muestra eventos persistidos del servidor', (
     tester,
   ) async {

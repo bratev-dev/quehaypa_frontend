@@ -135,6 +135,22 @@ El token queda incorporado al APK, por lo que sus permisos deben limitarse a
 lectura. Para una futura compilación de producción se usa el mismo argumento
 `--dart-define=ACCESS_TOKEN=...` con su propio token público.
 
+La pestaña Mapa consulta los eventos públicos y dibuja marcadores únicamente
+cuando la respuesta incluye latitud y longitud válidas. Los eventos anteriores
+sin coordenadas siguen disponibles en otros listados, pero no se ubican de forma
+ficticia.
+
+Para revisar marcadores sin depender aún del backend, la compilación de debug
+puede mostrar tres eventos de ejemplo en Popayán:
+
+```powershell
+flutter run --dart-define="ACCESS_TOKEN=$env:MAPBOX_ACCESS_TOKEN" --dart-define=MAP_EVENTS_PREVIEW=true
+```
+
+Esta vista de prueba está desactivada por defecto y no se habilita en release.
+La lista normal muestra eventos en curso y próximos que el backend entregue
+con coordenadas; el endpoint actual todavía no devuelve eventos ya iniciados.
+
 Otros valores fijos del cliente OIDC, que viven en `lib/app/config/app_config.dart`:
 
 - client id: `que-hay-pa-mobile`
