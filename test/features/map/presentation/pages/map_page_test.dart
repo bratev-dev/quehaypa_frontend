@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/map/presentation/pages/map_page.dart';
+import 'package:frontend/features/map/presentation/controllers/map_events_provider.dart';
+import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 void main() {
+  Future<void> pumpMap(WidgetTester tester, Widget child) => tester.pumpWidget(
+    ProviderScope(
+      overrides: [mapEventsProvider.overrideWith((ref) async => [])],
+      child: child,
+    ),
+  );
+
   testWidgets('sin token muestra una explicación y no crea el mapa', (
     tester,
   ) async {
-    await tester.pumpWidget(
+    await pumpMap(
+      tester,
       const MaterialApp(
         home: Scaffold(body: MapPage(accessToken: '')),
       ),
@@ -28,7 +39,8 @@ void main() {
   ) async {
     MapWidget? createdMap;
 
-    await tester.pumpWidget(
+    await pumpMap(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MapPage(
@@ -51,12 +63,29 @@ void main() {
     expect(find.text('No pudimos cargar el mapa.'), findsNothing);
   });
 
+  testWidgets('sin eventos ubicados muestra un estado vacío', (tester) async {
+    await pumpMap(
+      tester,
+      MaterialApp(
+        home: Scaffold(
+          body: MapPage(
+            accessToken: 'pk.test',
+            mapBuilder: (_) => const SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('No hay eventos ubicados para mostrar.'), findsOneWidget);
+  });
+
   testWidgets('un fallo inicial muestra reintento y crea un mapa nuevo', (
     tester,
   ) async {
     MapWidget? currentMap;
 
-    await tester.pumpWidget(
+    await pumpMap(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MapPage(
@@ -95,7 +124,8 @@ void main() {
   ) async {
     MapWidget? currentMap;
 
-    await tester.pumpWidget(
+    await pumpMap(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MapPage(
@@ -132,5 +162,146 @@ void main() {
     currentMap!.onMapLoadErrorListener!(error);
     await tester.pump();
     expect(find.text('No pudimos cargar el mapa.'), findsNothing);
+  });
+
+  testWidgets('envía un marcador por evento ubicado al cargar el mapa', (
+    tester,
+  ) async {
+    MapWidget? createdMap;
+    List<CircleAnnotationOptions>? written;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          mapEventsProvider.overrideWith(
+            (ref) async => [
+              const EventSeed(
+                id: 1,
+                title: 'Concierto',
+                category: 'Música',
+                eventText: '',
+                latitude: 2.4419,
+                longitude: -76.6063,
+              ),
+              const EventSeed(
+                id: 2,
+                title: 'Sin ubicación',
+                category: 'Arte',
+                eventText: '',
+              ),
+            ],
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MapPage(
+              accessToken: 'pk.test',
+              mapBuilder: (map) {
+                createdMap = map;
+                return const SizedBox.expand();
+              },
+              markerWriter: (options) async => written = options,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    createdMap!.onMapLoadedListener!(
+      MapLoadedEventData(
+        timeInterval: EventTimeInterval(
+          begin: DateTime(2026),
+          end: DateTime(2026),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(written, hasLength(1));
+    expect(written!.single.geometry.coordinates.lat, 2.4419);
+    expect(find.text('No hay eventos ubicados para mostrar.'), findsNothing);
+  });
+
+  testWidgets('permite reintentar si falla el envío de marcadores', (
+    tester,
+  ) async {
+    MapWidget? createdMap;
+    var attempts = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          mapEventsProvider.overrideWith(
+            (ref) async => [
+              const EventSeed(
+                id: 1,
+                title: 'Concierto',
+                category: 'Música',
+                eventText: '',
+                latitude: 2.4419,
+                longitude: -76.6063,
+              ),
+            ],
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MapPage(
+              accessToken: 'pk.test',
+              mapBuilder: (map) {
+                createdMap = map;
+                return const SizedBox.expand();
+              },
+              markerWriter: (_) async {
+                attempts++;
+                if (attempts == 1) throw Exception('Anotación fallida');
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    createdMap!.onMapLoadedListener!(
+      MapLoadedEventData(
+        timeInterval: EventTimeInterval(
+          begin: DateTime(2026),
+          end: DateTime(2026),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('No pudimos mostrar los eventos.'), findsOneWidget);
+
+    await tester.tap(find.text('Reintentar'));
+    await tester.pumpAndSettle();
+    expect(attempts, 2);
+    expect(find.text('No pudimos mostrar los eventos.'), findsNothing);
+  });
+
+  testWidgets('un error de consulta muestra la opción de reintento', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          mapEventsProvider.overrideWith(
+            (ref) async => throw Exception('offline'),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MapPage(
+              accessToken: 'pk.test',
+              mapBuilder: (_) => const SizedBox.expand(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No pudimos mostrar los eventos.'), findsOneWidget);
+    await tester.tap(find.text('Reintentar'));
+    await tester.pumpAndSettle();
+    expect(find.text('No pudimos mostrar los eventos.'), findsOneWidget);
   });
 }

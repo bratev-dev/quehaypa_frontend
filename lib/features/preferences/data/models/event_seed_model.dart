@@ -10,6 +10,8 @@ class EventSeedModel {
   final String? imageUrl;
   final String? city;
   final String? venue;
+  final double? latitude;
+  final double? longitude;
   final String? startsAt;
   final String? endsAt;
   final String? audience;
@@ -27,6 +29,8 @@ class EventSeedModel {
     this.imageUrl,
     this.city,
     this.venue,
+    this.latitude,
+    this.longitude,
     this.startsAt,
     this.endsAt,
     this.audience,
@@ -54,6 +58,8 @@ class EventSeedModel {
       imageUrl: json['imageUrl'] as String?,
       city: json['city'] as String?,
       venue: json['venue'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       startsAt: json['startsAt'] as String?,
       endsAt: json['endsAt'] as String?,
       audience: json['audience'] as String?,
@@ -83,6 +89,8 @@ class EventSeedModel {
     imageUrl: imageUrl,
     city: city,
     venue: venue,
+    latitude: latitude,
+    longitude: longitude,
     startsAt: startsAt,
     endsAt: endsAt,
     audience: audience,
