@@ -6,7 +6,9 @@ import '../../../location/domain/entities/user_location.dart';
 import '../../../preferences/domain/entities/event_seed.dart';
 import '../../domain/entities/event_map_marker.dart';
 import '../controllers/map_events_provider.dart';
+import '../map_event_selection.dart';
 import '../map_marker_options.dart';
+import '../molecules/map_event_card.dart';
 
 /// Mapa de descubrimiento con eventos públicos que tienen ubicación válida.
 class MapPage extends ConsumerStatefulWidget {
@@ -15,6 +17,9 @@ class MapPage extends ConsumerStatefulWidget {
     this.accessToken = const String.fromEnvironment('ACCESS_TOKEN'),
     this.mapBuilder,
     this.markerWriter,
+    this.onMarkerTapReady,
+    this.onMapTapReady,
+    this.now,
   });
 
   final String accessToken;
@@ -23,7 +28,15 @@ class MapPage extends ConsumerStatefulWidget {
   final Widget Function(MapWidget map)? mapBuilder;
 
   /// Permite comprobar el envío de anotaciones sin crear una vista nativa.
-  final Future<void> Function(List<CircleAnnotationOptions>)? markerWriter;
+  final Future<void> Function(List<PointAnnotationOptions>)? markerWriter;
+
+  /// Expone la selección al sustituir las anotaciones nativas en pruebas.
+  final void Function(void Function(Map<String, Object>?) select)?
+  onMarkerTapReady;
+
+  /// Permite comprobar el cierre al tocar el mapa sin la vista nativa.
+  final void Function(VoidCallback dismiss)? onMapTapReady;
+  final DateTime Function()? now;
 
   @override
   ConsumerState<MapPage> createState() => _MapPageState();
@@ -37,12 +50,34 @@ class _MapPageState extends ConsumerState<MapPage> {
   bool _markersFailed = false;
   int _retryCount = 0;
   MapboxMap? _map;
-  CircleAnnotationManager? _markers;
+  PointAnnotationManager? _markers;
+  Cancelable? _markerTapSubscription;
+  Future<MapPinImages>? _pinImages;
+  final Map<String, int> _eventIdsByAnnotation = {};
+  DateTime? _lastMarkerTapAt;
   List<EventSeed>? _renderedEvents;
   List<EventSeed>? _pendingEvents;
+  EventSeed? _selectedEvent;
   bool _rendering = false;
 
   bool get _canRender => _map != null || widget.markerWriter != null;
+  DateTime get _now => widget.now?.call() ?? DateTime.now();
+
+  void _selectMarker(Map<String, Object>? customData) {
+    final selected = eventForMarkerTap(_renderedEvents ?? const [], customData);
+    if (selected != null && mounted) {
+      _lastMarkerTapAt = _now;
+      setState(() => _selectedEvent = selected);
+    }
+  }
+
+  void _onMapTap() {
+    if (mounted &&
+        _selectedEvent != null &&
+        shouldCloseCardOnMapTap(_lastMarkerTapAt, _now)) {
+      setState(() => _selectedEvent = null);
+    }
+  }
 
   Future<void> _renderMarkers(List<EventSeed> events) async {
     if (!_canRender || !_loaded || identical(_renderedEvents, events)) return;
@@ -53,19 +88,48 @@ class _MapPageState extends ConsumerState<MapPage> {
       while (_pendingEvents != null && _canRender && mounted) {
         final current = _pendingEvents!;
         _pendingEvents = null;
-        final points = mapMarkerOptions(
-          current.map(EventMapMarker.fromEvent).whereType<EventMapMarker>(),
-        );
+        final images = await (_pinImages ??= MapPinImages.load());
+        final located = current
+            .where((event) => EventMapMarker.fromEvent(event) != null)
+            .toList();
+        final points = mapMarkerOptions(located, images);
         final writer = widget.markerWriter;
         if (writer != null) {
           await writer(points);
         } else {
           final manager = _markers ??= await _map!.annotations
-              .createCircleAnnotationManager();
+              .createPointAnnotationManager();
+          _markerTapSubscription ??= manager.tapEvents(
+            onTap: (annotation) {
+              final selected = eventForAnnotationTap(
+                _renderedEvents ?? const [],
+                annotation.id,
+                _eventIdsByAnnotation,
+                annotation.customData,
+              );
+              if (selected != null) _selectMarker({'eventId': selected.id});
+            },
+          );
           await manager.deleteAll();
-          if (points.isNotEmpty) await manager.createMulti(points);
+          _eventIdsByAnnotation.clear();
+          if (points.isNotEmpty) {
+            final created = await manager.createMulti(points);
+            for (var i = 0; i < created.length; i++) {
+              final annotation = created[i];
+              if (annotation != null) {
+                _eventIdsByAnnotation[annotation.id] = located[i].id;
+              }
+            }
+          }
         }
         _renderedEvents = current;
+        if (writer != null) widget.onMarkerTapReady?.call(_selectMarker);
+        if (_selectedEvent != null && mounted) {
+          final refreshed = eventForMarkerTap(current, {
+            'eventId': _selectedEvent!.id,
+          });
+          setState(() => _selectedEvent = refreshed);
+        }
       }
       if (_markersFailed && mounted) setState(() => _markersFailed = false);
     } catch (_) {
@@ -89,6 +153,9 @@ class _MapPageState extends ConsumerState<MapPage> {
   }
 
   void _retry() {
+    _markerTapSubscription?.cancel();
+    _markerTapSubscription = null;
+    _eventIdsByAnnotation.clear();
     setState(() {
       _retryCount++;
       _loaded = false;
@@ -97,7 +164,14 @@ class _MapPageState extends ConsumerState<MapPage> {
       _map = null;
       _markers = null;
       _renderedEvents = null;
+      _selectedEvent = null;
     });
+  }
+
+  @override
+  void dispose() {
+    _markerTapSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -118,6 +192,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     final bottomMargin =
         _navigationClearance + MediaQuery.paddingOf(context).bottom;
     final events = ref.watch(mapEventsProvider);
+    if (widget.mapBuilder != null) widget.onMapTapReady?.call(_onMapTap);
     if (_canRender && _loaded && events.hasValue) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _renderMarkers(events.requireValue);
@@ -194,6 +269,23 @@ class _MapPageState extends ConsumerState<MapPage> {
               ),
             ),
           ),
+        if (_selectedEvent != null)
+          Positioned(
+            left: 18,
+            right: 18,
+            bottom: bottomMargin,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.52,
+              ),
+              child: SingleChildScrollView(
+                child: MapEventCard(
+                  event: _selectedEvent!,
+                  onClose: () => setState(() => _selectedEvent = null),
+                ),
+              ),
+            ),
+          ),
         if (_loadFailed)
           Positioned.fill(
             child: ColoredBox(
@@ -234,6 +326,7 @@ class _MapPageState extends ConsumerState<MapPage> {
       ),
       onMapCreated: (mapboxMap) async {
         _map = mapboxMap;
+        mapboxMap.addInteraction(TapInteraction.onMap((_) => _onMapTap()));
         await _positionAttribution(mapboxMap, bottomMargin);
       },
       onMapLoadedListener: (_) {
