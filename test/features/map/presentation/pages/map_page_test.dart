@@ -310,32 +310,33 @@ void main() {
   ) async {
     MapWidget? createdMap;
     void Function(Map<String, Object>?)? selectMarker;
+    VoidCallback? tapMap;
+    var now = DateTime(2026, 11, 19, 12);
+    var currentEvents = <EventSeed>[
+      const EventSeed(
+        id: 1,
+        title: 'Concierto',
+        category: 'Música',
+        eventText: 'Hoy',
+        venue: 'Teatro Municipal',
+        latitude: 2.4419,
+        longitude: -76.6063,
+      ),
+      const EventSeed(
+        id: 2,
+        title: 'Exposición',
+        category: 'Arte',
+        eventText: 'Mañana',
+        city: 'Popayán',
+        latitude: 2.4470,
+        longitude: -76.6010,
+        isPaid: true,
+      ),
+    ];
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          mapEventsProvider.overrideWith(
-            (ref) async => [
-              const EventSeed(
-                id: 1,
-                title: 'Concierto',
-                category: 'Música',
-                eventText: 'Hoy',
-                venue: 'Teatro Municipal',
-                latitude: 2.4419,
-                longitude: -76.6063,
-              ),
-              const EventSeed(
-                id: 2,
-                title: 'Exposición',
-                category: 'Arte',
-                eventText: 'Mañana',
-                city: 'Popayán',
-                latitude: 2.4470,
-                longitude: -76.6010,
-                isPaid: true,
-              ),
-            ],
-          ),
+          mapEventsProvider.overrideWith((ref) async => currentEvents),
         ],
         child: MaterialApp(
           home: Scaffold(
@@ -347,6 +348,8 @@ void main() {
               },
               markerWriter: (_) async {},
               onMarkerTapReady: (select) => selectMarker = select,
+              onMapTapReady: (dismiss) => tapMap = dismiss,
+              now: () => now,
             ),
           ),
         ),
@@ -375,9 +378,35 @@ void main() {
     expect(find.text('Exposición'), findsOneWidget);
     expect(find.text('De pago'), findsOneWidget);
 
+    currentEvents = [
+      const EventSeed(
+        id: 2,
+        title: 'Exposición actualizada',
+        category: 'Arte',
+        eventText: 'Hoy',
+        latitude: 2.4470,
+        longitude: -76.6010,
+      ),
+    ];
+    ProviderScope.containerOf(tester.element(find.byType(MapPage)))
+        .invalidate(mapEventsProvider);
+    await tester.pumpAndSettle();
+    expect(find.text('Exposición actualizada'), findsOneWidget);
+
+    tapMap!();
+    await tester.pump();
+    expect(find.text('Exposición actualizada'), findsOneWidget);
+    now = now.add(const Duration(milliseconds: 360));
+    tapMap!();
+    await tester.pump();
+    expect(find.text('Exposición actualizada'), findsNothing);
+
+    selectMarker!({'eventId': 2});
+    await tester.pump();
+
     await tester.tap(find.bySemanticsLabel('Cerrar tarjeta del evento'));
     await tester.pump();
-    expect(find.text('Exposición'), findsNothing);
+    expect(find.text('Exposición actualizada'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

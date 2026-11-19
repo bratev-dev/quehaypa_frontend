@@ -18,6 +18,8 @@ class MapPage extends ConsumerStatefulWidget {
     this.mapBuilder,
     this.markerWriter,
     this.onMarkerTapReady,
+    this.onMapTapReady,
+    this.now,
   });
 
   final String accessToken;
@@ -31,6 +33,10 @@ class MapPage extends ConsumerStatefulWidget {
   /// Expone la selección al sustituir las anotaciones nativas en pruebas.
   final void Function(void Function(Map<String, Object>?) select)?
   onMarkerTapReady;
+
+  /// Permite comprobar el cierre al tocar el mapa sin la vista nativa.
+  final void Function(VoidCallback dismiss)? onMapTapReady;
+  final DateTime Function()? now;
 
   @override
   ConsumerState<MapPage> createState() => _MapPageState();
@@ -55,12 +61,21 @@ class _MapPageState extends ConsumerState<MapPage> {
   bool _rendering = false;
 
   bool get _canRender => _map != null || widget.markerWriter != null;
+  DateTime get _now => widget.now?.call() ?? DateTime.now();
 
   void _selectMarker(Map<String, Object>? customData) {
     final selected = eventForMarkerTap(_renderedEvents ?? const [], customData);
     if (selected != null && mounted) {
-      _lastMarkerTapAt = DateTime.now();
+      _lastMarkerTapAt = _now;
       setState(() => _selectedEvent = selected);
+    }
+  }
+
+  void _onMapTap() {
+    if (mounted &&
+        _selectedEvent != null &&
+        shouldCloseCardOnMapTap(_lastMarkerTapAt, _now)) {
+      setState(() => _selectedEvent = null);
     }
   }
 
@@ -177,6 +192,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     final bottomMargin =
         _navigationClearance + MediaQuery.paddingOf(context).bottom;
     final events = ref.watch(mapEventsProvider);
+    if (widget.mapBuilder != null) widget.onMapTapReady?.call(_onMapTap);
     if (_canRender && _loaded && events.hasValue) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _renderMarkers(events.requireValue);
@@ -310,18 +326,7 @@ class _MapPageState extends ConsumerState<MapPage> {
       ),
       onMapCreated: (mapboxMap) async {
         _map = mapboxMap;
-        mapboxMap.addInteraction(
-          TapInteraction.onMap((_) {
-            final markerTap = _lastMarkerTapAt;
-            if (mounted &&
-                _selectedEvent != null &&
-                (markerTap == null ||
-                    DateTime.now().difference(markerTap) >
-                        const Duration(milliseconds: 350))) {
-              setState(() => _selectedEvent = null);
-            }
-          }),
-        );
+        mapboxMap.addInteraction(TapInteraction.onMap((_) => _onMapTap()));
         await _positionAttribution(mapboxMap, bottomMargin);
       },
       onMapLoadedListener: (_) {

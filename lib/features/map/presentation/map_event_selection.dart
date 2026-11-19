@@ -25,3 +25,7 @@ EventSeed? eventForAnnotationTap(
     eventId == null ? customData : {'eventId': eventId},
   );
 }
+
+bool shouldCloseCardOnMapTap(DateTime? lastMarkerTap, DateTime now) =>
+    lastMarkerTap == null ||
+    now.difference(lastMarkerTap) > const Duration(milliseconds: 350);

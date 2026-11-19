@@ -26,4 +26,14 @@ void main() {
     );
     expect(eventForAnnotationTap(events, 'sin-id', {}, {'eventId': 1})?.id, 1);
   });
+
+  test('el toque del propio pin no cierra inmediatamente su tarjeta', () {
+    final now = DateTime(2026, 11, 19, 12);
+    expect(shouldCloseCardOnMapTap(now, now), isFalse);
+    expect(
+      shouldCloseCardOnMapTap(now, now.add(const Duration(milliseconds: 351))),
+      isTrue,
+    );
+    expect(shouldCloseCardOnMapTap(null, now), isTrue);
+  });
 }
