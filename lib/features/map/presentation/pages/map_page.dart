@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../../location/domain/entities/user_location.dart';
+import '../../../location/presentation/controllers/location_controller.dart';
 import '../../../preferences/domain/entities/event_seed.dart';
 import '../../domain/entities/event_map_marker.dart';
 import '../controllers/map_events_provider.dart';
@@ -51,6 +54,9 @@ class _MapPageState extends ConsumerState<MapPage> {
   int _retryCount = 0;
   MapboxMap? _map;
   PointAnnotationManager? _markers;
+  CircleAnnotationManager? _locationMarkers;
+  Future<void> _locationWrites = Future.value();
+  bool _centeredOnDevice = false;
   Cancelable? _markerTapSubscription;
   Future<MapPinImages>? _pinImages;
   final Map<String, int> _eventIdsByAnnotation = {};
@@ -62,6 +68,57 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   bool get _canRender => _map != null || widget.markerWriter != null;
   DateTime get _now => widget.now?.call() ?? DateTime.now();
+
+  UserLocation? _deviceLocation(UserLocation location) =>
+      location.source == LocationSource.device ? location : null;
+
+  Point _point(UserLocation location) =>
+      Point(coordinates: Position(location.longitude, location.latitude));
+
+  void _syncDeviceLocation(UserLocation? location) {
+    if (!_loaded || _map == null) return;
+    final generation = _retryCount;
+    _locationWrites = _locationWrites.then((_) async {
+      if (!mounted || generation != _retryCount) return;
+      try {
+        await _writeDeviceLocation(location, generation);
+      } catch (_) {
+        // El indicador es independiente de los pines de eventos.
+      }
+    });
+    unawaited(_locationWrites);
+  }
+
+  Future<void> _writeDeviceLocation(
+    UserLocation? location,
+    int generation,
+  ) async {
+    final options = location == null
+        ? null
+        : CircleAnnotationOptions(
+            geometry: _point(location),
+            circleRadius: 8,
+            circleColor: 0xFF1769D2,
+            circleStrokeColor: 0xFFFFFFFF,
+            circleStrokeWidth: 3,
+          );
+    final map = _map!;
+    if (options == null) {
+      await _locationMarkers?.deleteAll();
+      return;
+    }
+    final manager =
+        _locationMarkers ??
+        await map.annotations.createCircleAnnotationManager();
+    if (!mounted || generation != _retryCount) return;
+    _locationMarkers = manager;
+    await manager.deleteAll();
+    await manager.create(options);
+    if (mounted && generation == _retryCount && !_centeredOnDevice) {
+      _centeredOnDevice = true;
+      await map.setCamera(CameraOptions(center: options.geometry));
+    }
+  }
 
   void _selectMarker(Map<String, Object>? customData) {
     final selected = eventForMarkerTap(_renderedEvents ?? const [], customData);
@@ -163,6 +220,9 @@ class _MapPageState extends ConsumerState<MapPage> {
       _markersFailed = false;
       _map = null;
       _markers = null;
+      _locationMarkers = null;
+      _locationWrites = Future.value();
+      _centeredOnDevice = false;
       _renderedEvents = null;
       _selectedEvent = null;
     });
@@ -192,6 +252,12 @@ class _MapPageState extends ConsumerState<MapPage> {
     final bottomMargin =
         _navigationClearance + MediaQuery.paddingOf(context).bottom;
     final events = ref.watch(mapEventsProvider);
+    ref.listen(
+      locationControllerProvider.select(
+        (state) => _deviceLocation(state.location),
+      ),
+      (_, location) => _syncDeviceLocation(location),
+    );
     if (widget.mapBuilder != null) widget.onMapTapReady?.call(_onMapTap);
     if (_canRender && _loaded && events.hasValue) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -312,6 +378,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   }
 
   Widget _buildMap(double bottomMargin) {
+    final generation = _retryCount;
     final map = MapWidget(
       key: ValueKey(_retryCount),
       styleUri: MapboxStyles.STANDARD,
@@ -325,20 +392,23 @@ class _MapPageState extends ConsumerState<MapPage> {
         zoom: 13,
       ),
       onMapCreated: (mapboxMap) async {
+        if (!mounted || generation != _retryCount) return;
         _map = mapboxMap;
         mapboxMap.addInteraction(TapInteraction.onMap((_) => _onMapTap()));
         await _positionAttribution(mapboxMap, bottomMargin);
       },
       onMapLoadedListener: (_) {
-        if (mounted) {
+        if (mounted && generation == _retryCount) {
           setState(() {
             _loaded = true;
             _loadFailed = false;
           });
+          final location = ref.read(locationControllerProvider).location;
+          _syncDeviceLocation(_deviceLocation(location));
         }
       },
       onMapLoadErrorListener: (_) {
-        if (mounted && !_loaded) {
+        if (mounted && generation == _retryCount && !_loaded) {
           setState(() => _loadFailed = true);
         }
       },

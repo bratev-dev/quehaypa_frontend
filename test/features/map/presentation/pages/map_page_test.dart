@@ -1,12 +1,131 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/features/location/domain/entities/user_location.dart';
+import 'package:frontend/features/location/presentation/controllers/location_controller.dart';
+import 'package:frontend/features/location/presentation/controllers/location_state.dart';
 import 'package:frontend/features/map/presentation/pages/map_page.dart';
 import 'package:frontend/features/map/presentation/controllers/map_events_provider.dart';
 import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+// La prueba sustituye la plataforma nativa, manteniendo la fachada de Mapbox.
+// ignore: depend_on_referenced_packages
+import 'package:mapbox_maps_flutter_platform_interface/mapbox_maps_flutter_platform_interface_internal.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _TestMap extends Mock implements MapboxMapPlatformInterface {}
+
+class _TestStyle extends Mock implements StylePlatformInterface {}
+
+class _TestLogo extends Mock implements LogoSettingsPlatformInterface {}
+
+class _TestAttribution extends Mock
+    implements AttributionSettingsPlatformInterface {}
+
+class _TestAnnotations extends Mock
+    implements AnnotationManagerPlatformInterface {}
+
+class _TestCircles extends Mock
+    implements CircleAnnotationManagerPlatformInterface {}
+
+class _TestLocationController extends LocationController {
+  void setLocation(UserLocation location) {
+    state = LocationState(status: LocationStatus.ready, location: location);
+  }
+}
 
 void main() {
+  testWidgets('muestra solo la ubicación actual y la retira al perder el GPS', (
+    tester,
+  ) async {
+    final controller = _TestLocationController();
+    final locations = <CircleAnnotationOptions>[];
+    final deviceMap = _TestMap();
+    final annotations = _TestAnnotations();
+    final circles = _TestCircles();
+    final logo = _TestLogo();
+    final attribution = _TestAttribution();
+    final center = Point(coordinates: Position(-76.61, 2.44));
+    registerFallbackValue(CircleAnnotationOptions(geometry: center));
+    registerFallbackValue(CameraOptions());
+    registerFallbackValue(LogoSettings());
+    registerFallbackValue(AttributionSettings());
+    when(() => deviceMap.style).thenReturn(_TestStyle());
+    when(() => deviceMap.logo).thenReturn(logo);
+    when(() => deviceMap.attribution).thenReturn(attribution);
+    when(() => deviceMap.annotations).thenReturn(annotations);
+    when(() => deviceMap.setCamera(any())).thenAnswer((_) async {});
+    when(() => logo.updateSettings(any())).thenAnswer((_) async {});
+    when(() => attribution.updateSettings(any())).thenAnswer((_) async {});
+    when(() => annotations.createCircleAnnotationManager())
+        .thenAnswer((_) async => circles);
+    when(() => circles.deleteAll()).thenAnswer((_) async => locations.clear());
+    when(() => circles.create(any())).thenAnswer((invocation) async {
+      final point =
+          invocation.positionalArguments.single as CircleAnnotationOptions;
+      locations.add(point);
+      return CircleAnnotation(id: 'device', geometry: point.geometry);
+    });
+    late MapWidget map;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          mapEventsProvider.overrideWith((ref) async => []),
+          locationControllerProvider.overrideWith(() => controller),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MapPage(
+              accessToken: 'pk.test',
+              mapBuilder: (widget) {
+                map = widget;
+                return const SizedBox.expand();
+              },
+              markerWriter: (_) async {},
+            ),
+          ),
+        ),
+      ),
+    );
+    // ignore: invalid_use_of_internal_member
+    map.onMapCreated!(MapboxMap(deviceMap));
+    map.onMapLoadedListener!(
+      MapLoadedEventData(
+        timeInterval: EventTimeInterval(
+          begin: DateTime(2026),
+          end: DateTime(2026),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(locations, isEmpty);
+
+    controller.setLocation(
+      const UserLocation(
+        latitude: 2.44,
+        longitude: -76.61,
+        source: LocationSource.device,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final marker = locations.single;
+    expect(marker.geometry.coordinates.lat, 2.44);
+    expect(marker.geometry.coordinates.lng, -76.61);
+    expect(marker.circleStrokeWidth, 3);
+    verify(() => deviceMap.setCamera(any())).called(1);
+
+    controller.setLocation(
+      const UserLocation(
+        latitude: 2.44,
+        longitude: -76.61,
+        source: LocationSource.lastKnown,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(locations, isEmpty);
+    expect(find.text('No hay eventos ubicados para mostrar.'), findsOneWidget);
+  });
+
   Future<void> pumpMap(WidgetTester tester, Widget child) => tester.pumpWidget(
     ProviderScope(
       overrides: [mapEventsProvider.overrideWith((ref) async => [])],
