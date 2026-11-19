@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/features/event_creation/presentation/organisms/event_location_picker.dart';
+import 'package:frontend/features/map/presentation/molecules/location_picker.dart';
 import 'package:frontend/features/map/domain/entities/event_coordinates.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
@@ -19,7 +19,7 @@ void main() {
               onPressed: () async {
                 selected = await Navigator.of(context).push<EventCoordinates>(
                   MaterialPageRoute(
-                    builder: (_) => EventLocationPicker(
+                    builder: (_) => LocationPicker(
                       initialPoint: const EventCoordinates(2, -76),
                       readCamera: () async =>
                           camera ?? (throw StateError('Sin cámara')),

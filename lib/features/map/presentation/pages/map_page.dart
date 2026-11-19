@@ -7,10 +7,12 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../location/domain/entities/user_location.dart';
 import '../../../location/presentation/controllers/location_controller.dart';
 import '../../../preferences/domain/entities/event_seed.dart';
+import '../../domain/entities/event_coordinates.dart';
 import '../../domain/entities/event_map_marker.dart';
 import '../controllers/map_events_provider.dart';
 import '../map_event_selection.dart';
 import '../map_marker_options.dart';
+import '../molecules/location_picker.dart';
 import '../molecules/map_event_card.dart';
 
 /// Mapa de descubrimiento con eventos públicos que tienen ubicación válida.
@@ -57,6 +59,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   CircleAnnotationManager? _locationMarkers;
   Future<void> _locationWrites = Future.value();
   bool _centeredOnDevice = false;
+  EventCoordinates? _manualLocation;
   Cancelable? _markerTapSubscription;
   Future<MapPinImages>? _pinImages;
   final Map<String, int> _eventIdsByAnnotation = {};
@@ -75,18 +78,60 @@ class _MapPageState extends ConsumerState<MapPage> {
   Point _point(UserLocation location) =>
       Point(coordinates: Position(location.longitude, location.latitude));
 
-  void _syncDeviceLocation(UserLocation? location) {
+  void _queueLocationWrite(Future<void> Function(int generation) write) {
     if (!_loaded || _map == null) return;
     final generation = _retryCount;
     _locationWrites = _locationWrites.then((_) async {
       if (!mounted || generation != _retryCount) return;
       try {
-        await _writeDeviceLocation(location, generation);
+        await write(generation);
       } catch (_) {
         // El indicador es independiente de los pines de eventos.
       }
     });
     unawaited(_locationWrites);
+  }
+
+  void _syncDeviceLocation(UserLocation? location) => _queueLocationWrite(
+    (generation) => _writeDeviceLocation(location, generation),
+  );
+
+  UserLocation? get _currentDeviceLocation =>
+      _deviceLocation(ref.read(locationControllerProvider).location);
+
+  void _centerOnReference() => _queueLocationWrite((_) async {
+    final manual = _manualLocation;
+    final device = _currentDeviceLocation;
+    final point = manual == null
+        ? _point(device ?? UserLocation.defaultCity)
+        : Point(coordinates: Position(manual.longitude, manual.latitude));
+    if (manual == null && device != null) _centeredOnDevice = true;
+    await _map!.setCamera(CameraOptions(center: point));
+  });
+
+  Future<void> _chooseManualLocation() async {
+    final device = _currentDeviceLocation;
+    final initialPoint =
+        _manualLocation ??
+        (device == null
+            ? null
+            : EventCoordinates(device.latitude, device.longitude));
+    final selected = await Navigator.of(context).push<EventCoordinates>(
+      MaterialPageRoute(
+        builder: (_) => LocationPicker(
+          initialPoint: initialPoint,
+          mapBuilder: widget.mapBuilder,
+        ),
+      ),
+    );
+    if (!mounted || selected == null || !selected.isValid) return;
+    setState(() => _manualLocation = selected);
+    _centerOnReference();
+  }
+
+  void _returnToDeviceLocation() {
+    setState(() => _manualLocation = null);
+    _centerOnReference();
   }
 
   Future<void> _writeDeviceLocation(
@@ -114,7 +159,10 @@ class _MapPageState extends ConsumerState<MapPage> {
     _locationMarkers = manager;
     await manager.deleteAll();
     await manager.create(options);
-    if (mounted && generation == _retryCount && !_centeredOnDevice) {
+    if (mounted &&
+        generation == _retryCount &&
+        !_centeredOnDevice &&
+        _manualLocation == null) {
       _centeredOnDevice = true;
       await map.setCamera(CameraOptions(center: options.geometry));
     }
@@ -268,6 +316,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     return Stack(
       children: [
         _buildMap(bottomMargin),
+        if (_loaded && _selectedEvent == null) _locationControls(bottomMargin),
         if (events.isLoading && !_loadFailed)
           const Positioned(
             top: 16,
@@ -377,6 +426,32 @@ class _MapPageState extends ConsumerState<MapPage> {
     );
   }
 
+  Widget _locationControls(double bottomMargin) => Positioned(
+    right: 16,
+    left: 16,
+    bottom: bottomMargin,
+    child: Wrap(
+      alignment: WrapAlignment.end,
+      spacing: 8,
+      children: [
+        if (_manualLocation != null)
+          FilledButton.tonal(
+            onPressed: _returnToDeviceLocation,
+            child: const Text('Volver a mi ubicación'),
+          ),
+        FilledButton.tonalIcon(
+          onPressed: _chooseManualLocation,
+          icon: const Icon(Icons.place_outlined),
+          label: Text(
+            _manualLocation == null
+                ? 'Elegir ubicación'
+                : 'Cambiar ubicación manual',
+          ),
+        ),
+      ],
+    ),
+  );
+
   Widget _buildMap(double bottomMargin) {
     final generation = _retryCount;
     final map = MapWidget(
@@ -403,8 +478,8 @@ class _MapPageState extends ConsumerState<MapPage> {
             _loaded = true;
             _loadFailed = false;
           });
-          final location = ref.read(locationControllerProvider).location;
-          _syncDeviceLocation(_deviceLocation(location));
+          _syncDeviceLocation(_currentDeviceLocation);
+          if (_manualLocation != null) _centerOnReference();
         }
       },
       onMapLoadErrorListener: (_) {

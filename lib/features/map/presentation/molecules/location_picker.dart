@@ -2,25 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../../location/domain/entities/user_location.dart';
-import '../../../map/domain/entities/event_coordinates.dart';
+import '../../domain/entities/event_coordinates.dart';
 
-class EventLocationPicker extends StatefulWidget {
-  const EventLocationPicker({
+class LocationPicker extends StatefulWidget {
+  const LocationPicker({
     super.key,
     this.initialPoint,
+    this.title = 'Elegir ubicación manual',
+    this.instructions = 'Mueve el mapa para elegir el punto de referencia.',
     this.mapBuilder,
     this.readCamera,
   });
 
   final EventCoordinates? initialPoint;
+  final String title;
+  final String instructions;
   final Widget Function(MapWidget map)? mapBuilder;
   final Future<CameraState> Function()? readCamera;
 
   @override
-  State<EventLocationPicker> createState() => _EventLocationPickerState();
+  State<LocationPicker> createState() => _LocationPickerState();
 }
 
-class _EventLocationPickerState extends State<EventLocationPicker> {
+class _LocationPickerState extends State<LocationPicker> {
   MapboxMap? _map;
   bool _loaded = false;
   bool _failed = false;
@@ -95,7 +99,7 @@ class _EventLocationPickerState extends State<EventLocationPicker> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ubicación del evento')),
+      appBar: AppBar(title: Text(widget.title)),
       body: Stack(
         alignment: Alignment.center,
         children: [
@@ -116,7 +120,7 @@ class _EventLocationPickerState extends State<EventLocationPicker> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Mueve el mapa para ubicar el evento en el centro.'),
+            Text(widget.instructions),
             const SizedBox(height: 8),
             FilledButton(
               onPressed: _loaded && !_confirming ? _confirm : null,

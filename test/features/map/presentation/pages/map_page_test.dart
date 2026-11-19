@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/location/domain/entities/user_location.dart';
 import 'package:frontend/features/location/presentation/controllers/location_controller.dart';
 import 'package:frontend/features/location/presentation/controllers/location_state.dart';
+import 'package:frontend/features/map/domain/entities/event_coordinates.dart';
+import 'package:frontend/features/map/presentation/molecules/location_picker.dart';
 import 'package:frontend/features/map/presentation/pages/map_page.dart';
 import 'package:frontend/features/map/presentation/controllers/map_events_provider.dart';
 import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
@@ -35,11 +37,12 @@ class _TestLocationController extends LocationController {
 }
 
 void main() {
-  testWidgets('muestra solo la ubicación actual y la retira al perder el GPS', (
+  testWidgets('prioriza el punto manual ante GPS tardío y permite volver', (
     tester,
   ) async {
     final controller = _TestLocationController();
     final locations = <CircleAnnotationOptions>[];
+    final cameraCenters = <Position>[];
     final deviceMap = _TestMap();
     final annotations = _TestAnnotations();
     final circles = _TestCircles();
@@ -54,7 +57,10 @@ void main() {
     when(() => deviceMap.logo).thenReturn(logo);
     when(() => deviceMap.attribution).thenReturn(attribution);
     when(() => deviceMap.annotations).thenReturn(annotations);
-    when(() => deviceMap.setCamera(any())).thenAnswer((_) async {});
+    when(() => deviceMap.setCamera(any())).thenAnswer((invocation) async {
+      final options = invocation.positionalArguments.single as CameraOptions;
+      cameraCenters.add(options.center!.coordinates);
+    });
     when(() => logo.updateSettings(any())).thenAnswer((_) async {});
     when(() => attribution.updateSettings(any())).thenAnswer((_) async {});
     when(() => annotations.createCircleAnnotationManager())
@@ -100,6 +106,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(locations, isEmpty);
 
+    await tester.tap(find.text('Elegir ubicación'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    final picker = tester.widget<LocationPicker>(find.byType(LocationPicker));
+    expect(picker.initialPoint, isNull);
+    Navigator.of(tester.element(find.byType(LocationPicker)))
+        .pop(const EventCoordinates(4.60, -74.08));
+    await tester.pumpAndSettle();
+    expect(cameraCenters.single.lat, 4.60);
+    expect(cameraCenters.single.lng, -74.08);
+
     controller.setLocation(
       const UserLocation(
         latitude: 2.44,
@@ -112,7 +129,15 @@ void main() {
     expect(marker.geometry.coordinates.lat, 2.44);
     expect(marker.geometry.coordinates.lng, -76.61);
     expect(marker.circleStrokeWidth, 3);
-    verify(() => deviceMap.setCamera(any())).called(1);
+    expect(cameraCenters, hasLength(1));
+    expect(find.text('Cambiar ubicación manual'), findsOneWidget);
+
+    await tester.tap(find.text('Volver a mi ubicación'));
+    await tester.pumpAndSettle();
+    expect(cameraCenters, hasLength(2));
+    expect(cameraCenters.last.lat, 2.44);
+    expect(cameraCenters.last.lng, -76.61);
+    expect(find.text('Elegir ubicación'), findsOneWidget);
 
     controller.setLocation(
       const UserLocation(
