@@ -7,4 +7,14 @@ class GetEvents {
 
   Future<List<EventSeed>> call({String? category}) =>
       repository.getEvents(category: category);
+
+  Future<List<EventSeed>> nearby({
+    required double latitude,
+    required double longitude,
+    required int radiusKm,
+  }) => repository.getNearbyEvents(
+    latitude: latitude,
+    longitude: longitude,
+    radiusKm: radiusKm,
+  );
 }

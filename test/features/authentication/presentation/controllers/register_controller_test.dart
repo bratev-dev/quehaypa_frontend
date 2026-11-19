@@ -96,6 +96,13 @@ class FakePreferencesRepository implements PreferencesRepository {
   @override
   Future<List<EventSeed>> getEvents({String? category}) =>
       throw UnimplementedError();
+
+  @override
+  Future<List<EventSeed>> getNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required int radiusKm,
+  }) => throw UnimplementedError();
 }
 
 AuthSession identity(String email) {

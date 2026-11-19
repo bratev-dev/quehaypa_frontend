@@ -83,18 +83,37 @@ class PreferencesRemoteDataSource {
     }
   }
 
-  Future<List<EventSeedModel>> getEvents({String? category}) async {
+  Future<List<EventSeedModel>> getEvents({String? category}) =>
+      _getEvents(category: category);
+
+  Future<List<EventSeedModel>> getNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required int radiusKm,
+  }) =>
+      _getEvents(latitude: latitude, longitude: longitude, radiusKm: radiusKm);
+
+  Future<List<EventSeedModel>> _getEvents({
+    String? category,
+    double? latitude,
+    double? longitude,
+    int? radiusKm,
+  }) async {
     try {
       final events = <EventSeedModel>[];
       var page = 0;
       while (true) {
+        final query = <String, dynamic>{
+          if (category != null && category.isNotEmpty) 'category': category,
+          'page': page,
+          'size': 50,
+        };
+        if (latitude != null) query['latitude'] = latitude;
+        if (longitude != null) query['longitude'] = longitude;
+        if (radiusKm != null) query['radiusKm'] = radiusKm;
         final response = await _dio.get<Map<String, dynamic>>(
           '/api/v1/events',
-          queryParameters: {
-            if (category != null && category.isNotEmpty) 'category': category,
-            'page': page,
-            'size': 50,
-          },
+          queryParameters: query,
         );
         events.addAll(_parseEventList(response.data));
         final data = response.data?['data'];

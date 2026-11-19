@@ -106,6 +106,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(locations, isEmpty);
 
+    expect(find.text('Radio: 5 km'), findsOneWidget);
+    await tester.tap(find.text('Radio: 5 km'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Slider));
+    await tester.pumpAndSettle();
+    final radius = ProviderScope.containerOf(
+      tester.element(find.byType(Slider)),
+    ).read(mapSearchOptionsProvider).radiusKm;
+    expect(radius, greaterThan(5));
+    Navigator.of(tester.element(find.byType(Slider))).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('Radio: $radius km'), findsOneWidget);
+
     await tester.tap(find.text('Elegir ubicación'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

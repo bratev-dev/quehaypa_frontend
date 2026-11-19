@@ -144,6 +144,25 @@ void main() {
       expect(adapter.last.queryParameters, {'page': 0, 'size': 50});
     });
 
+    test('getNearbyEvents envía coordenadas y radio al catálogo', () async {
+      adapter.reply = const FakeReply(200, {'data': []});
+
+      await dataSource.getNearbyEvents(
+        latitude: 2.4448,
+        longitude: -76.6147,
+        radiusKm: 5,
+      );
+
+      expect(adapter.last.path, '/api/v1/events');
+      expect(adapter.last.queryParameters, {
+        'latitude': 2.4448,
+        'longitude': -76.6147,
+        'radiusKm': 5,
+        'page': 0,
+        'size': 50,
+      });
+    });
+
     test('lista de eventos inválida lanza ServerException', () async {
       adapter.reply = const FakeReply(200, {'data': null});
 
