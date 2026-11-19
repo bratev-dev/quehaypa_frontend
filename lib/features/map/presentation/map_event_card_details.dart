@@ -32,22 +32,29 @@ class MapEventCardDetails {
   factory MapEventCardDetails.fromEvent(EventSeed event) {
     final start = DateTime.tryParse(event.startsAt ?? '')?.toLocal();
     final end = DateTime.tryParse(event.endsAt ?? '')?.toLocal();
-    final date = start == null
-        ? (event.eventText.trim().isEmpty
-              ? 'Fecha por confirmar'
-              : event.eventText.trim())
-        : '${_weekdays[start.weekday - 1]} ${start.day} '
-              '${_months[start.month - 1]} · ${_time(start)}'
-              '${end != null && _sameDay(start, end) ? ' – ${_time(end)}' : ''}';
+    String date;
+    if (start == null) {
+      final eventText = event.eventText.trim();
+      date = eventText.isEmpty ? 'Fecha por confirmar' : eventText;
+    } else {
+      final timeRange = end != null && _sameDay(start, end)
+          ? ' – ${_time(end)}'
+          : '';
+      date =
+          '${_weekdays[start.weekday - 1]} ${start.day} '
+          '${_months[start.month - 1]} · ${_time(start)}$timeRange';
+    }
     final venue = event.venue?.trim();
     final city = event.city?.trim();
+    String place = 'Lugar por confirmar';
+    if (venue != null && venue.isNotEmpty) {
+      place = venue;
+    } else if (city != null && city.isNotEmpty) {
+      place = city;
+    }
     return MapEventCardDetails(
       when: date,
-      where: venue != null && venue.isNotEmpty
-          ? venue
-          : city != null && city.isNotEmpty
-          ? city
-          : 'Lugar por confirmar',
+      where: place,
       price: event.isPaid ? 'De pago' : 'Gratuito',
       adultsOnly: event.audience == 'ADULTS_ONLY',
     );
