@@ -1,0 +1,38 @@
+# Avisa a la landing (bratev-dev/quehaypa_landing) cada vez que se publica un release
+# estable, para que actualice el botón de descarga, la versión y el tamaño del APK.
+#
+# Requisitos:
+#   - Secret LANDING_DISPATCH_TOKEN: token fine-grained con permiso "Contents: Read and write"
+#     solo sobre bratev-dev/quehaypa_landing.
+#   - El APK del release debe llamarse quehaypa.apk.
+#
+# Los pre-releases (como "develop-latest", que crea Flutter CI) no disparan el aviso.
+# Nota: GitHub solo ejecuta este workflow cuando el archivo está en la rama por defecto (main).
+
+name: Avisar a la landing
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Avisar a la landing
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.release.prerelease }}
+    steps:
+      - name: Enviar aviso apk-released
+        env:
+          GH_TOKEN: ${{ secrets.LANDING_DISPATCH_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Falta el secret LANDING_DISPATCH_TOKEN; la landing no se actualizará."
+            exit 1
+          fi
+          gh api repos/bratev-dev/quehaypa_landing/dispatches \
+            -f event_type=apk-released \
+            -f "client_payload[tag]=$TAG"
+          echo "Aviso enviado a la landing para el release $TAG"
