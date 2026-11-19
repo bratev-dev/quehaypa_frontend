@@ -20,7 +20,6 @@ class MapPage extends ConsumerStatefulWidget {
     this.accessToken = const String.fromEnvironment('ACCESS_TOKEN'),
     this.mapBuilder,
     this.markerWriter,
-    this.locationWriter,
     this.onMarkerTapReady,
     this.onMapTapReady,
     this.now,
@@ -33,9 +32,6 @@ class MapPage extends ConsumerStatefulWidget {
 
   /// Permite comprobar el envío de anotaciones sin crear una vista nativa.
   final Future<void> Function(List<PointAnnotationOptions>)? markerWriter;
-
-  /// Permite observar la anotación de ubicación sin una vista nativa.
-  final Future<void> Function(CircleAnnotationOptions?)? locationWriter;
 
   /// Expone la selección al sustituir las anotaciones nativas en pruebas.
   final void Function(void Function(Map<String, Object>?) select)?
@@ -80,7 +76,7 @@ class _MapPageState extends ConsumerState<MapPage> {
       Point(coordinates: Position(location.longitude, location.latitude));
 
   void _syncDeviceLocation(UserLocation? location) {
-    if (!_loaded || (_map == null && widget.locationWriter == null)) return;
+    if (!_loaded || _map == null) return;
     final generation = _retryCount;
     _locationWrites = _locationWrites.then((_) async {
       if (!mounted || generation != _retryCount) return;
@@ -106,11 +102,6 @@ class _MapPageState extends ConsumerState<MapPage> {
             circleStrokeColor: 0xFFFFFFFF,
             circleStrokeWidth: 3,
           );
-    final writer = widget.locationWriter;
-    if (writer != null) {
-      await writer(options);
-      return;
-    }
     final map = _map!;
     if (options == null) {
       await _locationMarkers?.deleteAll();
