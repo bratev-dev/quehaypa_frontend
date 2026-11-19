@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/features/map/domain/entities/event_coordinates.dart';
 import 'package:frontend/features/events/data/event_api.dart';
 import 'package:frontend/features/events/presentation/controllers/event_providers.dart';
 import 'package:frontend/features/event_creation/presentation/controllers/event_creation_controller.dart';
@@ -20,6 +21,7 @@ void main() {
       ..updateCategory('Música')
       ..updateCity('Bogotá')
       ..updateAddress('Calle 1')
+      ..selectCoordinates(const EventCoordinates(2.4448, -76.6147))
       ..updateDay('${date.day}')
       ..updateMonth('${date.month}')
       ..updateYear('${date.year}')
@@ -81,6 +83,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('¡Evento creado con éxito!'), findsOneWidget);
     expect(adapter.requests.last.method, 'POST');
+    final saved = adapter.requests.singleWhere(
+      (request) => request.method == 'PUT',
+    );
+    final fields = (saved.data as Map)['fields'] as Map;
+    final event = fields['event'] as Map;
+    expect(event['latitude'], 2.4448);
+    expect(event['longitude'], -76.6147);
   });
 
   testWidgets(
@@ -210,6 +219,8 @@ void main() {
                 'title': 'Mi borrador',
                 'category': 'Música',
                 'businessId': 1,
+                'latitude': 2.4448,
+                'longitude': -76.6147,
                 'isPaid': true,
               },
               'step': 0,
@@ -224,6 +235,9 @@ void main() {
       expect(find.text('Negocio demo'), findsOneWidget);
       expect(find.text('Ciudad'), findsNothing);
       expect(controller.isPaid, isTrue);
+      expect(controller.coordinates?.latitude, 2.4448);
+      expect(controller.coordinates?.longitude, -76.6147);
+      expect(find.byTooltip('Cambiar ubicación del evento'), findsOneWidget);
       controller.step = EventCreationStep.details;
       controller.updateDescription('Detalles');
       await tester.pumpAndSettle();

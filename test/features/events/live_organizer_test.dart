@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/features/map/domain/entities/event_coordinates.dart';
 import 'package:frontend/features/event_creation/presentation/controllers/event_creation_controller.dart';
 import 'package:frontend/features/events/data/event_api.dart';
 import 'package:frontend/features/events/data/repositories/event_repository_impl.dart';
@@ -58,6 +59,7 @@ void main() {
         )
         ..updateCategory(data.categories.first)
         ..updateAddress('Prueba técnica temporal')
+        ..selectCoordinates(const EventCoordinates(2.4448, -76.6147))
         ..updateDay('${date.day}')
         ..updateMonth('${date.month}')
         ..updateYear('${date.year}')

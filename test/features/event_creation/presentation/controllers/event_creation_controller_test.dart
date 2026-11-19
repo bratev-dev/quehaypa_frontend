@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/features/map/domain/entities/event_coordinates.dart';
 import 'package:frontend/features/event_creation/presentation/controllers/event_creation_controller.dart';
 
 void main() {
@@ -19,6 +20,7 @@ void main() {
     controller.updateMonth('06');
     controller.updateYear('2026');
     controller.updateAddress('Calle 1 #2-3');
+    controller.selectCoordinates(const EventCoordinates(2.4448, -76.6147));
     controller.updateCity('Bogotá');
   }
 
@@ -57,6 +59,17 @@ void main() {
       fillValidData();
       expect(controller.selectedBusiness, isNull);
       expect(controller.validateData(), isNull);
+    });
+
+    test('requiere un punto válido para avanzar', () {
+      fillValidData();
+      controller.coordinates = null;
+      expect(controller.next(), isFalse);
+      expect(controller.errorMessage, 'Ubica el evento en el mapa.');
+
+      controller.selectCoordinates(const EventCoordinates(91, -76));
+      expect(controller.next(), isFalse);
+      expect(controller.errorMessage, 'Ubica el evento en el mapa.');
     });
 
     test('interpreta la hora final más temprana como el día siguiente', () {

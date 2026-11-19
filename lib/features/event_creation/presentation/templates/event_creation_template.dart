@@ -17,6 +17,7 @@ class EventCreationTemplate extends StatelessWidget {
     required this.controller,
     required this.linkController,
     required this.onPickAttachments,
+    required this.onPickLocation,
     required this.onAddLink,
     required this.onClose,
     required this.onDraft,
@@ -27,6 +28,7 @@ class EventCreationTemplate extends StatelessWidget {
   final EventCreationController controller;
   final TextEditingController linkController;
   final VoidCallback onPickAttachments;
+  final VoidCallback onPickLocation;
   final VoidCallback onAddLink;
   final VoidCallback onClose;
   final VoidCallback onDraft;
@@ -347,9 +349,17 @@ class EventCreationTemplate extends StatelessWidget {
         hint: 'Dirección',
         initialValue: controller.address,
         onChanged: controller.updateAddress,
-        suffix: Padding(
-          padding: const EdgeInsets.all(13),
-          child: SvgPicture.asset('assets/images/event_location.svg'),
+        suffix: IconButton(
+          onPressed: onPickLocation,
+          tooltip: controller.coordinates == null
+              ? 'Ubicar evento en el mapa'
+              : 'Cambiar ubicación del evento',
+          icon: controller.coordinates == null
+              ? SvgPicture.asset('assets/images/event_location.svg')
+              : const Icon(
+                  Icons.check_circle,
+                  color: EventCreationColors.yellow,
+                ),
         ),
       ),
       const SizedBox(height: 20),
