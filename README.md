@@ -144,7 +144,7 @@ Para revisar marcadores sin depender aún del backend, la compilación de debug
 puede mostrar tres eventos de ejemplo en Popayán:
 
 ```powershell
-flutter run --dart-define="ACCESS_TOKEN=$env:MAPBOX_ACCESS_TOKEN" --dart-define=MAP_EVENTS_PREVIEW=true
+flutter run --dart-define="ACCESS_TOKEN=$env:MAPBOX_ACCESS_TOKEN" --dart-define=MAP_EVENTS_PREVIEW=true --dart-define=ORGANIZER_PREVIEW=true
 ```
 
 Esta vista de prueba está desactivada por defecto y no se habilita en release.
