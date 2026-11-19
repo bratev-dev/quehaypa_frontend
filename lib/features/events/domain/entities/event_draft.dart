@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import '../../../map/domain/entities/event_coordinates.dart';
+
 class EventBusiness {
   const EventBusiness({required this.id, required this.name});
   final String id;
@@ -29,6 +31,7 @@ class EventDraft {
     this.name = '',
     this.category = '',
     this.address = '',
+    this.coordinates,
     this.description = '',
     this.day = '',
     this.month = '',
@@ -48,6 +51,7 @@ class EventDraft {
   });
   final String? id;
   final String name, category, address, description, day, month, year;
+  final EventCoordinates? coordinates;
   final int step;
   final int? startHour, startMinute, endHour, endMinute, businessId;
   final DateTime? startsAt, endsAt;

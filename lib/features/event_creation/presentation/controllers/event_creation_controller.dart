@@ -1,4 +1,5 @@
 import '../../../events/domain/entities/event_draft.dart';
+import '../../../map/domain/entities/event_coordinates.dart';
 export '../../../events/domain/entities/event_draft.dart'
     show EventBusiness, EventAttachment;
 
@@ -49,6 +50,7 @@ class EventCreationController extends ChangeNotifier {
   String month = '';
   String year = '';
   String address = '';
+  EventCoordinates? coordinates;
   String city = '';
   List<String> categories = [];
   String? draftId;
@@ -103,6 +105,11 @@ class EventCreationController extends ChangeNotifier {
 
   void updateAddress(String value) {
     address = value;
+    _changed();
+  }
+
+  void selectCoordinates(EventCoordinates point) {
+    coordinates = point;
     _changed();
   }
 
@@ -212,6 +219,7 @@ class EventCreationController extends ChangeNotifier {
     );
     if (!startsAt.isAfter(_now())) return 'La hora de inicio debe ser futura.';
     if (address.trim().isEmpty) return 'Escribe la dirección del evento.';
+    if (coordinates?.isValid != true) return 'Ubica el evento en el mapa.';
     return null;
   }
 
@@ -277,6 +285,7 @@ class EventCreationController extends ChangeNotifier {
       description: description,
       category: category,
       address: address,
+      coordinates: coordinates,
       day: day,
       month: month,
       year: year,
@@ -303,6 +312,7 @@ class EventCreationController extends ChangeNotifier {
     description = draft.description;
     category = draft.category;
     address = draft.address;
+    coordinates = draft.coordinates;
     isPaid = draft.isPaid;
     adultsOnly = draft.adultsOnly;
     day = draft.day;

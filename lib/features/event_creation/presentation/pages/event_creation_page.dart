@@ -1,14 +1,14 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:share_plus/share_plus.dart';
 
 import '../../../events/presentation/controllers/event_providers.dart';
-import '../controllers/event_creation_workflow.dart';
-
+import '../../../map/domain/entities/event_coordinates.dart';
 import '../controllers/event_creation_controller.dart';
+import '../controllers/event_creation_workflow.dart';
 import '../event_creation_colors.dart';
+import '../organisms/event_location_picker.dart';
 import '../templates/event_creation_template.dart';
 
 typedef EventAttachmentPicker = Future<List<EventAttachment>> Function();
@@ -96,6 +96,16 @@ class _EventCreationPageState extends ConsumerState<EventCreationPage> {
     } catch (_) {
       if (mounted) _showMessage('No pudimos seleccionar los archivos.');
     }
+  }
+
+  Future<void> _pickLocation() async {
+    final point = await Navigator.of(context).push<EventCoordinates>(
+      MaterialPageRoute(
+        builder: (_) =>
+            EventLocationPicker(initialPoint: controller.coordinates),
+      ),
+    );
+    if (mounted && point != null) controller.selectCoordinates(point);
   }
 
   void _addLink() {
@@ -229,6 +239,7 @@ class _EventCreationPageState extends ConsumerState<EventCreationPage> {
           controller: controller,
           linkController: linkController,
           onPickAttachments: _pickAttachments,
+          onPickLocation: _pickLocation,
           onAddLink: _addLink,
           onClose: () => Navigator.of(context).pop(),
           onDraft: _saveDraft,
