@@ -5,10 +5,16 @@ import '../../../location/domain/entities/user_location.dart';
 import '../../../map/domain/entities/event_coordinates.dart';
 
 class EventLocationPicker extends StatefulWidget {
-  const EventLocationPicker({super.key, this.initialPoint, this.mapBuilder});
+  const EventLocationPicker({
+    super.key,
+    this.initialPoint,
+    this.mapBuilder,
+    this.readCamera,
+  });
 
   final EventCoordinates? initialPoint;
   final Widget Function(MapWidget map)? mapBuilder;
+  final Future<CameraState> Function()? readCamera;
 
   @override
   State<EventLocationPicker> createState() => _EventLocationPickerState();
@@ -22,11 +28,11 @@ class _EventLocationPickerState extends State<EventLocationPicker> {
   int _attempt = 0;
 
   Future<void> _confirm() async {
-    final map = _map;
-    if (map == null || _confirming) return;
+    final readCamera = widget.readCamera ?? _map?.getCameraState;
+    if (readCamera == null || _confirming) return;
     setState(() => _confirming = true);
     try {
-      final camera = await map.getCameraState();
+      final camera = await readCamera();
       final center = camera.center.coordinates;
       final point = EventCoordinates(
         center.lat.toDouble(),
