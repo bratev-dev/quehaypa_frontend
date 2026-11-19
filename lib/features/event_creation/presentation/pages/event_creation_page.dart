@@ -8,7 +8,7 @@ import '../../../map/domain/entities/event_coordinates.dart';
 import '../controllers/event_creation_controller.dart';
 import '../controllers/event_creation_workflow.dart';
 import '../event_creation_colors.dart';
-import '../organisms/event_location_picker.dart';
+import '../../../map/presentation/molecules/location_picker.dart';
 import '../templates/event_creation_template.dart';
 
 typedef EventAttachmentPicker = Future<List<EventAttachment>> Function();
@@ -101,8 +101,11 @@ class _EventCreationPageState extends ConsumerState<EventCreationPage> {
   Future<void> _pickLocation() async {
     final point = await Navigator.of(context).push<EventCoordinates>(
       MaterialPageRoute(
-        builder: (_) =>
-            EventLocationPicker(initialPoint: controller.coordinates),
+        builder: (_) => LocationPicker(
+          initialPoint: controller.coordinates,
+          title: 'Ubicación del evento',
+          instructions: 'Mueve el mapa para ubicar el evento en el centro.',
+        ),
       ),
     );
     if (mounted && point != null) controller.selectCoordinates(point);
