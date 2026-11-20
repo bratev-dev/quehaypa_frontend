@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/authentication/domain/entities/user.dart';
+import 'package:frontend/features/authentication/presentation/controllers/authentication_controller.dart';
+import 'package:frontend/features/authentication/presentation/controllers/authentication_state.dart';
 import 'package:frontend/features/preferences/domain/entities/interest.dart';
 import 'package:frontend/features/preferences/domain/repositories/preferences_repository.dart';
 import 'package:frontend/features/preferences/presentation/controllers/preferences_providers.dart';
@@ -37,6 +39,9 @@ void main() {
           overrides: [
             myProfileProvider.overrideWith((ref) async => user),
             preferencesRepositoryProvider.overrideWithValue(preferences),
+            authenticationControllerProvider.overrideWithBuild(
+              (ref, _) => const AuthenticationState.initial(),
+            ),
           ],
           child: const MaterialApp(home: Scaffold(body: ProfilePage())),
         ),

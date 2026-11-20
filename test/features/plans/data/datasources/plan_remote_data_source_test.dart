@@ -157,15 +157,27 @@ void main() {
             const UpdatePlanParams(planId: 3, title: 'x', description: 'y'),
           ),
           throwsA(
-            isA<UnauthorizedException>().having(
-              (e) => e.message,
-              'message',
-              'No tienes permisos para esta operación.',
-            ),
+            isA<UnauthorizedException>()
+                .having((e) => e.statusCode, 'statusCode', 403)
+                .having(
+                  (e) => e.message,
+                  'message',
+                  'No tienes permisos para esta operación.',
+                ),
           ),
         );
       },
     );
+
+    test('envía meetingDate nulo para quitar una fecha existente', () async {
+      adapter.reply = const FakeReply(200, {'data': _plan});
+
+      await dataSource.updatePlan(
+        const UpdatePlanParams(planId: 3, title: 'Sin fecha'),
+      );
+
+      expect(adapter.last.data, containsPair('meetingDate', null));
+    });
   });
 
   group('deletePlan', () {
@@ -235,5 +247,82 @@ void main() {
         );
       },
     );
+  });
+
+  group('plan events', () {
+    const event = {
+      'id': 7,
+      'title': 'Concierto',
+      'category': 'Música',
+      'eventText': 'Viernes 20:00',
+      'description': 'En vivo',
+    };
+
+    test('addEvent envía el id y parsea el evento guardado', () async {
+      adapter.reply = const FakeReply(201, {'data': event});
+
+      final saved = await dataSource.addEvent(3, 7);
+
+      expect(adapter.last.method, 'POST');
+      expect(adapter.last.path, '/api/v1/plans/3/items');
+      expect(adapter.last.data, {'eventId': 7});
+      expect(saved.id, 7);
+      expect(saved.title, 'Concierto');
+    });
+
+    test('getPlanEvents devuelve la lista del plan', () async {
+      adapter.reply = const FakeReply(200, {
+        'data': [event],
+      });
+
+      final events = await dataSource.getPlanEvents(3);
+
+      expect(adapter.last.method, 'GET');
+      expect(adapter.last.path, '/api/v1/plans/3/items');
+      expect(events.single.id, 7);
+    });
+
+    test('addEvent convierte una respuesta inválida en ServerException', () {
+      adapter.reply = const FakeReply(201, {'data': []});
+
+      expect(dataSource.addEvent(3, 7), throwsA(isA<ServerException>()));
+    });
+
+    test('getPlanEvents rechaza una lista con evento inválido', () {
+      adapter.reply = const FakeReply(200, {
+        'data': [
+          {'title': 'Sin id'},
+        ],
+      });
+
+      expect(dataSource.getPlanEvents(3), throwsA(isA<ServerException>()));
+    });
+
+    test('addEvent convierte duplicados en ConflictException', () {
+      adapter.reply = const FakeReply(409, {
+        'message': 'Este evento ya está guardado en el plan',
+      });
+
+      expect(dataSource.addEvent(3, 7), throwsA(isA<ConflictException>()));
+    });
+
+    test('removeEvent borra solo la asociación del evento indicado', () async {
+      adapter.reply = const FakeReply(200, {
+        'message': 'Evento quitado del plan',
+      });
+
+      await dataSource.removeEvent(3, 7);
+
+      expect(adapter.last.method, 'DELETE');
+      expect(adapter.last.path, '/api/v1/plans/3/items/7');
+    });
+
+    test('removeEvent no considera éxito un evento ausente', () {
+      adapter.reply = const FakeReply(404, {
+        'message': 'El evento no está guardado en este plan',
+      });
+
+      expect(dataSource.removeEvent(3, 7), throwsA(isA<ServerException>()));
+    });
   });
 }

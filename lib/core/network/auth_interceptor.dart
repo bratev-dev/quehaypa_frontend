@@ -66,14 +66,22 @@ class AuthInterceptor extends Interceptor {
       final response = await _retryRequest(request);
 
       handler.resolve(response);
+    } on DioException catch (retryError) {
+      if (retryError.response?.statusCode == 401) {
+        await _sessionInvalidator.invalidateSession();
+      }
+      handler.next(retryError);
     } catch (_) {
-      await _sessionInvalidator.invalidateSession();
       handler.next(err);
     }
   }
 
   Future<Response<dynamic>> _retryRequest(RequestOptions request) {
-    return _dio.fetch<dynamic>(request);
+    final data = request.data;
+    final retry = data is FormData
+        ? request.copyWith(data: data.clone())
+        : request;
+    return _dio.fetch<dynamic>(retry);
   }
 
   Future<String?> _getRefreshedToken() {

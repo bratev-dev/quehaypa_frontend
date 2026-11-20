@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../../../events/presentation/controllers/event_providers.dart';
+
+import '../../../events/presentation/event_image.dart';
 
 import '../../../saved_to_plans/presentation/modals/save_to_plans_bottom_sheet.dart';
 
 class EventCard extends StatelessWidget {
+  final int eventId;
   final String title;
   final String category;
   final String date;
+  final String? imageUrl;
 
   const EventCard({
     super.key,
+    required this.eventId,
     required this.title,
     required this.category,
     required this.date,
+    this.imageUrl,
   });
 
   static const Color _pink = Color(0xFFFF4081);
@@ -49,11 +59,16 @@ class EventCard extends StatelessWidget {
                 color: const Color(0xFFE0E0E0),
                 borderRadius: BorderRadius.circular(_imageRadius),
               ),
-              child: Center(
-                child: Icon(
-                  Icons.image_outlined,
-                  size: 48,
-                  color: Colors.grey[500],
+              clipBehavior: Clip.antiAlias,
+              child: EventImage(
+                url: imageUrl,
+                height: _imageHeight,
+                placeholder: Center(
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 48,
+                    color: Colors.grey[500],
+                  ),
                 ),
               ),
             ),
@@ -83,8 +98,29 @@ class EventCard extends StatelessWidget {
                 // Botón de compartir
                 _CircleActionButton(
                   icon: Icons.share_outlined,
-                  onPressed: () {
-                    // Acción de compartir
+                  onPressed: () async {
+                    try {
+                      final api = ProviderScope.containerOf(context)
+                          .read(eventUseCasesProvider);
+                      final text = await api.shareEvent(eventId);
+                      if (!context.mounted) return;
+                      final box = context.findRenderObject() as RenderBox?;
+                      await SharePlus.instance.share(
+                        ShareParams(
+                          text: text,
+                          subject: title,
+                          sharePositionOrigin: box == null
+                              ? null
+                              : box.localToGlobal(Offset.zero) & box.size,
+                        ),
+                      );
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(eventError(e))));
+                      }
+                    }
                   },
                 ),
                 const SizedBox(width: _gap),
@@ -93,7 +129,11 @@ class EventCard extends StatelessWidget {
                   icon: Icons.bookmark_border,
                   onPressed: () {
                     // Despliega el bottom sheet estilo Spotify para guardar en planes
-                    showSaveToPlansBottomSheet(context);
+                    showSaveToPlansBottomSheet(
+                      context,
+                      eventId: eventId,
+                      eventTitle: title,
+                    );
                   },
                 ),
               ],

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../molecules/quick_actions_bar_molecule.dart';
-import 'create_plan_modal.dart';
-
 class MyPlansHeaderOrganism extends StatelessWidget {
   const MyPlansHeaderOrganism({super.key});
 
@@ -40,12 +37,6 @@ class MyPlansHeaderOrganism extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-          QuickActionsBarMolecule(
-            onShare: () {},
-            onAddFolder: () => showCreatePlanModal(context),
-            onDelete: () {},
           ),
         ],
       ),

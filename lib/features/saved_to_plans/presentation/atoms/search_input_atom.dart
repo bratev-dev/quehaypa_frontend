@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 
 class SearchInputAtom extends StatelessWidget {
   final ValueChanged<String> onChanged;
+  final TextEditingController controller;
 
-  const SearchInputAtom({super.key, required this.onChanged});
+  const SearchInputAtom({
+    super.key,
+    required this.onChanged,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       onChanged: onChanged,
       style: const TextStyle(color: Colors.white, fontSize: 14),
       decoration: InputDecoration(

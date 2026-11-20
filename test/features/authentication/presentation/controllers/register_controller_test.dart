@@ -96,6 +96,13 @@ class FakePreferencesRepository implements PreferencesRepository {
   @override
   Future<List<EventSeed>> getEvents({String? category}) =>
       throw UnimplementedError();
+
+  @override
+  Future<List<EventSeed>> getNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required int radiusKm,
+  }) => throw UnimplementedError();
 }
 
 AuthSession identity(String email) {
@@ -109,7 +116,13 @@ AuthSession identity(String email) {
       }),
     ),
   );
-  return AuthSession(accessToken: 'header.$payload.signature');
+  return AuthSession(
+    accessToken: 'header.$payload.signature',
+    email: email,
+    username: 'identidad.keycloak',
+    firstName: 'Nombre de Keycloak',
+    lastName: 'Apellido de Keycloak',
+  );
 }
 
 void main() {

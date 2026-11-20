@@ -4,7 +4,7 @@ import '../../../../core/errors/exceptions.dart';
 import '../models/event_seed_model.dart';
 import '../models/interest_model.dart';
 
-/// Habla con el monolito para intereses/eventos.
+/// Consulta intereses, preferencias y eventos a través del API Gateway.
 /// El Bearer lo pone AuthInterceptor. Parsea el envelope ApiResponse{data}.
 class PreferencesRemoteDataSource {
   final Dio _dio;
@@ -83,22 +83,55 @@ class PreferencesRemoteDataSource {
     }
   }
 
-  Future<List<EventSeedModel>> getEvents({String? category}) async {
+  Future<List<EventSeedModel>> getEvents({String? category}) =>
+      _getEvents(category: category);
+
+  Future<List<EventSeedModel>> getNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required int radiusKm,
+  }) =>
+      _getEvents(latitude: latitude, longitude: longitude, radiusKm: radiusKm);
+
+  Future<List<EventSeedModel>> _getEvents({
+    String? category,
+    double? latitude,
+    double? longitude,
+    int? radiusKm,
+  }) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/v1/events',
-        queryParameters: {
+      final events = <EventSeedModel>[];
+      var page = 0;
+      while (true) {
+        final query = <String, dynamic>{
           if (category != null && category.isNotEmpty) 'category': category,
-        },
-      );
-      return _parseEventList(response.data);
+          'page': page,
+          'size': 50,
+        };
+        if (latitude != null) query['latitude'] = latitude;
+        if (longitude != null) query['longitude'] = longitude;
+        if (radiusKm != null) query['radiusKm'] = radiusKm;
+        final response = await _dio.get<Map<String, dynamic>>(
+          '/api/v1/events',
+          queryParameters: query,
+        );
+        events.addAll(_parseEventList(response.data));
+        final data = response.data?['data'];
+        page++;
+        if (data is! Map ||
+            page >= ((data['totalPages'] as num?)?.toInt() ?? 1)) {
+          break;
+        }
+      }
+      return events;
     } on DioException catch (e) {
       throw _mapDioError(e);
     }
   }
 
   List<EventSeedModel> _parseEventList(Map<String, dynamic>? envelope) {
-    final data = envelope?['data'];
+    final payload = envelope?['data'];
+    final data = payload is Map ? payload['content'] : payload;
     if (data is! List) {
       throw const ServerException(
         'El servidor devolvió eventos con formato inesperado.',

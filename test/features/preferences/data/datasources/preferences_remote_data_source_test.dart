@@ -130,14 +130,37 @@ void main() {
       await dataSource.getEvents(category: 'Música');
 
       expect(adapter.last.path, '/api/v1/events');
-      expect(adapter.last.queryParameters, {'category': 'Música'});
+      expect(adapter.last.queryParameters, {
+        'category': 'Música',
+        'page': 0,
+        'size': 50,
+      });
     });
 
-    test('getEvents sin categoría no envía query', () async {
+    test('getEvents sin categoría envía paginación', () async {
       adapter.reply = const FakeReply(200, {'data': []});
 
       expect(await dataSource.getEvents(), isEmpty);
-      expect(adapter.last.queryParameters, isEmpty);
+      expect(adapter.last.queryParameters, {'page': 0, 'size': 50});
+    });
+
+    test('getNearbyEvents envía coordenadas y radio al catálogo', () async {
+      adapter.reply = const FakeReply(200, {'data': []});
+
+      await dataSource.getNearbyEvents(
+        latitude: 2.4448,
+        longitude: -76.6147,
+        radiusKm: 5,
+      );
+
+      expect(adapter.last.path, '/api/v1/events');
+      expect(adapter.last.queryParameters, {
+        'latitude': 2.4448,
+        'longitude': -76.6147,
+        'radiusKm': 5,
+        'page': 0,
+        'size': 50,
+      });
     });
 
     test('lista de eventos inválida lanza ServerException', () async {

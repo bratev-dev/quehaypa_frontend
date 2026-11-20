@@ -1,38 +1,20 @@
-import 'dart:convert';
-
+/// Identidad ya interpretada por Data; el dominio no decodifica tokens ni JSON.
 class AuthSession {
-  final String accessToken;
-  final String? refreshToken;
-  final String? idToken;
-
   const AuthSession({
     required this.accessToken,
     this.refreshToken,
     this.idToken,
+    this.email = '',
+    this.username = '',
+    this.firstName = '',
+    this.lastName = '',
+    this.subject = '',
+    this.isOrganizer = false,
   });
+  final String accessToken;
+  final String? refreshToken, idToken;
+  final String email, username, firstName, lastName, subject;
 
-  /// Datos de la identidad para el formulario; no se usan para autorizar roles.
-  String get email => _claim('email');
-  String get username => _claim('preferred_username');
-  String get firstName => _claim('given_name');
-  String get lastName => _claim('family_name');
-
-  String _claim(String name) {
-    for (final token in [idToken, accessToken]) {
-      if (token == null) continue;
-      try {
-        final parts = token.split('.');
-        if (parts.length != 3) continue;
-        final claims = jsonDecode(
-          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-        );
-        if (claims is Map<String, dynamic> && claims[name] is String) {
-          return claims[name] as String;
-        }
-      } on FormatException {
-        // Un token sin estos datos no aporta valores al formulario.
-      }
-    }
-    return '';
-  }
+  /// Solo orienta la navegación; el backend valida los permisos del JWT.
+  final bool isOrganizer;
 }

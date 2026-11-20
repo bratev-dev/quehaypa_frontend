@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
 import '../../../../app/router/animations/slide_page_route.dart';
+import '../../../../core/widgets/top_status_snackbar.dart';
 import '../../../authentication/presentation/controllers/authentication_controller.dart';
+import '../../../location/domain/entities/location_permission_status.dart';
+import '../../../location/presentation/controllers/location_controller.dart';
 import '../profile_providers.dart';
 import '../profile_colors.dart';
 import 'edit_profile_page.dart';
@@ -43,9 +46,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (mounted) context.go(RoutePaths.home);
   }
 
+  Future<void> _enableLocation() async {
+    final permission = await ref
+        .read(locationControllerProvider.notifier)
+        .enableFromSettings();
+    if (!mounted) return;
+    final message = switch (permission) {
+      LocationPermissionStatus.granted => 'Ubicación activada.',
+      LocationPermissionStatus.deniedForever =>
+        'Activa la ubicación en los ajustes del teléfono y vuelve a la app.',
+      LocationPermissionStatus.denied =>
+        'No se activó la ubicación. Usaremos Popayán como referencia.',
+      null => 'No pudimos activar la ubicación. Inténtalo de nuevo.',
+    };
+    TopStatusSnackbar.show(
+      context,
+      message: message,
+      success: permission == LocationPermissionStatus.granted,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(myProfileProvider);
+    final isOrganizer = ref.watch(
+      authenticationControllerProvider.select((state) => state.isOrganizer),
+    );
     return Scaffold(
       backgroundColor: profileBackground,
       appBar: AppBar(
@@ -130,6 +156,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     SlidePageRoute<void>(builder: (_) => const InterestsPage()),
                   ),
                 ),
+                if (!isOrganizer)
+                  _SettingsItem(
+                    icon: Icons.location_on_outlined,
+                    title: 'Ubicación',
+                    subtitle: 'Planes y eventos cerca de ti',
+                    onTap: _enableLocation,
+                  ),
               ],
             ),
             const SizedBox(height: 24),

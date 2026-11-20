@@ -31,3 +31,15 @@ final updatePlanUseCaseProvider = Provider<UpdatePlan>((ref) {
 final deletePlanUseCaseProvider = Provider<DeletePlan>((ref) {
   return DeletePlan(ref.read(planRepositoryProvider));
 });
+
+final addPlanEventUseCaseProvider = Provider<AddPlanEvent>((ref) {
+  return AddPlanEvent(ref.read(planRepositoryProvider));
+});
+
+final getPlanEventsUseCaseProvider = Provider<GetPlanEvents>((ref) {
+  return GetPlanEvents(ref.read(planRepositoryProvider));
+});
+
+final removePlanEventUseCaseProvider = Provider<RemovePlanEvent>((ref) {
+  return RemovePlanEvent(ref.read(planRepositoryProvider));
+});

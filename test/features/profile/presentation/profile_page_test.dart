@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/authentication/domain/entities/user.dart';
+import 'package:frontend/features/authentication/presentation/controllers/authentication_controller.dart';
+import 'package:frontend/features/authentication/presentation/controllers/authentication_state.dart';
 import 'package:frontend/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend/features/profile/presentation/pages/settings_page.dart';
 import 'package:frontend/features/profile/presentation/profile_providers.dart';
@@ -46,7 +48,12 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [myProfileProvider.overrideWith((ref) async => user)],
+        overrides: [
+          myProfileProvider.overrideWith((ref) async => user),
+          authenticationControllerProvider.overrideWithBuild(
+            (ref, _) => const AuthenticationState.initial(),
+          ),
+        ],
         child: const MaterialApp(home: SettingsPage()),
       ),
     );

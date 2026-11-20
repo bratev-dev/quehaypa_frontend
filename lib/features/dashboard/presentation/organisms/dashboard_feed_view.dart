@@ -27,18 +27,23 @@ class _DashboardFeedViewState extends ConsumerState<DashboardFeedView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(dashboardControllerProvider);
-    return CustomScrollView(
-      slivers: [
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: DashboardHeaderDelegate(
-            topInset: MediaQuery.paddingOf(context).top,
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(dashboardControllerProvider.notifier).loadEvents(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: DashboardHeaderDelegate(
+              topInset: MediaQuery.paddingOf(context).top,
+            ),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        _content(state),
-        const SliverToBoxAdapter(child: SizedBox(height: 100)),
-      ],
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          _content(state),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
     );
   }
 
@@ -90,9 +95,11 @@ class _DashboardFeedViewState extends ConsumerState<DashboardFeedView> {
       delegate: SliverChildBuilderDelegate((context, index) {
         final event = state.visibleEvents[index];
         return EventCard(
+          eventId: event.id,
           title: event.title,
           category: event.category,
           date: event.eventText,
+          imageUrl: event.imageUrl,
         );
       }, childCount: state.visibleEvents.length),
     );

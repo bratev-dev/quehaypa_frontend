@@ -19,7 +19,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     previous,
     next,
   ) {
-    if (previous?.status != next.status) {
+    if (previous?.status != next.status ||
+        previous?.isOrganizer != next.isOrganizer) {
       routerRefreshNotifier.refresh();
     }
   });

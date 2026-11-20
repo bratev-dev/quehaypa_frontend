@@ -98,7 +98,7 @@ jobs:
       # Configuración en sonar-project.properties. Los PR de Dependabot usan el
       # secreto SONAR_TOKEN del almacén de Dependabot.
       - name: Análisis de SonarCloud (calidad, seguridad y cobertura)
-        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -218,7 +218,14 @@ jobs:
       # Firma: el build de release usa la clave de depuración (android/app/build.gradle.kts).
       # Sirve para pruebas; no es un APK para tienda.
       - name: Compilar APK de release
-        run: flutter build apk --release
+        env:
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          if [[ "$MAPBOX_ACCESS_TOKEN" != pk.* ]]; then
+            echo "❌ Falta configurar el token público de Mapbox en MAPBOX_ACCESS_TOKEN"
+            exit 1
+          fi
+          flutter build apk --release --dart-define="ACCESS_TOKEN=$MAPBOX_ACCESS_TOKEN"
 
       - name: Publicar en GitHub Releases (develop-latest)
         env:

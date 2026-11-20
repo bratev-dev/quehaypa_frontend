@@ -17,4 +17,10 @@ abstract class PreferencesRepository {
 
   /// Lista completa de eventos quemados, con filtro opcional por categoria.
   Future<List<EventSeed>> getEvents({String? category});
+
+  Future<List<EventSeed>> getNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required int radiusKm,
+  });
 }

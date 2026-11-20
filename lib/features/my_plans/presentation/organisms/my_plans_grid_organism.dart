@@ -4,11 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../plans/presentation/controllers/plans_controller.dart';
 import '../../../plans/presentation/controllers/plans_state.dart';
 import '../molecules/plan_card_molecule.dart';
-import 'create_plan_modal.dart'; // Importa tu modal de creación
+import '../pages/plan_details_page.dart';
 
-/// Grid Spotify conectado al backend: lee `GET /my-plans` vía
-/// PlansController y elimina con `DELETE /{id}/delete` (optimista +
-/// recarga). Mantiene la UX original (add-card + swipe + UNDO).
+/// Grid de planes conectado al estado del controlador.
 class MyPlansGridOrganism extends ConsumerStatefulWidget {
   const MyPlansGridOrganism({super.key});
 
@@ -19,19 +17,23 @@ class MyPlansGridOrganism extends ConsumerStatefulWidget {
 
 class _MyPlansGridOrganismState extends ConsumerState<MyPlansGridOrganism> {
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(
-      () => ref.read(plansControllerProvider.notifier).loadMyPlans(),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     final state = ref.watch(plansControllerProvider);
 
-    if (state.status == PlansStatus.loading && state.plans.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+    if ((state.status == PlansStatus.initial ||
+            state.status == PlansStatus.loading) &&
+        state.plans.isEmpty) {
+      return GridView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.92,
+        ),
+        itemCount: 4,
+        itemBuilder: (context, index) => const _PlanSkeletonCard(),
+      );
     }
 
     if (state.status == PlansStatus.error && state.plans.isEmpty) {
@@ -57,8 +59,30 @@ class _MyPlansGridOrganismState extends ConsumerState<MyPlansGridOrganism> {
     }
 
     final plans = state.plans;
-    final totalCount = plans.length + 1;
-
+    if (plans.isEmpty) {
+      return const Align(
+        // Compensa el encabezado para centrar el mensaje en la pantalla.
+        alignment: Alignment(0, -0.22),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.folder_open_rounded, size: 56, color: Colors.black87),
+            SizedBox(height: 12),
+            Text(
+              'Aún no tienes planes',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Crea uno y guarda los eventos que quieras vivir.',
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text('Toca el botón + para empezar.'),
+          ],
+        ),
+      );
+    }
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
       physics: const BouncingScrollPhysics(),
@@ -71,96 +95,76 @@ class _MyPlansGridOrganismState extends ConsumerState<MyPlansGridOrganism> {
         // ni títulos de 255 chars desbordan los ~3.2px originales.
         childAspectRatio: 0.92,
       ),
-      itemCount: totalCount,
+      itemCount: plans.length,
       itemBuilder: (context, index) {
-        if (index == plans.length) {
-          return PlanCardMolecule(
-            isAddCard: true,
-            title: '',
-            onTap: () {
-              showCreatePlanModal(context);
-            },
-            onViewMore: () {},
-          );
-        }
-
         final plan = plans[index];
-
-        return Dismissible(
-          key: ValueKey(plan.id),
-          direction: DismissDirection.horizontal,
-          background: Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.only(left: 20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD32F2F),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.delete_sweep_rounded,
-              color: Colors.white,
-              size: 32,
+        return PlanCardMolecule(
+          title: plan.title,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => PlanDetailsPage(plan: plan),
             ),
           ),
-          secondaryBackground: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD32F2F),
-              borderRadius: BorderRadius.circular(20),
+          onViewMore: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => PlanDetailsPage(plan: plan),
             ),
-            child: const Icon(
-              Icons.delete_sweep_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          onDismissed: (direction) async {
-            final notifier = ref.read(plansControllerProvider.notifier);
-            final ok = await notifier.deletePlan(plan.id);
-
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).clearSnackBars();
-            if (ok) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: const Color(0xFF1E1E1E),
-                  content: Text(
-                    'Plan "${plan.title}" eliminado',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  duration: const Duration(seconds: 4),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: const Color(0xFF1E1E1E),
-                  content: Text(
-                    ref.read(plansControllerProvider).errorMessage ??
-                        'No fue posible eliminar el plan.',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          },
-          child: PlanCardMolecule(
-            title: plan.title,
-            onTap: () {
-              // Lógica al tocar la tarjeta del plan
-            },
-            onViewMore: () {
-              // Lógica al tocar "Ver más"
-            },
           ),
         );
       },
     );
   }
+}
+
+class _PlanSkeletonCard extends StatefulWidget {
+  const _PlanSkeletonCard();
+
+  @override
+  State<_PlanSkeletonCard> createState() => _PlanSkeletonCardState();
+}
+
+class _PlanSkeletonCardState extends State<_PlanSkeletonCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 850),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _pulse,
+    builder: (context, child) => Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Color.lerp(Colors.white60, Colors.white, _pulse.value),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(height: 14, width: double.infinity, color: Colors.black12),
+        ],
+      ),
+    ),
+  );
 }

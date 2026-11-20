@@ -12,6 +12,8 @@ import 'package:frontend/features/authentication/presentation/controllers/authen
 import 'package:frontend/features/authentication/presentation/controllers/authentication_providers.dart';
 import 'package:frontend/features/authentication/presentation/controllers/authentication_state.dart';
 import 'package:frontend/features/home/presentation/organisms/home_auth_actions.dart';
+import 'package:frontend/features/navigation/providers/navigation_provider.dart';
+import 'package:frontend/features/organizer_dashboard/presentation/pages/organizer_dashboard_page.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _Repository extends Mock implements AuthenticationRepository {}
@@ -19,6 +21,36 @@ class _Repository extends Mock implements AuthenticationRepository {}
 class _Tokens extends Mock implements TokenManager {}
 
 void main() {
+  testWidgets('la vista previa abre el dashboard y reinicia la navegación', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    final tokens = _Tokens();
+    final container = ProviderContainer(
+      overrides: [
+        authenticationRepositoryProvider.overrideWithValue(repository),
+        tokenManagerProvider.overrideWithValue(tokens),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(navigationIndexProvider.notifier).setIndex(3);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: Scaffold(body: HomeAuthActions())),
+      ),
+    );
+
+    await tester.tap(find.text('Vista previa: organizador'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OrganizerDashboardPage), findsOneWidget);
+    expect(container.read(navigationIndexProvider), 0);
+    verifyNever(() => repository.login(loginHint: any(named: 'loginHint')));
+    verifyNever(() => repository.register());
+    expect(tester.takeException(), isNull);
+  });
+
   for (final registering in [false, true]) {
     final label = registering ? 'Registrarse' : 'Iniciar Sesión';
     testWidgets('$label abre Keycloak y cancelar vuelve sin error', (

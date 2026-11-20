@@ -3,6 +3,7 @@ import '../../../../core/errors/failtures.dart';
 import '../../domain/entities/event_seed.dart';
 import '../../domain/entities/interest.dart';
 import '../../domain/repositories/preferences_repository.dart';
+import '../models/event_seed_model.dart';
 import '../datasources/preferences_remote_data_source.dart';
 
 class PreferencesRepositoryImpl implements PreferencesRepository {
@@ -90,8 +91,27 @@ class PreferencesRepositoryImpl implements PreferencesRepository {
 
   @override
   Future<List<EventSeed>> getEvents({String? category}) async {
+    return _loadEvents(() => _remoteDataSource.getEvents(category: category));
+  }
+
+  @override
+  Future<List<EventSeed>> getNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required int radiusKm,
+  }) => _loadEvents(
+    () => _remoteDataSource.getNearbyEvents(
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
+    ),
+  );
+
+  Future<List<EventSeed>> _loadEvents(
+    Future<List<EventSeedModel>> Function() request,
+  ) async {
     try {
-      final models = await _remoteDataSource.getEvents(category: category);
+      final models = await request();
       return models.map((m) => m.toEntity()).toList();
     } on UnauthorizedException {
       throw const UnauthorizedFailure(
