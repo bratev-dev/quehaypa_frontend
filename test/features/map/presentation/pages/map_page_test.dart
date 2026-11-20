@@ -8,6 +8,9 @@ import 'package:frontend/features/map/domain/entities/event_coordinates.dart';
 import 'package:frontend/features/map/presentation/molecules/location_picker.dart';
 import 'package:frontend/features/map/presentation/pages/map_page.dart';
 import 'package:frontend/features/map/presentation/controllers/map_events_provider.dart';
+import 'package:frontend/features/plans/domain/entities/plan.dart';
+import 'package:frontend/features/plans/domain/repositories/plan_repository.dart';
+import 'package:frontend/features/plans/presentation/controllers/plans_providers.dart';
 import 'package:frontend/features/preferences/domain/entities/event_seed.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 // La prueba sustituye la plataforma nativa, manteniendo la fachada de Mapbox.
@@ -18,6 +21,8 @@ import 'package:mocktail/mocktail.dart';
 class _TestMap extends Mock implements MapboxMapPlatformInterface {}
 
 class _TestStyle extends Mock implements StylePlatformInterface {}
+
+class _TestPlanRepository extends Mock implements PlanRepository {}
 
 class _TestLogo extends Mock implements LogoSettingsPlatformInterface {}
 
@@ -468,6 +473,8 @@ void main() {
     MapWidget? createdMap;
     void Function(Map<String, Object>?)? selectMarker;
     VoidCallback? tapMap;
+    final plans = _TestPlanRepository();
+    when(() => plans.getMyPlans()).thenAnswer((_) async => <Plan>[]);
     var now = DateTime(2026, 11, 19, 12);
     var currentEvents = <EventSeed>[
       const EventSeed(
@@ -494,6 +501,7 @@ void main() {
       ProviderScope(
         overrides: [
           mapEventsProvider.overrideWith((ref) async => currentEvents),
+          planRepositoryProvider.overrideWithValue(plans),
         ],
         child: MaterialApp(
           home: Scaffold(
@@ -534,6 +542,14 @@ void main() {
     expect(find.text('Concierto'), findsNothing);
     expect(find.text('Exposición'), findsOneWidget);
     expect(find.text('De pago'), findsOneWidget);
+    await tester.ensureVisible(find.text('Guardar en un plan'));
+    await tester.tap(find.text('Guardar en un plan'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Evento: Exposición'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Guardado en'))).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('Exposición'), findsOneWidget);
 
     currentEvents = [
       const EventSeed(
