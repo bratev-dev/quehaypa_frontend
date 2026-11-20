@@ -7,6 +7,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../location/domain/entities/user_location.dart';
 import '../../../location/presentation/controllers/location_controller.dart';
 import '../../../preferences/domain/entities/event_seed.dart';
+import '../../../saved_to_plans/presentation/modals/save_to_plans_bottom_sheet.dart';
 import '../../domain/entities/event_coordinates.dart';
 import '../../domain/entities/event_map_marker.dart';
 import '../controllers/map_events_provider.dart';
@@ -396,7 +397,7 @@ class _MapPageState extends ConsumerState<MapPage> {
               ),
             ),
           ),
-        if (_selectedEvent != null)
+        if (_selectedEvent case final event?)
           Positioned(
             left: 18,
             right: 18,
@@ -407,8 +408,15 @@ class _MapPageState extends ConsumerState<MapPage> {
               ),
               child: SingleChildScrollView(
                 child: MapEventCard(
-                  event: _selectedEvent!,
+                  event: event,
                   onClose: () => setState(() => _selectedEvent = null),
+                  onSave: event.id > 0
+                      ? () => showSaveToPlansBottomSheet(
+                          context,
+                          eventId: event.id,
+                          eventTitle: event.title,
+                        )
+                      : null,
                 ),
               ),
             ),

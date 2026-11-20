@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/failtures.dart';
+import '../../domain/entities/plan.dart';
 import '../../domain/repositories/plan_params.dart';
 import '../../../preferences/domain/entities/event_seed.dart';
 import 'plans_providers.dart';
@@ -37,30 +38,43 @@ class PlansController extends Notifier<PlansState> {
     required String title,
     String description = '',
     DateTime? meetingDate,
+  }) async =>
+      await createPlanAndGet(
+        title: title,
+        description: description,
+        meetingDate: meetingDate,
+      ) !=
+      null;
+
+  Future<Plan?> createPlanAndGet({
+    required String title,
+    String description = '',
+    DateTime? meetingDate,
   }) async {
     state = state.copyWith(status: PlansStatus.loading, errorMessage: null);
     try {
-      await ref.read(createPlanUseCaseProvider)(
+      final plan = await ref.read(createPlanUseCaseProvider)(
         CreatePlanParams(
           title: title,
           description: description,
           meetingDate: meetingDate,
         ),
       );
+      state = state.copyWith(plans: [...state.plans, plan]);
       await loadMyPlans();
-      return true;
+      return plan;
     } on Failure catch (e) {
       state = state.copyWith(
         status: PlansStatus.error,
         errorMessage: e.message,
       );
-      return false;
+      return null;
     } catch (e) {
       state = state.copyWith(
         status: PlansStatus.error,
         errorMessage: 'No fue posible crear el plan: $e',
       );
-      return false;
+      return null;
     }
   }
 

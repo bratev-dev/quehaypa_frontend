@@ -6,14 +6,18 @@ import '../../../plans/presentation/controllers/plans_controller.dart';
 /// Modal de creación con la UX original intacta, pero persistiendo
 /// en el backend: Page -> Controller -> UseCase -> Repository -> DataSource.
 /// El back espera title (<=255), description opcional y meetingDate sin zona.
-void showCreatePlanModal(BuildContext context) {
+Future<int?> showCreatePlanModal(
+  BuildContext context, {
+  bool saveEvent = false,
+}) {
   final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final dateController = TextEditingController();
   DateTime? pickedMeetingDate;
+  var saving = false;
 
-  showModalBottomSheet<void>(
+  return showModalBottomSheet<int>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
@@ -139,23 +143,25 @@ void showCreatePlanModal(BuildContext context) {
                       ),
                     ),
                     onPressed: () async {
-                      if (!(formKey.currentState!.validate())) return;
+                      if (saving || !formKey.currentState!.validate()) return;
+                      saving = true;
 
                       final container = ProviderScope.containerOf(
                         sheetContext,
                         listen: false,
                       );
-                      final ok = await container
+                      final plan = await container
                           .read(plansControllerProvider.notifier)
-                          .createPlan(
+                          .createPlanAndGet(
                             title: nameController.text.trim(),
                             description: descriptionController.text.trim(),
                             meetingDate: pickedMeetingDate,
                           );
+                      saving = false;
 
                       if (!sheetContext.mounted) return;
-                      if (ok) {
-                        Navigator.pop(sheetContext);
+                      if (plan != null) {
+                        Navigator.pop(sheetContext, plan.id);
                       } else {
                         final msg =
                             container
@@ -166,9 +172,11 @@ void showCreatePlanModal(BuildContext context) {
                             .showSnackBar(SnackBar(content: Text(msg)));
                       }
                     },
-                    child: const Text(
-                      'Guardar Plan',
-                      style: TextStyle(
+                    child: Text(
+                      saveEvent
+                          ? 'Crear plan y guardar evento'
+                          : 'Guardar Plan',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../my_plans/presentation/organisms/create_plan_modal.dart';
 import '../../../plans/presentation/controllers/plans_controller.dart';
 import '../../../plans/presentation/controllers/plans_state.dart';
 import '../../../plans/presentation/controllers/plans_providers.dart';
@@ -12,13 +13,11 @@ import '../atoms/search_input_atom.dart';
 
 /// Hoja de Figma «Guardado en», conectada con los eventos persistidos del plan.
 class SavedToPlansOrganism extends ConsumerStatefulWidget {
-  final VoidCallback onCreatePlan;
   final int eventId;
   final String eventTitle;
 
   const SavedToPlansOrganism({
     super.key,
-    required this.onCreatePlan,
     required this.eventId,
     required this.eventTitle,
   });
@@ -32,7 +31,7 @@ class _SavedToPlansOrganismState extends ConsumerState<SavedToPlansOrganism>
     with SingleTickerProviderStateMixin {
   final Set<int> _savedPlanIds = {};
   final Set<int> _savingPlanIds = {};
-  String _searchQuery = '';
+  final _search = TextEditingController();
   String? _associationError;
   bool _loadingAssociations = true;
   late final AnimationController _skeletonPulse;
@@ -50,6 +49,7 @@ class _SavedToPlansOrganismState extends ConsumerState<SavedToPlansOrganism>
   @override
   void dispose() {
     _skeletonPulse.dispose();
+    _search.dispose();
     super.dispose();
   }
 
@@ -142,6 +142,13 @@ class _SavedToPlansOrganismState extends ConsumerState<SavedToPlansOrganism>
     }
   }
 
+  Future<void> _createPlanAndSave() async {
+    final planId = await showCreatePlanModal(context, saveEvent: true);
+    if (!mounted || planId == null) return;
+    _search.clear();
+    await _addToPlan(planId);
+  }
+
   void _showMessage(String message, {bool success = false}) {
     TopStatusSnackbar.show(context, message: message, success: success);
   }
@@ -149,19 +156,17 @@ class _SavedToPlansOrganismState extends ConsumerState<SavedToPlansOrganism>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(plansControllerProvider);
+    final searchQuery = _search.text.toLowerCase();
 
     final filteredPlans = state.plans
         .where((plan) => plan.isCreator)
-        .where(
-          (plan) =>
-              plan.title.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
+        .where((plan) => plan.title.toLowerCase().contains(searchQuery))
         .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SaveHeaderMolecule(onCreatePlan: widget.onCreatePlan),
+        SaveHeaderMolecule(onCreatePlan: _createPlanAndSave),
         const SizedBox(height: 4),
         Text(
           'Evento: ${widget.eventTitle}',
@@ -170,9 +175,7 @@ class _SavedToPlansOrganismState extends ConsumerState<SavedToPlansOrganism>
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         const SizedBox(height: 16),
-        SearchInputAtom(
-          onChanged: (value) => setState(() => _searchQuery = value),
-        ),
+        SearchInputAtom(controller: _search, onChanged: (_) => setState(() {})),
         const SizedBox(height: 16),
         Expanded(
           child: switch (state.status) {
@@ -226,15 +229,15 @@ class _SavedToPlansOrganismState extends ConsumerState<SavedToPlansOrganism>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _searchQuery.isEmpty
+                    searchQuery.isEmpty
                         ? 'Aún no tienes planes propios.'
                         : 'No encontramos planes con ese nombre.',
                     style: const TextStyle(color: Colors.white70),
                   ),
                   const SizedBox(height: 8),
-                  if (_searchQuery.isEmpty)
+                  if (searchQuery.isEmpty)
                     TextButton(
-                      onPressed: widget.onCreatePlan,
+                      onPressed: _createPlanAndSave,
                       child: const Text('Crear mi primer plan'),
                     ),
                 ],

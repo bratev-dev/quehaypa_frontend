@@ -6,10 +6,16 @@ import '../../../preferences/domain/entities/event_seed.dart';
 import '../map_event_card_details.dart';
 
 class MapEventCard extends StatelessWidget {
-  const MapEventCard({super.key, required this.event, required this.onClose});
+  const MapEventCard({
+    super.key,
+    required this.event,
+    required this.onClose,
+    this.onSave,
+  });
 
   final EventSeed event;
   final VoidCallback onClose;
+  final VoidCallback? onSave;
 
   static const _pink = Color(0xFFEB4A9A);
   static const _yellow = Color(0xFFFCD413);
@@ -122,6 +128,12 @@ class MapEventCard extends StatelessWidget {
                   ),
               ],
             ),
+            if (onSave != null)
+              TextButton.icon(
+                onPressed: onSave,
+                icon: const Icon(Icons.bookmark_add_outlined),
+                label: const Text('Guardar en un plan'),
+              ),
           ],
         ),
       ),
