@@ -25,7 +25,7 @@ void main() {
                           camera ?? (throw StateError('Sin cámara')),
                       mapBuilder: (widget) {
                         mapWidget = widget;
-                        return const SizedBox.expand();
+                        return const SizedBox(key: ValueKey('picker-map'));
                       },
                     ),
                   ),
@@ -42,6 +42,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     final confirm = find.widgetWithText(FilledButton, 'Confirmar ubicación');
     expect(tester.widget<FilledButton>(confirm).onPressed, isNull);
+    final map = find.byKey(const ValueKey('picker-map'));
+    final availableMapArea = tester.getSize(map);
+    expect(availableMapArea.width, tester.getSize(find.byType(AppBar)).width);
+    expect(availableMapArea.height, greaterThan(32));
 
     final firstKey = mapWidget.key;
     mapWidget.onMapLoadErrorListener!(
@@ -65,6 +69,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
+    expect(tester.getSize(map), availableMapArea);
+    expect(
+      tester.getCenter(find.byIcon(Icons.my_location)),
+      tester.getCenter(map),
+    );
 
     await tester.tap(confirm);
     await tester.pumpAndSettle();
