@@ -126,11 +126,21 @@ class _MapPageState extends ConsumerState<MapPage> {
     );
     if (!mounted || selected == null || !selected.isValid) return;
     setState(() => _manualLocation = selected);
+    final search = ref.read(mapSearchOptionsProvider);
+    ref.read(mapSearchOptionsProvider.notifier).state = (
+      manual: selected,
+      radiusKm: search.radiusKm,
+    );
     _centerOnReference();
   }
 
   void _returnToDeviceLocation() {
     setState(() => _manualLocation = null);
+    final search = ref.read(mapSearchOptionsProvider);
+    ref.read(mapSearchOptionsProvider.notifier).state = (
+      manual: null,
+      radiusKm: search.radiusKm,
+    );
     _centerOnReference();
   }
 
@@ -299,6 +309,7 @@ class _MapPageState extends ConsumerState<MapPage> {
 
     final bottomMargin =
         _navigationClearance + MediaQuery.paddingOf(context).bottom;
+    final radiusKm = ref.watch(mapSearchOptionsProvider).radiusKm;
     final events = ref.watch(mapEventsProvider);
     ref.listen(
       locationControllerProvider.select(
@@ -316,7 +327,8 @@ class _MapPageState extends ConsumerState<MapPage> {
     return Stack(
       children: [
         _buildMap(bottomMargin),
-        if (_loaded && _selectedEvent == null) _locationControls(bottomMargin),
+        if (_loaded && _selectedEvent == null)
+          _locationControls(bottomMargin, radiusKm),
         if (events.isLoading && !_loadFailed)
           const Positioned(
             top: 16,
@@ -426,7 +438,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     );
   }
 
-  Widget _locationControls(double bottomMargin) => Positioned(
+  Widget _locationControls(double bottomMargin, int radiusKm) => Positioned(
     right: 16,
     left: 16,
     bottom: bottomMargin,
@@ -434,6 +446,11 @@ class _MapPageState extends ConsumerState<MapPage> {
       alignment: WrapAlignment.end,
       spacing: 8,
       children: [
+        FilledButton.tonalIcon(
+          onPressed: _chooseRadius,
+          icon: const Icon(Icons.radar),
+          label: Text('Radio: $radiusKm km'),
+        ),
         if (_manualLocation != null)
           FilledButton.tonal(
             onPressed: _returnToDeviceLocation,
@@ -451,6 +468,41 @@ class _MapPageState extends ConsumerState<MapPage> {
       ],
     ),
   );
+
+  Future<void> _chooseRadius() async {
+    var selected = ref.read(mapSearchOptionsProvider).radiusKm;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, updateSheet) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Radio de búsqueda: $selected km'),
+                Slider(
+                  min: 1,
+                  max: 20,
+                  divisions: 19,
+                  value: selected.toDouble(),
+                  label: '$selected km',
+                  onChanged: (value) {
+                    updateSheet(() => selected = value.round());
+                    final search = ref.read(mapSearchOptionsProvider);
+                    ref.read(mapSearchOptionsProvider.notifier).state = (
+                      manual: search.manual,
+                      radiusKm: selected,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildMap(double bottomMargin) {
     final generation = _retryCount;
