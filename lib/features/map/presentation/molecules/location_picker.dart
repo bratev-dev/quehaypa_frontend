@@ -103,7 +103,7 @@ class _LocationPickerState extends State<LocationPicker> {
       body: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned.fill(child: _buildMap()),
+          SizedBox.expand(child: _buildMap()),
           if (_loaded)
             const IgnorePointer(child: Icon(Icons.my_location, size: 32))
           else if (_failed)
