@@ -36,13 +36,13 @@ dependencies:
   flutter_riverpod: ^3.5.0
   go_router: ^18.1.4
   dio: ^5.11.1
-  flutter_svg: ^2.4.0
+  flutter_svg: ^2.5.0
   video_player: ^2.14.1
-  flutter_dotenv: ^6.0.1
+  flutter_dotenv: ^6.0.2
   share_plus: 13.3.1
   file_picker: ^13.3.3
   geolocator: ^14.1.0
-  mapbox_maps_flutter: ^3.35.0
+  mapbox_maps_flutter: ^3.35.2
 
 dev_dependencies:
   flutter_test:
